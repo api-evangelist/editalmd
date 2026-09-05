@@ -1,0 +1,82 @@
+name: EditalMD API Conventions
+generated: '2026-09-05'
+method: searched
+source: https://editalmd.com/api/
+docs: https://editalmd.com/llms-full.txt
+note: >-
+  Derived from the self-describing /api/ index (conventions block), llms.txt/llms-full.txt, the OpenAPI and
+  live probes (error envelope observed on GET /api/compra/999999999 and unauthenticated GET /api/dono,
+  2026-09-05). Cross-links: errors/editalmd-problem-types.yml, authentication/editalmd-authentication.yml,
+  lifecycle/editalmd-lifecycle.yml, rate-limits/editalmd-rate-limits.yml, asyncapi/editalmd-webhooks.yml.
+format:
+  request_response: JSON on /api/*; documents are delivered as text/markdown with provenance front-matter
+  cors: 'Access-Control-Allow-Origin: * on agent routes'
+auth_style: >-
+  no accounts - public routes, no-signup bearer tokens (edm_ owner, cred_ prepaid credit) and per-request
+  x402 payment (HTTP 402 + X-PAYMENT). See authentication/editalmd-authentication.yml.
+error_envelope:
+  shape: '{"error": "<snake_case_slug>", ...optional helper fields}'
+  observed: '{"error": "nao_autorizado", "como": "Authorization: Bearer edm_…"} on 401'
+  format: custom
+  note: not RFC 9457 problem+json; slugs are stable Portuguese snake_case codes
+pagination:
+  style: limit-only
+  params: ['limite (1-50 or 1-100 per route, defaults 20/50)']
+  ordering: newest first on list routes
+  note: no cursor or offset pagination is exposed; alert/watcher rows carry ultimo_check as the provider-side cron cursor
+versioning:
+  style: build-hash
+  current: 2d690e87
+  note: OpenAPI info.version and the /api/ index build field carry the deploy hash; there is no /v1 path versioning
+request_tracing:
+  headers: [x-editalmd-recibo, x-editalmd-sha256, x-editalmd-regime]
+  note: >-
+    every delivery returns a receipt id and the SHA-256 of the delivered content; the receipt is auditable at
+    GET /api/recibo/{id} (price, payment mode, hash) - delivery-level provenance rather than request-id tracing.
+rate_limit_signaling:
+  headers: []
+  status: 429 on the daily owner-creation cap and on 5 wrong email-confirmation codes
+  note: no X-RateLimit-*/RateLimit-*/Retry-After response headers are documented; 503 on alerta creation carries retry_after in the body
+parity:
+  note: 'provider convention: any UI/API change ships apidocs + skill + MCP in the same PR ("parity" in /api/ conventions)'
+idempotency:
+  coverage: none
+  note: >-
+    no Idempotency-Key or replay-protection mechanism is documented on any mutating route; repeating
+    POST /api/alertas or POST /api/vigias creates (and charges) again. Two narrower dedup mechanisms exist and
+    are documented but are not write idempotency: habilitacao charge-dedup by document text hash ("mesmo texto
+    nao paga de novo" - the same sha256_texto is never charged twice), and webhook delivery dedup via the
+    webhook-id header. Free-of-charge guarantees on failure: 404, 409 and unpublished tenders are never charged.
+reversibility:
+  summary: >-
+    Mostly forward-only. Alerts can be paused and reactivated; deletes are explicitly final ("Sem volta");
+    webhook-secret rotation has a stated 24-hour overlap window; no refund path is documented for x402
+    payments or prepaid credit.
+  writes:
+    - operation: post_api_alertas
+      reversal: patch_api_alertas_by_id
+      grade: documented
+      note: PATCH pauses, reactivates or edits an alert; DELETE /api/alertas/{id} removes it but the docs state no window and the delete itself is final
+      docs: https://editalmd.com/llms-full.txt
+    - operation: delete_api_alertas_by_id
+      reversal: null
+      grade: none
+      note: '"Apaga o alerta e o histórico de compras casadas. Sem volta." - explicitly irreversible'
+    - operation: post_api_vigias
+      reversal: delete_api_vigias_by_id
+      grade: documented
+      note: a watcher can be deleted; no pause and no undo of the delete
+    - operation: delete_api_vigias_by_id
+      reversal: null
+      grade: none
+      note: '"Apaga a vigia e seus eventos. Sem volta." - explicitly irreversible'
+    - operation: post_api_dono_segredo
+      reversal: overlap-window
+      grade: verified
+      window: previous webhook secret continues to sign for 24 hours after rotation
+      docs: https://editalmd.com/llms.txt
+      note: the stated 24h dual-signing window is the documented safety net for a bad rotation
+    - operation: post_api_credito
+      reversal: null
+      grade: none
+      note: no refund path is documented for credit purchases or per-request x402 payments; the documented guarantee is that failed deliveries (404/409) are not charged and a paid non-delivery (502) returns the receipt number

@@ -1,0 +1,60 @@
+name: EditalMD Standards Conformance
+generated: '2026-09-05'
+method: probed
+source: live probes of editalmd.com 2026-09-05 + https://editalmd.com/llms.txt + openapi/editalmd-openapi.json
+conformance:
+  - id: openapi-3.1
+    conforms: true
+    evidence: https://editalmd.com/openapi.json - OpenAPI 3.1.0, 26 paths / 33 operations, fetched 200 and saved verbatim
+  - id: rfc9727-api-catalog
+    conforms: true
+    evidence: >-
+      https://editalmd.com/.well-known/api-catalog - 200, Content-Type application/linkset+json;
+      profile="https://www.rfc-editor.org/info/rfc9727", linkset anchoring the REST API, the MCP endpoint,
+      the OpenAPI, llms.txt/llms-full.txt and the OKF bundle
+  - id: rfc9116-security-txt
+    conforms: true
+    evidence: https://editalmd.com/.well-known/security.txt - 200 with Contact, Expires, Preferred-Languages, Canonical
+  - id: apis-json
+    conforms: true
+    evidence: https://editalmd.com/apis.json and /.well-known/apis.json - 200, specificationVersion 0.19 with OpenAPI/MCP/llms.txt/OKF properties
+  - id: mcp-streamable-http
+    conforms: true
+    evidence: POST https://editalmd.com/mcp tools/list answered 200 with 19 tools and full inputSchema (JSON-RPC 2.0), probed 2026-09-05
+  - id: x402
+    conforms: true
+    evidence: >-
+      paid routes answer HTTP 402 with an x402 accepts[] offer and accept the X-PAYMENT retry header
+      (documented per-route in llms-full.txt and the OpenAPI 402 responses); prepaid credit recharge
+      POST /api/credito is itself bought via x402
+  - id: standard-webhooks
+    conforms: true
+    evidence: >-
+      llms.txt "Webhook assinado" - webhook-id, webhook-timestamp, webhook-signature "v1,<base64>" HMAC-SHA256
+      of id.timestamp.body with the whsec_ secret, 5-minute timestamp tolerance, 24h dual-signing on rotation -
+      explicitly "o padrao Standard Webhooks"
+  - id: llms-txt
+    conforms: true
+    evidence: https://editalmd.com/llms.txt and /llms-full.txt both 200 text/plain, linked from the homepage and the api-catalog
+  - id: rss-2.0
+    conforms: true
+    evidence: https://editalmd.com/feed.xml - 200 application/rss+xml (newest published tenders)
+  - id: json-feed-1.1
+    conforms: true
+    evidence: https://editalmd.com/feed.json - 200 application/feed+json
+  - id: okf-0.1
+    conforms: true
+    evidence: https://editalmd.com/okf/index.md - 200 text/markdown, frontmatter okf_version "0.1" (Open Knowledge Format bundle for agents)
+  - id: rfc9457
+    conforms: false
+    evidence: 'errors are a custom {"error": "<slug>"} JSON envelope, not application/problem+json (observed live on 404/401 probes)'
+  - id: oauth2
+    conforms: false
+    evidence: no securitySchemes in the OpenAPI; /.well-known/oauth-authorization-server and /openid-configuration both 404 - auth is no-signup bearer tokens + x402
+  - id: idempotency
+    conforms: false
+    evidence: no Idempotency-Key mechanism documented on any mutating route (see conventions/editalmd-conventions.yml)
+note: >-
+  No domain API standard (e.g. OCDS) is declared by the contract; the product is a value-added layer over
+  Brazil's PNCP portal and serves its own JSON shapes with provenance hashes. Recorded as an honest absence,
+  not a nonconformance.

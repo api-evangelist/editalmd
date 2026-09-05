@@ -1,14 +1,38 @@
 name: EditalMD
-description: >-
-  Agent-native data API over Brazil's public-procurement portal PNCP (Portal Nacional de Contratações Públicas).
-  Provides full-text tender search, proposal and challenge deadlines, editais rendered as markdown with provenance and
-  SHA-256 hashes, new-tender alerts by keyword or CNPJ, tender change-watchers, and extracted eligibility (habilitação)
-  checklists. Search is free; other routes are paid per request (x402) or via prepaid credit with no signup.
+description: Agent-native data API over Brazil's public-procurement portal PNCP (Portal Nacional de Contratações
+  Públicas). Provides full-text tender search, proposal and challenge deadlines, editais rendered as markdown with
+  provenance and SHA-256 hashes, new-tender alerts by keyword or CNPJ, tender change-watchers, and extracted eligibility
+  (habilitação) checklists. Search is free; other routes are paid per request (x402) or via prepaid credit with
+  no signup.
 url: https://raw.githubusercontent.com/api-evangelist/editalmd/refs/heads/main/apis.yml
 created: '2026-09-05'
 modified: '2026-09-05'
 specificationVersion: '0.21'
 tags:
+- GovTech
+- Public Procurement
+- Brazil
+- PNCP
+- Legal & Compliance
+- Business Intelligence
+- Company Data
+- CNPJ
+- CNAE
+- SICAF
+- Document Extraction
+- Agent-Native
+- MCP
+- x402
+- Machine-Payable
+apis:
+- name: EditalMD API
+  description: Public REST API over Brazil's PNCP procurement portal with full-text tender search, tender sheets
+    and deadlines, edital markdown, eligibility extraction, alerts and watchers. Also exposes a hosted MCP server
+    and agent-native documentation surfaces.
+  humanURL: https://editalmd.com/
+  baseURL: https://editalmd.com/api/
+  image: https://editalmd.com/icon.svg
+  tags:
   - GovTech
   - Public Procurement
   - Brazil
@@ -24,48 +48,82 @@ tags:
   - MCP
   - x402
   - Machine-Payable
-apis:
-  - name: EditalMD API
-    description: >-
-      Public REST API over Brazil's PNCP procurement portal with full-text tender search, tender sheets and deadlines,
-      edital markdown, eligibility extraction, alerts and watchers. Also exposes a hosted MCP server and agent-native
-      documentation surfaces.
-    humanURL: https://editalmd.com/
-    baseURL: https://editalmd.com/api/
-    tags:
-      - GovTech
-      - Public Procurement
-      - Brazil
-      - PNCP
-      - Legal & Compliance
-      - Business Intelligence
-      - Company Data
-      - CNPJ
-      - CNAE
-      - SICAF
-      - Document Extraction
-      - Agent-Native
-      - MCP
-      - x402
-      - Machine-Payable
-    properties:
-      - type: OpenAPI
-        url: https://editalmd.com/openapi.json
-      - type: MCPServer
-        url: https://editalmd.com/mcp
-      - type: LLMsTxt
-        url: https://editalmd.com/llms.txt
-      - type: LLMsTxt
-        url: https://editalmd.com/llms-full.txt
-      - type: Documentation
-        url: https://editalmd.com/okf/index.md
-      - type: Documentation
-        url: https://editalmd.com/api/
+  properties:
+  - type: OpenAPI
+    url: https://editalmd.com/openapi.json
+  - type: MCPServer
+    url: https://editalmd.com/mcp
+  - type: LLMsTxt
+    url: https://editalmd.com/llms.txt
+  - type: LLMsTxt
+    url: https://editalmd.com/llms-full.txt
+  - type: Documentation
+    url: https://editalmd.com/okf/index.md
+  - type: Documentation
+    url: https://editalmd.com/api/
+  - type: APIReference
+    url: https://editalmd.com/llms-full.txt
+  - type: OpenAPI
+    url: openapi/editalmd-openapi.json
+  - type: MCPServer
+    url: mcp/editalmd-mcp.yml
+  - type: ToolCrosswalk
+    url: mcp/editalmd-tool-crosswalk.yml
+  - type: LLMsTxt
+    url: llms/editalmd-llms.txt
+  - type: Overlay
+    url: overlays/editalmd-openapi-overlay.yaml
+  - type: Authentication
+    url: authentication/editalmd-authentication.yml
+  - type: Conventions
+    url: conventions/editalmd-conventions.yml
+  - type: ErrorCatalog
+    url: errors/editalmd-problem-types.yml
+  - type: Webhooks
+    url: asyncapi/editalmd-webhooks.yml
+  - type: DataModel
+    url: data-model/editalmd-data-model.yml
+  - type: Conformance
+    url: conformance/editalmd-conformance.yml
+  - type: Lifecycle
+    url: lifecycle/editalmd-lifecycle.yml
+  - type: Plans
+    url: plans/editalmd-plans-pricing.yml
+  - type: RateLimits
+    url: rate-limits/editalmd-rate-limits.yml
+  - type: AgentSkill
+    url: skills/_index.yml
+image: https://editalmd.com/icon.svg
 maintainers:
-  - FN: EditalMD
-    url: https://editalmd.com/
-generated:
+- FN: EditalMD
+  url: https://editalmd.com/
+  email: contato@editalmd.com
+x-generated:
   by: apis.io/add
   model: claude-opus-4-8
   confidence: 98
   at: '2026-09-05T11:48:14.423Z'
+common:
+- type: Website
+  url: https://editalmd.com
+- type: VulnerabilityDisclosure
+  url: security/editalmd-vulnerability-disclosure.yml
+- type: DomainSecurity
+  url: security/editalmd-domain-security.yml
+- type: Security
+  url: security/editalmd-vulnerability-disclosure.yml
+- type: WellKnown
+  url: well-known/editalmd-well-known.yml
+- type: SecurityTxt
+  url: well-known/editalmd-security.txt
+- type: TermsOfService
+  url: https://editalmd.com/termos
+- type: PrivacyPolicy
+  url: https://editalmd.com/privacidade
+- type: Pricing
+  url: https://editalmd.com/#precos
+x-enrichment:
+  date: '2026-09-05'
+  status: enriched
+  artifacts_added: 26
+  pass: local-v3

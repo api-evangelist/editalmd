@@ -1,0 +1,38 @@
+name: EditalMD Plans and Pricing
+generated: '2026-09-05'
+method: probed
+source: https://editalmd.com/api/
+docs: https://editalmd.com/llms.txt
+note: >-
+  Read from the machine-readable /api/ index (regime, pago and pagamento blocks) and llms.txt "Cota". There are
+  no subscription tiers and no signup: pricing is per-request (x402, USDC) or prepaid credit, with a free
+  discovery layer. The provider states the live numbers are always at https://editalmd.com/api/.
+plan_count: 0
+model: usage-based
+currency: USD
+free:
+  - full-text tender search (GET /api/busca) - always free, no quota
+  - tender sheet with deadlines (GET /api/compra/{id}) - free, no quota
+  - CNAE dictionary (GET /api/cnaes) - free
+  - document markdown of tenders published 30+ days ago - free sample, no quota
+  - first active alert (30 days) and first watcher - free quota (franquia)
+per_request:
+  - item: 'GET /api/documento/{id}/markdown (tender published < 30 days)'
+    price_usd: 0.01
+  - item: 'POST /api/documento/{id}/habilitacao (recent document)'
+    price_usd: 0.05
+    note: same extracted text (same sha256_texto) is never charged twice
+  - item: 'POST /api/alertas (beyond the first, per 30 days)'
+    price_usd: 0.10
+  - item: 'POST /api/vigias (beyond the first)'
+    price_usd: 0.05
+payment_methods:
+  - method: x402
+    description: per-request - HTTP 402 with accepts[], pay in USDC and repeat with X-PAYMENT; no registration
+  - method: prepaid-credit
+    description: 'POST /api/credito?usd={pack} paid once via x402 returns a cred_ bearer token that debits any paid route across all the operator''s products'
+    packs_usd: [1, 5, 10, 25]
+never_charged:
+  - nonexistent document (404)
+  - document without extractable text in the corpus (409)
+  - tender without a publication date

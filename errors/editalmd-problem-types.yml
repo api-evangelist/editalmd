@@ -1,0 +1,60 @@
+name: EditalMD Error Catalog
+generated: '2026-09-05'
+method: derived
+source: openapi/editalmd-openapi.json (4xx/5xx responses) + https://editalmd.com/llms-full.txt + live probes 2026-09-05
+format: custom
+envelope:
+  shape: '{"error": "<snake_case_slug>", ...optional helper fields}'
+  observed:
+    - status: 404
+      body: '{"error": "compra_nao_encontrada"}'
+      url: https://editalmd.com/api/compra/999999999
+    - status: 401
+      body: '{"error": "nao_autorizado", "como": "Authorization: Bearer edm_…"}'
+      url: https://editalmd.com/api/dono
+  note: not RFC 9457 problem+json; JSON with a stable Portuguese snake_case error slug plus optional how-to-fix helper fields
+problems:
+  - status: 400
+    title: Invalid input
+    detail: >-
+      Search term under 3 letters, CNAE query under 2 characters, invalid terms/CNPJ/UF/channel/destination on
+      alerts and watchers, credit pack outside {1,5,10,25}, or an invalid/expired email confirmation code.
+    remediation: fix the named parameter; the route descriptions in llms-full.txt state each constraint
+  - status: 401
+    title: Missing or unknown token
+    detail: owner routes without an edm_ bearer, credit routes without a cred_ bearer, metrics with a wrong operator token.
+    remediation: create an owner token with POST /api/dono (no signup) and send it as Authorization Bearer
+  - status: 402
+    title: Payment required (x402)
+    detail: >-
+      A paid route called without payment - a recent document, an eligibility extraction, an alert or watcher
+      above the free quota, or a credit recharge. The body carries the x402 accepts[] offer and the credit
+      recharge path.
+    remediation: pay the accepts[] offer and repeat with the X-PAYMENT header, or send a cred_ prepaid token
+  - status: 404
+    title: Not found (never charged)
+    detail: unknown tender, document, receipt, alert or watcher (or one owned by another owner); CNPJ absent from the Receita base; file outside the OKF/well-known bundle.
+    remediation: 404 on paid document routes is explicitly free of charge
+  - status: 409
+    title: No extractable text (never charged)
+    detail: the document has not been ingested into the corpus, has no text/binary, or the text is too short to extract.
+    remediation: explicitly free of charge; retry after the corpus ingests the document
+  - status: 422
+    title: CNPJ has no mappable activity
+    detail: none of the company's CNAEs exist in the term dictionary, so no alert family can be created; the response lists the CNAEs.
+    remediation: create the alert by explicit terms instead (POST /api/alertas with termos)
+  - status: 429
+    title: Rate limited
+    detail: the network hit the daily cap on new owner tokens (POST /api/dono), or five wrong email confirmation attempts.
+    remediation: wait for the daily window, or request a new confirmation code
+  - status: 502
+    title: Origin failure / paid non-delivery
+    detail: PNCP origin unavailable on search and tender routes; on paid document routes, "paid and not delivered" - the body carries the receipt number.
+    remediation: keep the receipt id from the 502 body as proof of the charged non-delivery
+  - status: 503
+    title: Dependency unavailable
+    detail: email channel disabled, CNPJ lookup or database temporarily unavailable, model extraction disabled; alert creation returns retry_after in the body.
+    remediation: honor the retry_after field where present
+guarantees:
+  - a 404, a 409 and a tender without a publication date are never charged
+  - every charged delivery returns x-editalmd-recibo and x-editalmd-sha256; the receipt is auditable at GET /api/recibo/{id}

@@ -1,0 +1,68 @@
+name: EditalMD MCP Server
+generated: '2026-09-05'
+method: searched
+source: https://editalmd.com/mcp
+status: official
+description: >-
+  Hosted first-party MCP server (Streamable HTTP, JSON-RPC 2.0) dispatched by the same Cloudflare Worker as the
+  REST API. Exposes 19 tools covering the whole product: free PNCP tender search, tender sheets with proposal and
+  challenge (impugnacao) deadlines, edital markdown with provenance hash, extracted eligibility (habilitacao)
+  checklists, no-signup owner tokens, keyword and CNPJ alerts, tender change-watchers, prepaid credit and
+  delivery receipts. Paid tools charge per request via x402 or debit a prepaid cred_ token. The homepage ships
+  one-click install deeplinks for Cursor and VS Code, and /.well-known/mcp-registry-auth publishes the ed25519
+  key for the official MCP registry.
+deployment:
+  mode: remote
+  endpoint: https://editalmd.com/mcp
+  auth: none
+  verified: probed
+discovery:
+  - https://editalmd.com/.well-known/api-catalog
+  - https://editalmd.com/apis.json
+  - https://editalmd.com/.well-known/mcp-registry-auth
+x-evidence:
+  fetched: '2026-09-05'
+  url: https://editalmd.com/mcp
+  request: 'POST tools/list (JSON-RPC 2.0)'
+  http_status: 200
+  content_type: application/json
+  tools_file: editalmd-mcp-tools.json
+tools:
+  - name: api_index
+    description: API index - routes, pricing regime and price per route.
+  - name: health
+    description: Origin health and corpus size (tenders and documents with extracted text).
+  - name: buscar_licitacao
+    description: Full-text PNCP tender search by term, UF, open-only filter. Free.
+  - name: prazos
+    description: Tender deadlines - end of proposals (from PNCP) and last challenge day (estimated).
+  - name: compra
+    description: Tender sheet plus its documents with extracted text and the price of each. Free.
+  - name: edital_markdown
+    description: PNCP document as markdown with provenance front-matter and hash. Free at 30+ days, paid when recent.
+  - name: habilitacao
+    description: Extracted eligibility checklist (legal, fiscal, economic-financial, technical), each item with its literal excerpt.
+  - name: criar_dono
+    description: Creates the owner token (edm_) that opens alerts and watchers, plus the whsec_ webhook signing secret. No signup.
+  - name: dono
+    description: Owner state (requires edm_ token) - confirmed email, free quota and the webhook secret.
+  - name: rotacionar_segredo_webhook
+    description: Rotates the webhook signing secret; the previous one still signs for 24h.
+  - name: criar_alerta
+    description: New-tender alert by object terms and UF (requires edm_ token); pull, signed webhook or email channel.
+  - name: alerta_por_cnpj
+    description: New-tender alerts from a company CNPJ - each CNAE activity becomes a term family, one alert per family.
+  - name: cnaes
+    description: CNAE dictionary as the CNPJ alert reads it - official IBGE description, family, terms, active SICAF suppliers.
+  - name: alertas_compras
+    description: Tenders already matched by an alert (pull channel) with deadlines and delivery status.
+  - name: vigiar_compra
+    description: Watch a tender - snapshot now, then events on rectification, new document, deadline change, value change.
+  - name: vigia_eventos
+    description: Events of a watched tender (what changed, from what to what, when) and the current snapshot.
+  - name: credito_saldo
+    description: Prepaid credit balance and statement (requires cred_ token).
+  - name: credito_recarregar
+    description: Recharge credit - pay once with x402 (1, 5, 10, 25 USD packs), get the bearer token valid across the house.
+  - name: recibo
+    description: Delivery receipt - price, payment mode and SHA-256 hash of the delivered content.

@@ -1,0 +1,143 @@
+name: EditalMD MCP tool - REST operation crosswalk
+generated: '2026-09-05'
+method: derived
+source: >-
+  Live MCP tools/list (https://editalmd.com/mcp, probed 2026-09-05, 19 tools with inputSchema) bound to
+  operationIds in openapi/editalmd-openapi.json (33 operations). The provider states the MCP tools are
+  "as tools deste catalogo, despachadas neste mesmo Worker" - the same Worker dispatches both surfaces.
+surfaces:
+  openapi:
+    path: openapi/editalmd-openapi.json
+    url: https://editalmd.com/openapi.json
+    gated: false
+  mcp:
+    url: https://editalmd.com/mcp
+    transport: streamable-http
+    gated: false
+    note: tools/list answers anonymously with full inputSchema; saved verbatim at mcp/editalmd-mcp-tools.json
+crosswalk:
+  - tool: api_index
+    category: discovery
+    rest: [get_api]
+    binding: direct
+    confidence: high
+  - tool: health
+    category: discovery
+    rest: [get_api_health]
+    binding: direct
+    confidence: high
+  - tool: buscar_licitacao
+    category: search
+    rest: [get_api_busca]
+    binding: direct
+    confidence: high
+  - tool: prazos
+    category: tenders
+    rest: [get_api_compra_by_id]
+    binding: subset
+    confidence: medium
+    note: deadlines (prazos) ship inside the FichaCompra response of GET /api/compra/{id}; no standalone REST deadlines route exists
+  - tool: compra
+    category: tenders
+    rest: [get_api_compra_by_id]
+    binding: direct
+    confidence: high
+  - tool: edital_markdown
+    category: documents
+    rest: [get_api_documento_by_id_markdown]
+    binding: direct
+    confidence: high
+  - tool: habilitacao
+    category: documents
+    rest: [post_api_documento_by_id_habilitacao]
+    binding: direct
+    confidence: high
+  - tool: criar_dono
+    category: owner
+    rest: [post_api_dono]
+    binding: direct
+    confidence: high
+  - tool: dono
+    category: owner
+    rest: [get_api_dono]
+    binding: direct
+    confidence: high
+  - tool: rotacionar_segredo_webhook
+    category: owner
+    rest: [post_api_dono_segredo]
+    binding: direct
+    confidence: high
+  - tool: criar_alerta
+    category: alerts
+    rest: [post_api_alertas]
+    binding: direct
+    confidence: high
+  - tool: alerta_por_cnpj
+    category: alerts
+    rest: [post_api_alertas]
+    binding: mode
+    confidence: high
+    note: same route in CNPJ mode - each CNAE family becomes one alert, charged in a single x402 payment
+  - tool: cnaes
+    category: alerts
+    rest: [get_api_cnaes]
+    binding: direct
+    confidence: high
+  - tool: alertas_compras
+    category: alerts
+    rest: [get_api_alertas_by_id_compras]
+    binding: direct
+    confidence: high
+  - tool: vigiar_compra
+    category: watchers
+    rest: [post_api_vigias]
+    binding: direct
+    confidence: high
+  - tool: vigia_eventos
+    category: watchers
+    rest: [get_api_vigias_by_id_eventos]
+    binding: direct
+    confidence: high
+  - tool: credito_saldo
+    category: billing
+    rest: [get_api_credito]
+    binding: direct
+    confidence: high
+  - tool: credito_recarregar
+    category: billing
+    rest: [post_api_credito]
+    binding: direct
+    confidence: high
+  - tool: recibo
+    category: billing
+    rest: [get_api_recibo_by_id]
+    binding: direct
+    confidence: high
+mcp_only: []
+rest_only:
+  - post_mcp
+  - get_okf_by_arquivo
+  - get_well_known_by_arquivo
+  - get_apis_json
+  - get_feed_xml
+  - get_feed_json
+  - get_api_alertas
+  - get_api_alertas_by_id
+  - patch_api_alertas_by_id
+  - delete_api_alertas_by_id
+  - get_api_vigias
+  - get_api_vigias_by_id
+  - delete_api_vigias_by_id
+  - post_api_dono_confirmar_email
+  - post_api_visit
+  - get_api_metrics
+coverage:
+  mcp_tools: 19
+  tools_mapped: 19
+  tools_unmapped: 0
+  rest_operations: 33
+  rest_operations_bound: 17
+  rest_only: 16
+  note: >-
+    every MCP tool binds to a public REST operation; the unbound REST operations are discovery/feed surfaces,
+    list/update/delete management routes and operator metrics the MCP surface deliberately omits.

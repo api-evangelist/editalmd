@@ -1,0 +1,17 @@
+generated: '2026-09-05'
+method: generated
+source: openapi/editalmd-openapi.json + https://editalmd.com/llms.txt
+note: >-
+  Skills authored by API Evangelist, grounded in the provider's live OpenAPI operationIds and llms.txt payment
+  and webhook rules. The provider's own "parity" convention references an in-repo skill, but no provider-published
+  skill file was found at a public URL.
+skills:
+  - name: editalmd-find-tender-read-edital
+    file: editalmd-find-tender-read-edital.md
+    description: search a tender, check deadlines, read the edital markdown and extract eligibility, paying only on recent documents
+  - name: editalmd-cnpj-tender-alerts
+    file: editalmd-cnpj-tender-alerts.md
+    description: no-signup new-tender alerts by CNPJ (CNAE families) or terms/UF, over pull, signed webhook or email
+  - name: editalmd-watch-tender-changes
+    file: editalmd-watch-tender-changes.md
+    description: watch one tender for rectifications, new documents, postponed deadlines and value changes

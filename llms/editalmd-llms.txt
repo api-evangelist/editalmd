@@ -1,0 +1,77 @@
+# EditalMD
+
+> Edital do PNCP em markdown com procedência e hash. Cliente: agente.
+>
+> **Como pagar, em uma linha:** busca e ficha são grátis; documento de compra publicada há 30+ dias é grátis; publicação recente custa $0.01 — pague **por requisição** (x402) ou **desconte de crédito pré-pago**.
+>
+> **Segundo andar:** prazos de proposta e impugnação em toda ficha (grátis), alerta de compra nova por termos e UF ou pelo **CNPJ** da empresa (cada CNAE vira uma família de termos; dicionário em `/api/cnaes`), vigia de mudanças na compra e lista de habilitação extraída do edital — tudo por um token `edm_…` criado sem cadastro (`POST /api/dono`). 1º alerta e 1ª vigia grátis; extra $0.10 por alerta (30 dias) e $0.05 por vigia; habilitação $0.05 em documento recente.
+
+## Descoberta
+
+- [Índice da API](https://editalmd.com/api/)
+- [llms-full.txt](https://editalmd.com/llms-full.txt)
+- [OpenAPI](https://editalmd.com/openapi.json)
+- [MCP](https://editalmd.com/mcp)
+
+## Endpoints principais
+
+- `GET /api/health` — Saúde da origem e tamanho do acervo. (auth: none)
+- `POST /mcp` — MCP Streamable HTTP — as tools deste catálogo, despachadas neste mesmo Worker. (auth: none)
+- `GET /okf/:arquivo` — Bundle OKF (Open Knowledge Format v0.1): markdown com frontmatter para o agente ler o produto inteiro sem parsear HTML. (auth: none)
+- `GET /.well-known/:arquivo` — Descoberta de máquina antes da home: `api-catalog` (RFC 9727, linkset com a API e o MCP), `security.txt` (RFC 9116) e `mcp-registry-auth` (chave do registro oficial de MCP). (auth: none)
+- `GET /apis.json` — APIs.json (apisjson.org, 0.19): o índice que o APIs.io colhe — a API, o MCP, OpenAPI, guia e bundle OKF num arquivo só. Também em `/.well-known/apis.json`. (auth: none)
+- `GET /feed.xml` — RSS 2.0 das compras publicadas mais recentemente no acervo. (auth: none)
+- `GET /feed.json` — JSON Feed 1.1 das compras publicadas mais recentemente — o mesmo stream do RSS. (auth: none)
+- `GET /api/busca` — Busca compras do PNCP por termo. Sempre grátis — é a descoberta. (auth: none)
+- `GET /api/cnaes` — A lista de CNAE como o alerta por CNPJ a lê: descrição oficial (IBGE), família e termos do dicionário, e fornecedores ativos no SICAF. Grátis. (auth: none)
+- `GET /api/compra/:id` — Ficha da compra com prazos de proposta e impugnação, documentos e o regime de cobrança de cada um. (auth: none)
+- `GET /api/documento/:id/markdown` — Documento em markdown com front-matter de procedência e hash. Grátis se a compra tem 30+ dias; pago se é recente. (auth: none)
+- `POST /api/documento/:id/habilitacao` — Lista de habilitação do edital: cada exigência com o trecho literal de onde saiu. Pago por documento; mesmo texto não paga de novo. (auth: none)
+- `POST /api/dono` — Cria o token de dono que abre alertas e vigias, e o segredo que assina os webhooks. Sem cadastro. (auth: none)
+- `GET /api/dono` — O estado do dono: e-mail confirmado, franquia e o segredo que assina os webhooks. (auth: owner)
+- `POST /api/dono/segredo` — Rotaciona o segredo do webhook. O anterior ainda assina por 24 h, para trocar sem janela de falha. (auth: owner)
+- `POST /api/dono/confirmar-email` — Confirma o e-mail de destino dos alertas com o código de 6 dígitos recebido. (auth: owner)
+- `POST /api/alertas` — Cria alertas de compra nova: por termos do objeto e UF, ou pelo CNPJ da empresa (um alerta por família de atividade), entregues por pull, webhook ou e-mail. (auth: owner)
+- `GET /api/alertas` — Lista os alertas deste dono, os mais novos primeiro. (auth: owner)
+- `GET /api/alertas/:id` — Um alerta do dono, com o cursor da última verificação do cron. (auth: owner)
+- `GET /api/alertas/:id/compras` — As compras que já casaram com o alerta — é o canal pull, e a prova do que foi entregue. (auth: owner)
+- `PATCH /api/alertas/:id` — Pausa, reativa ou muda termos, UF, canal e destino de um alerta. (auth: owner)
+- `DELETE /api/alertas/:id` — Apaga o alerta e o histórico de compras casadas. Sem volta. (auth: owner)
+- `POST /api/vigias` — Vigia uma compra: fotografa agora e avisa quando mudar — documento novo, suspensão, prazo adiado, valor — e nos prazos. (auth: owner)
+- `GET /api/vigias` — Lista as vigias deste dono, as mais novas primeiro. (auth: owner)
+- `GET /api/vigias/:id` — Uma vigia do dono com a fotografia mais recente da compra. (auth: owner)
+- `GET /api/vigias/:id/eventos` — O que mudou na compra vigiada, evento a evento — é a série temporal e o canal pull. (auth: owner)
+- `DELETE /api/vigias/:id` — Apaga a vigia e seus eventos. Sem volta. (auth: owner)
+- `POST /api/credito` — Recarrega crédito pré-pago: paga uma vez com x402 e recebe o token que desconta em qualquer API da casa. (auth: none)
+- `GET /api/credito` — Saldo e extrato do crédito — as últimas movimentações, sem devolver o token. (auth: credito)
+- `POST /api/visit` — Ping da interface que incrementa a visita do dia no painel do operador. Agente não precisa chamar. (auth: none)
+- `GET /api/metrics` — Métricas dos últimos 7 dias para o painel do operador; com o token, inclui os pagamentos. (auth: none)
+- `GET /api/recibo/:id` — Recibo de uma entrega — a prova de o que saiu, quanto custou e com qual hash. (auth: none)
+
+## Pagamento — duas portas, escolha a sua
+
+- **Por requisição (x402):** peça o documento recente sem token → **HTTP 402** com `accepts[]`. Pague e repita com `X-PAYMENT`. Serve para quem passa uma vez.
+- **Crédito pré-pago:** `POST https://editalmd.com/api/credito?usd=10` (pacotes 1, 5, 10, 25) → devolve um token `cred_…` **uma única vez**.
+  Depois é só mandar `Authorization: Bearer cred_…` nas rotas pagas — **o mesmo token vale em todos os produtos da casa**.
+  Saldo e extrato: `GET https://editalmd.com/api/credito` com o token. Serve para quem usa todo dia e não quer assinar cada chamada.
+- **Nunca é cobrado:** documento inexistente (404), documento sem texto neste acervo (409) e compra sem data de publicação.
+- Toda entrega devolve `x-editalmd-recibo` e `x-editalmd-sha256`; o recibo fica em `/api/recibo/{id}`.
+
+## Webhook assinado (alertas e vigias)
+
+- Todo POST do webhook leva `webhook-id`, `webhook-timestamp` (segundos Unix) e `webhook-signature: v1,<base64>`: HMAC-SHA256 de `id.timestamp.corpo` com a chave do seu `whsec_…` (o base64 depois do prefixo). É o padrão Standard Webhooks — qualquer biblioteca dele confere; rejeite timestamp fora de 5 minutos. Depois de `POST /api/dono/segredo`, o anterior ainda assina por 24 h (duas partes `v1,` no cabeçalho).
+- O `id` da entrega vai no cabeçalho `webhook-id` e no corpo, para deduplicar; o corpo ainda traz `alerta_url`/`vigia_url` para conferir por pull.
+- Em Node: `chave = Buffer.from(segredo.slice(6), "base64")`; `esperada = createHmac("sha256", chave).update(`${id}.${ts}.${corpoBruto}`).digest("base64")`; compare com `timingSafeEqual` contra cada parte `v1,` do cabeçalho.
+
+## Cota
+
+- Grátis: busca e ficha da compra — sem cota.
+- Grátis: markdown de compra publicada há 30+ dias — sem cota.
+- Pago: markdown de compra recente — **$0.01** USDC via x402.
+- Pago: habilitação de documento recente — **$0.05** USDC via x402.
+- Pago: alerta além do 1º (30 dias) — **$0.10** USDC via x402.
+- Pago: vigia além da 1ª — **$0.05** USDC via x402.
+
+Documento recente → **402** com `accepts[]`. Pague e repita com `X-PAYMENT`.
+
+Números em vigor: https://editalmd.com/api/

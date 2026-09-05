@@ -1,0 +1,25 @@
+name: EditalMD API Lifecycle
+generated: '2026-09-05'
+method: searched
+source: https://editalmd.com/api/
+versioning:
+  scheme: build-hash
+  current: 2d690e87
+  note: >-
+    the OpenAPI info.version and the /api/ index build field carry the deploy hash; there is no path or header
+    versioning and no published versioning policy. The provider's stated parity convention (any UI/API change
+    ships apidocs + skill + MCP in the same PR) is the closest thing to a change-management policy.
+deprecation:
+  policy: none-published
+  sunset_headers: false
+  deprecated_operations: []
+  note: no deprecation policy, Deprecation/Sunset headers (RFC 8594) or deprecated operations found in the OpenAPI or docs
+status_page: null
+health:
+  endpoint: https://editalmd.com/api/health
+  note: live health route reporting origin health and corpus size (also exposed as the MCP health tool); no separate hosted status page found
+sla: none-published
+alert_terms:
+  note: >-
+    paid alerts are explicitly time-boxed - an alert beyond the first is paid per 30 days (pago_ate on the
+    alert row); watcher and alert rows carry ultimo_check as the provider cron cursor, checked every 30 minutes.

@@ -1,0 +1,22 @@
+name: EditalMD Rate Limits
+generated: '2026-09-05'
+method: searched
+source: https://editalmd.com/llms-full.txt
+limit_count: 2
+limits:
+  - scope: per-network per-day
+    surface: POST /api/dono (owner-token creation)
+    limit: daily cap on new owner tokens per network (TETO_DONOS_REDE_DIA)
+    status_on_exhaustion: 429
+    note: documented as "A rede ja criou o teto de donos do dia" - the numeric ceiling is not published
+  - scope: per-owner per-code
+    surface: POST /api/dono/confirmar-email
+    limit: 5 wrong confirmation attempts per code
+    status_on_exhaustion: 429
+    note: after five wrong attempts a new code must be requested
+response_headers: []
+notes: >-
+  No X-RateLimit-*/RateLimit-*/Retry-After response headers are documented; the free read surface (search,
+  tender sheets, CNAE dictionary, 30+ day documents) is documented as quota-free ("sem cota"), with per-request
+  pricing acting as the throttle on paid routes. A 503 on alert creation carries a retry_after field in the
+  JSON body when the CNPJ lookup is temporarily unavailable.

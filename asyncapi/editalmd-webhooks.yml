@@ -1,0 +1,55 @@
+name: EditalMD Webhooks
+generated: '2026-09-05'
+method: searched
+source: https://editalmd.com/llms.txt
+docs: https://editalmd.com/llms-full.txt
+note: >-
+  No AsyncAPI is published; this captures the documented webhook surface. Alerts (new-tender matches) and
+  watchers (tender-change events) can deliver by pull, signed webhook or email; the webhook channel is chosen
+  per alert/watcher (canal: webhook, destino: the receiving URL).
+signing:
+  scheme: standard-webhooks
+  secret_prefix: whsec_
+  headers:
+    - webhook-id
+    - webhook-timestamp
+    - 'webhook-signature: v1,<base64>'
+  algorithm: HMAC-SHA256 of "id.timestamp.rawBody" with the base64-decoded key after the whsec_ prefix
+  timestamp_tolerance: reject timestamps outside 5 minutes
+  rotation: >-
+    POST /api/dono/segredo rotates the secret; the previous one still signs for 24 hours, so the
+    webhook-signature header carries two v1, parts during the window
+  secret_readback: GET /api/dono returns webhook_segredo (the owner token itself is shown once and unrecoverable)
+delivery:
+  dedup: the delivery id travels in the webhook-id header and in the body for deduplication
+  verify_by_pull: the body carries alerta_url / vigia_url so every push can be double-checked over the pull channel
+events:
+  - source: alert
+    name: new-tender-match
+    description: a new PNCP tender matched the alert's terms/UF or CNPJ term family
+    pull_channel: GET /api/alertas/{id}/compras
+  - source: watcher
+    name: situacao
+    description: tender status changed (1 divulgada, 2 revogada, 3 anulada, 4 suspensa)
+  - source: watcher
+    name: prazo_adiado
+    description: proposal closing date postponed
+  - source: watcher
+    name: valor
+    description: estimated value changed
+  - source: watcher
+    name: documento_novo
+    description: new document attached to the tender (antes is null)
+  - source: watcher
+    name: documento_removido
+    description: document removed from the tender (depois is null)
+  - source: watcher
+    name: prazo_impugnacao
+    description: challenge (impugnacao) deadline notice
+  - source: watcher
+    name: prazo_proposta
+    description: proposal deadline notice
+  - source: watcher
+    pull_channel: GET /api/vigias/{id}/eventos
+    note: each event row carries id, tipo, antes, depois, visto_em, entregue_em (Evento schema in the OpenAPI)
+cadence: the provider cron checks alerts and watchers every 30 minutes

@@ -1,0 +1,48 @@
+name: EditalMD Authentication Profile
+generated: '2026-09-05'
+method: searched
+source: https://editalmd.com/api/
+docs: https://editalmd.com/llms.txt
+note: >-
+  The OpenAPI declares no securitySchemes; the auth model is documented in the self-describing /api/ index
+  (auth block), llms.txt and llms-full.txt. There are no accounts anywhere: every credential is a no-signup
+  bearer token or a per-request x402 payment.
+schemes:
+  - id: public
+    type: none
+    description: >-
+      Public, no credential. Search (GET /api/busca), tender sheets (GET /api/compra/{id}), CNAE dictionary,
+      health, discovery documents and feeds are free and unauthenticated. Documents of tenders published 30+
+      days ago are free samples on the same anonymous surface.
+  - id: owner-token
+    type: http
+    scheme: bearer
+    token_prefix: edm_
+    description: >-
+      Owner token sent as Authorization Bearer. Created by POST /api/dono with no signup; the response also
+      returns the whsec_ webhook signing secret. Only a hash of the token is stored server-side. Gates the
+      alert, watcher and owner-state routes (auth: owner in llms.txt).
+    create: POST /api/dono
+  - id: credit-token
+    type: http
+    scheme: bearer
+    token_prefix: cred_
+    description: >-
+      Prepaid-credit bearer token, sent as Authorization Bearer (or the X-Credito header). Bought once via
+      POST /api/credito?usd={1|5|10|25} paid with x402; returned exactly once; debits any paid route across
+      all the operator's products ("vale em todos os produtos da casa"). Not an account - a pure bearer.
+    create: POST /api/credito
+  - id: x402
+    type: payment
+    scheme: x402
+    description: >-
+      Per-request machine payment. A paid route called without payment answers HTTP 402 with an accepts[]
+      offer; the client pays (USDC) and repeats the request with the X-PAYMENT header. No registration.
+      Every paid delivery returns x-editalmd-recibo and x-editalmd-sha256 headers and a receipt at
+      GET /api/recibo/{id}.
+webhook_signing:
+  scheme: standard-webhooks
+  secret_prefix: whsec_
+  headers: [webhook-id, webhook-timestamp, webhook-signature]
+  algorithm: HMAC-SHA256 of "id.timestamp.body" with the base64-decoded secret, signature as "v1,<base64>"
+  rotation: POST /api/dono/segredo - previous secret still signs for 24 hours

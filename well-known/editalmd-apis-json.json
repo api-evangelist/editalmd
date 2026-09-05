@@ -1,0 +1,77 @@
+{
+  "name": "EditalMD",
+  "description": "Licitações do PNCP em markdown com procedência, prazos de proposta e impugnação, alertas, vigia de mudanças e habilitação extraída. Busca grátis, sem cadastro.",
+  "image": "https://editalmd.com/icon.svg",
+  "url": "https://editalmd.com/apis.json",
+  "tags": [
+    "Busca full-text nas compras públicas do PNCP",
+    "Prazos de proposta e impugnação estimada em toda compra",
+    "Edital em markdown com front-matter de procedência e SHA-256",
+    "Alerta de compra nova por termos e UF: pull, webhook assinado ou e-mail",
+    "Alerta pelo CNPJ: cada atividade (CNAE) da empresa vira uma família de termos, um alerta por família",
+    "Dicionário CNAE → termos, com a lista oficial do IBGE e os fornecedores ativos no SICAF, atualizados todo dia",
+    "Vigia de mudanças na compra: retificação, prazo adiado, valor, documento novo",
+    "Lista de habilitação extraída do edital, cada exigência com o trecho literal"
+  ],
+  "created": "2026-09-05",
+  "modified": "2026-09-05",
+  "specificationVersion": "0.19",
+  "apis": [
+    {
+      "name": "EditalMD",
+      "description": "Licitações do PNCP em markdown com procedência, prazos de proposta e impugnação, alertas, vigia de mudanças e habilitação extraída. Busca grátis, sem cadastro.",
+      "image": "https://editalmd.com/icon.svg",
+      "humanURL": "https://editalmd.com/",
+      "baseURL": "https://editalmd.com/api/",
+      "tags": [
+        "Busca full-text nas compras públicas do PNCP",
+        "Prazos de proposta e impugnação estimada em toda compra",
+        "Edital em markdown com front-matter de procedência e SHA-256",
+        "Alerta de compra nova por termos e UF: pull, webhook assinado ou e-mail",
+        "Alerta pelo CNPJ: cada atividade (CNAE) da empresa vira uma família de termos, um alerta por família",
+        "Dicionário CNAE → termos, com a lista oficial do IBGE e os fornecedores ativos no SICAF, atualizados todo dia",
+        "Vigia de mudanças na compra: retificação, prazo adiado, valor, documento novo",
+        "Lista de habilitação extraída do edital, cada exigência com o trecho literal"
+      ],
+      "properties": [
+        {
+          "type": "OpenAPI",
+          "url": "https://editalmd.com/openapi.json"
+        },
+        {
+          "type": "Documentation",
+          "url": "https://editalmd.com/llms-full.txt"
+        },
+        {
+          "type": "x-llms-txt",
+          "url": "https://editalmd.com/llms.txt"
+        },
+        {
+          "type": "x-mcp",
+          "url": "https://editalmd.com/mcp"
+        },
+        {
+          "type": "x-api-catalog",
+          "url": "https://editalmd.com/.well-known/api-catalog"
+        },
+        {
+          "type": "x-okf",
+          "url": "https://editalmd.com/okf/index.md"
+        }
+      ],
+      "contact": [
+        {
+          "FN": "EditalMD",
+          "email": "contato@editalmd.com"
+        }
+      ]
+    }
+  ],
+  "include": [],
+  "maintainers": [
+    {
+      "FN": "EditalMD",
+      "email": "contato@editalmd.com"
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+generated: '2026-09-05'
+method: probed
+source: live probes of https://editalmd.com/.well-known/*
+note: >-
+  EditalMD serves an unusually complete well-known surface for a single-host product: RFC 9116 security.txt,
+  an RFC 9727 api-catalog linkset (application/linkset+json, pointing at the REST API, the MCP endpoint, the
+  OpenAPI, llms.txt/llms-full.txt and the OKF bundle), an APIs.json 0.19 index at /.well-known/apis.json (and
+  /apis.json), and an MCP registry auth key (ed25519) at /.well-known/mcp-registry-auth. No OAuth/OIDC
+  discovery documents and no A2A agent card (404 on both canonical and legacy paths; the 404s return an HTML
+  error page, clearly distinct from the served documents).
+hosts:
+  - host: editalmd.com
+    documents:
+      - path: /.well-known/security.txt
+        status: 200
+        file: editalmd-security.txt
+      - path: /.well-known/apis.json
+        status: 200
+        file: editalmd-apis-json.json
+      - path: /.well-known/api-catalog
+        status: 200
+        file: editalmd-api-catalog.json
+        note: application/linkset+json with RFC 9727 profile
+      - path: /.well-known/mcp-registry-auth
+        status: 200
+        file: editalmd-mcp-registry-auth.txt
+        note: ed25519 public key for the official MCP registry (v=MCPv1)
+      - path: /.well-known/openid-configuration
+        status: 404
+      - path: /.well-known/oauth-authorization-server
+        status: 404
+      - path: /.well-known/oauth-protected-resource
+        status: 404
+      - path: /.well-known/ai-plugin.json
+        status: 404
+      - path: /.well-known/agent-card.json
+        status: 404
+      - path: /.well-known/agent.json
+        status: 404

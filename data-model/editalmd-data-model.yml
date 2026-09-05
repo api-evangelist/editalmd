@@ -1,0 +1,102 @@
+name: EditalMD Data Model
+generated: '2026-09-05'
+method: derived
+source: openapi/editalmd-openapi.json (components.schemas, 24 schemas) + https://editalmd.com/llms-full.txt (Estruturas)
+entities:
+  - name: Compra
+    description: a PNCP tender - object, organ, UF, modality, status, estimated value, proposal opening/closing
+  - name: Prazos
+    description: proposal window (from PNCP) and estimated challenge deadline with legal basis and holiday calendar
+  - name: Documento
+    description: a tender document with extracted text - type, SHA-256, extraction engine, price and free/paid regime
+  - name: Habilitacao
+    description: eligibility checklist extracted from an edital, grouped legal / fiscal-social-labor / economic-financial / technical
+  - name: Exigencia
+    description: one eligibility requirement with the literal excerpt it came from
+  - name: Dono
+    description: no-signup owner - token (shown once), webhook secret, free quota state, confirmed email
+  - name: Alerta
+    description: new-tender alert by terms+UF or CNPJ family - channel, destination, paid-until, cron cursor
+  - name: AlertaCompra
+    description: a tender matched by an alert, with delivery status (the pull channel)
+  - name: Vigia
+    description: a tender watcher - snapshot now, then change events; channel, paid-until, cron cursor
+  - name: Snapshot
+    description: the watched tender's photographed state - status, closing date, value, document list
+  - name: Evento
+    description: one change on a watched tender - tipo (situacao/prazo_adiado/valor/documento_novo/documento_removido/prazo_impugnacao/prazo_proposta), before/after
+  - name: Empresa
+    description: company sheet resolved from a CNPJ (via Radar CNPJ) with its CNAE activities
+  - name: Cnae
+    description: CNAE dictionary row - official IBGE description, term family, active SICAF supplier count
+  - name: Recibo
+    description: delivery receipt - resource, price, payment mode, SHA-256 of the delivered bytes
+relationships:
+  - subject: Compra
+    relation: has_many
+    object: Documento
+    via: FichaCompra.documentos[]
+  - subject: Compra
+    relation: has_one
+    object: Prazos
+    via: FichaCompra.prazos
+  - subject: Habilitacao
+    relation: belongs_to
+    object: Documento
+    via: documento_id
+  - subject: Habilitacao
+    relation: belongs_to
+    object: Compra
+    via: compra_id
+  - subject: Habilitacao
+    relation: has_many
+    object: Exigencia
+    via: habilitacao.{juridica,fiscal_social_trabalhista,economico_financeira,tecnica}[]
+  - subject: Dono
+    relation: has_many
+    object: Alerta
+    via: owner token (edm_)
+  - subject: Dono
+    relation: has_many
+    object: Vigia
+    via: owner token (edm_)
+  - subject: Alerta
+    relation: has_many
+    object: AlertaCompra
+    via: GET /api/alertas/{id}/compras
+  - subject: AlertaCompra
+    relation: belongs_to
+    object: Compra
+    via: compra_id
+  - subject: Alerta
+    relation: belongs_to
+    object: Empresa
+    via: origem.cnpj (CNPJ-mode alerts only; one alert per CNAE family)
+  - subject: Empresa
+    relation: has_many
+    object: Cnae
+    via: cnaes[].codigo
+  - subject: Vigia
+    relation: belongs_to
+    object: Compra
+    via: compra_id
+  - subject: Vigia
+    relation: has_one
+    object: Snapshot
+    via: current snapshot on GET /api/vigias/{id}
+  - subject: Vigia
+    relation: has_many
+    object: Evento
+    via: GET /api/vigias/{id}/eventos
+  - subject: Recibo
+    relation: belongs_to
+    object: Documento
+    via: documento_id
+id_conventions:
+  - prefix: edm_
+    entity: Dono (owner token)
+  - prefix: cred_
+    entity: prepaid credit token
+  - prefix: whsec_
+    entity: webhook signing secret
+  - note: tender, document, alert, watcher and receipt ids are opaque; the receipt id doubles as the x-editalmd-recibo header value

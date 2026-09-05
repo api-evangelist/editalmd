@@ -1,0 +1,44 @@
+overlay: 1.0.0
+info:
+  title: API Evangelist enhancements for the EditalMD OpenAPI
+  version: 1.0.0
+x-provenance:
+  generated: '2026-09-05'
+  method: generated
+  source: openapi/editalmd-openapi.json (https://editalmd.com/openapi.json, fetched 2026-09-05)
+  note: >-
+    Non-destructive overlay on the verbatim provider spec. The published spec ships info with only a build-hash
+    version and no title, description, contact or tags; this overlay supplies catalog identity metadata without
+    mutating the original.
+extends: editalmd-openapi.json
+actions:
+  - target: $.info
+    update:
+      title: EditalMD API
+      description: >-
+        Agent-native data API over Brazil's public-procurement portal PNCP: full-text tender search, proposal
+        and challenge deadlines, editais as markdown with provenance and SHA-256 hashes, extracted eligibility
+        checklists, new-tender alerts by keyword or CNPJ, tender change-watchers, prepaid credit and receipts.
+        Search is free; paid routes charge per request (x402) or debit prepaid credit, with no signup.
+      contact:
+        name: EditalMD
+        email: contato@editalmd.com
+        url: https://editalmd.com/
+      termsOfService: https://editalmd.com/termos
+  - target: $
+    update:
+      tags:
+        - name: discovery
+          description: self-describing index, health, feeds and machine discovery documents
+        - name: tenders
+          description: search, tender sheets and deadlines
+        - name: documents
+          description: edital markdown and eligibility extraction
+        - name: alerts
+          description: new-tender alerts by terms/UF or CNPJ family
+        - name: watchers
+          description: tender change-watchers and their events
+        - name: owner
+          description: no-signup owner token and webhook secret management
+        - name: billing
+          description: prepaid credit, x402 payment and delivery receipts

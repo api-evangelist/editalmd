@@ -1,0 +1,76 @@
+{
+  "linkset": [
+    {
+      "anchor": "https://editalmd.com/.well-known/api-catalog",
+      "item": [
+        {
+          "href": "https://editalmd.com/api/"
+        },
+        {
+          "href": "https://editalmd.com/mcp"
+        }
+      ],
+      "describedby": [
+        {
+          "href": "https://editalmd.com/apis.json",
+          "type": "application/json",
+          "title": "APIs.json"
+        }
+      ]
+    },
+    {
+      "anchor": "https://editalmd.com/api/",
+      "service-desc": [
+        {
+          "href": "https://editalmd.com/openapi.json",
+          "type": "application/json",
+          "title": "OpenAPI 3"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://editalmd.com/llms.txt",
+          "type": "text/plain",
+          "title": "Guia para agentes de IA"
+        },
+        {
+          "href": "https://editalmd.com/llms-full.txt",
+          "type": "text/plain",
+          "title": "Referência completa da API"
+        },
+        {
+          "href": "https://editalmd.com/okf/index.md",
+          "type": "text/markdown",
+          "title": "Bundle OKF"
+        }
+      ]
+    },
+    {
+      "anchor": "https://editalmd.com/mcp",
+      "service-desc": [
+        {
+          "href": "https://editalmd.com/mcp",
+          "type": "application/json",
+          "title": "MCP (streamable HTTP)"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://editalmd.com/llms.txt",
+          "type": "text/plain",
+          "title": "Guia para agentes de IA"
+        },
+        {
+          "href": "https://editalmd.com/llms-full.txt",
+          "type": "text/plain",
+          "title": "Referência completa da API"
+        },
+        {
+          "href": "https://editalmd.com/okf/index.md",
+          "type": "text/markdown",
+          "title": "Bundle OKF"
+        }
+      ]
+    }
+  ]
+}
