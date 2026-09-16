@@ -20,39 +20,37 @@ tags:
 - CNAE
 - SICAF
 - Document Extraction
+- agent-native
+- MCP
+- x402
+- Machine-Payable
+tags_raw:
+- GovTech
+- Public Procurement
+- Brazil
+- PNCP
+- Legal & Compliance
+- Business Intelligence
+- Company Data
+- CNPJ
+- CNAE
+- SICAF
+- Document Extraction
 - Agent-Native
 - MCP
 - x402
 - Machine-Payable
 apis:
-- name: EditalMD API
-  description: Public REST API over Brazil's PNCP procurement portal with full-text tender search, tender sheets
-    and deadlines, edital markdown, eligibility extraction, alerts and watchers. Also exposes a hosted MCP server
-    and agent-native documentation surfaces.
+- aid: editalmd:editalmd-alertas-api
+  name: EditalMD Alertas API
+  description: The Alertas API from EditalMD — 3 operation(s) for alertas.
   humanURL: https://editalmd.com/
   baseURL: https://editalmd.com/api/
-  image: https://editalmd.com/icon.svg
   tags:
-  - GovTech
-  - Public Procurement
-  - Brazil
-  - PNCP
-  - Legal & Compliance
-  - Business Intelligence
-  - Company Data
-  - CNPJ
-  - CNAE
-  - SICAF
-  - Document Extraction
-  - Agent-Native
-  - MCP
-  - x402
-  - Machine-Payable
+  - Alertas
   properties:
   - type: OpenAPI
-    url: https://editalmd.com/openapi.json
-  - type: MCPServer
-    url: https://editalmd.com/mcp
+    url: openapi/editalmd-alertas-api-openapi.yml
   - type: LLMsTxt
     url: https://editalmd.com/llms.txt
   - type: LLMsTxt
@@ -63,16 +61,10 @@ apis:
     url: https://editalmd.com/api/
   - type: APIReference
     url: https://editalmd.com/llms-full.txt
-  - type: OpenAPI
-    url: openapi/editalmd-openapi.json
-  - type: MCPServer
-    url: mcp/editalmd-mcp.yml
   - type: ToolCrosswalk
     url: mcp/editalmd-tool-crosswalk.yml
   - type: LLMsTxt
     url: llms/editalmd-llms.txt
-  - type: Overlay
-    url: overlays/editalmd-openapi-overlay.yaml
   - type: Authentication
     url: authentication/editalmd-authentication.yml
   - type: Conventions
@@ -91,8 +83,762 @@ apis:
     url: plans/editalmd-plans-pricing.yml
   - type: RateLimits
     url: rate-limits/editalmd-rate-limits.yml
-  - type: AgentSkill
-    url: skills/_index.yml
+- aid: editalmd:editalmd-apis-json-api
+  name: EditalMD Apis.json API
+  description: The Apis.json API from EditalMD — 1 operation(s) for apis.json.
+  humanURL: https://editalmd.com/
+  baseURL: https://editalmd.com/api/
+  tags:
+  - Apis.json
+  properties:
+  - type: OpenAPI
+    url: openapi/editalmd-apis-json-api-openapi.yml
+  - type: LLMsTxt
+    url: https://editalmd.com/llms.txt
+  - type: LLMsTxt
+    url: https://editalmd.com/llms-full.txt
+  - type: Documentation
+    url: https://editalmd.com/okf/index.md
+  - type: Documentation
+    url: https://editalmd.com/api/
+  - type: APIReference
+    url: https://editalmd.com/llms-full.txt
+  - type: ToolCrosswalk
+    url: mcp/editalmd-tool-crosswalk.yml
+  - type: LLMsTxt
+    url: llms/editalmd-llms.txt
+  - type: Authentication
+    url: authentication/editalmd-authentication.yml
+  - type: Conventions
+    url: conventions/editalmd-conventions.yml
+  - type: ErrorCatalog
+    url: errors/editalmd-problem-types.yml
+  - type: Webhooks
+    url: asyncapi/editalmd-webhooks.yml
+  - type: DataModel
+    url: data-model/editalmd-data-model.yml
+  - type: Conformance
+    url: conformance/editalmd-conformance.yml
+  - type: Lifecycle
+    url: lifecycle/editalmd-lifecycle.yml
+  - type: Plans
+    url: plans/editalmd-plans-pricing.yml
+  - type: RateLimits
+    url: rate-limits/editalmd-rate-limits.yml
+- aid: editalmd:editalmd-busca-api
+  name: EditalMD Busca API
+  description: The Busca API from EditalMD — 1 operation(s) for busca.
+  humanURL: https://editalmd.com/
+  baseURL: https://editalmd.com/api/
+  tags:
+  - Busca
+  properties:
+  - type: OpenAPI
+    url: openapi/editalmd-busca-api-openapi.yml
+  - type: LLMsTxt
+    url: https://editalmd.com/llms.txt
+  - type: LLMsTxt
+    url: https://editalmd.com/llms-full.txt
+  - type: Documentation
+    url: https://editalmd.com/okf/index.md
+  - type: Documentation
+    url: https://editalmd.com/api/
+  - type: APIReference
+    url: https://editalmd.com/llms-full.txt
+  - type: ToolCrosswalk
+    url: mcp/editalmd-tool-crosswalk.yml
+  - type: LLMsTxt
+    url: llms/editalmd-llms.txt
+  - type: Authentication
+    url: authentication/editalmd-authentication.yml
+  - type: Conventions
+    url: conventions/editalmd-conventions.yml
+  - type: ErrorCatalog
+    url: errors/editalmd-problem-types.yml
+  - type: Webhooks
+    url: asyncapi/editalmd-webhooks.yml
+  - type: DataModel
+    url: data-model/editalmd-data-model.yml
+  - type: Conformance
+    url: conformance/editalmd-conformance.yml
+  - type: Lifecycle
+    url: lifecycle/editalmd-lifecycle.yml
+  - type: Plans
+    url: plans/editalmd-plans-pricing.yml
+  - type: RateLimits
+    url: rate-limits/editalmd-rate-limits.yml
+- aid: editalmd:editalmd-cnaes-api
+  name: EditalMD Cnaes API
+  description: The Cnaes API from EditalMD — 1 operation(s) for cnaes.
+  humanURL: https://editalmd.com/
+  baseURL: https://editalmd.com/api/
+  tags:
+  - Cnaes
+  properties:
+  - type: OpenAPI
+    url: openapi/editalmd-cnaes-api-openapi.yml
+  - type: LLMsTxt
+    url: https://editalmd.com/llms.txt
+  - type: LLMsTxt
+    url: https://editalmd.com/llms-full.txt
+  - type: Documentation
+    url: https://editalmd.com/okf/index.md
+  - type: Documentation
+    url: https://editalmd.com/api/
+  - type: APIReference
+    url: https://editalmd.com/llms-full.txt
+  - type: ToolCrosswalk
+    url: mcp/editalmd-tool-crosswalk.yml
+  - type: LLMsTxt
+    url: llms/editalmd-llms.txt
+  - type: Authentication
+    url: authentication/editalmd-authentication.yml
+  - type: Conventions
+    url: conventions/editalmd-conventions.yml
+  - type: ErrorCatalog
+    url: errors/editalmd-problem-types.yml
+  - type: Webhooks
+    url: asyncapi/editalmd-webhooks.yml
+  - type: DataModel
+    url: data-model/editalmd-data-model.yml
+  - type: Conformance
+    url: conformance/editalmd-conformance.yml
+  - type: Lifecycle
+    url: lifecycle/editalmd-lifecycle.yml
+  - type: Plans
+    url: plans/editalmd-plans-pricing.yml
+  - type: RateLimits
+    url: rate-limits/editalmd-rate-limits.yml
+- aid: editalmd:editalmd-compra-api
+  name: EditalMD Compra API
+  description: The Compra API from EditalMD — 1 operation(s) for compra.
+  humanURL: https://editalmd.com/
+  baseURL: https://editalmd.com/api/
+  tags:
+  - Compra
+  properties:
+  - type: OpenAPI
+    url: openapi/editalmd-compra-api-openapi.yml
+  - type: LLMsTxt
+    url: https://editalmd.com/llms.txt
+  - type: LLMsTxt
+    url: https://editalmd.com/llms-full.txt
+  - type: Documentation
+    url: https://editalmd.com/okf/index.md
+  - type: Documentation
+    url: https://editalmd.com/api/
+  - type: APIReference
+    url: https://editalmd.com/llms-full.txt
+  - type: ToolCrosswalk
+    url: mcp/editalmd-tool-crosswalk.yml
+  - type: LLMsTxt
+    url: llms/editalmd-llms.txt
+  - type: Authentication
+    url: authentication/editalmd-authentication.yml
+  - type: Conventions
+    url: conventions/editalmd-conventions.yml
+  - type: ErrorCatalog
+    url: errors/editalmd-problem-types.yml
+  - type: Webhooks
+    url: asyncapi/editalmd-webhooks.yml
+  - type: DataModel
+    url: data-model/editalmd-data-model.yml
+  - type: Conformance
+    url: conformance/editalmd-conformance.yml
+  - type: Lifecycle
+    url: lifecycle/editalmd-lifecycle.yml
+  - type: Plans
+    url: plans/editalmd-plans-pricing.yml
+  - type: RateLimits
+    url: rate-limits/editalmd-rate-limits.yml
+- aid: editalmd:editalmd-credito-api
+  name: EditalMD Credito API
+  description: The Credito API from EditalMD — 1 operation(s) for credito.
+  humanURL: https://editalmd.com/
+  baseURL: https://editalmd.com/api/
+  tags:
+  - Credito
+  properties:
+  - type: OpenAPI
+    url: openapi/editalmd-credito-api-openapi.yml
+  - type: LLMsTxt
+    url: https://editalmd.com/llms.txt
+  - type: LLMsTxt
+    url: https://editalmd.com/llms-full.txt
+  - type: Documentation
+    url: https://editalmd.com/okf/index.md
+  - type: Documentation
+    url: https://editalmd.com/api/
+  - type: APIReference
+    url: https://editalmd.com/llms-full.txt
+  - type: ToolCrosswalk
+    url: mcp/editalmd-tool-crosswalk.yml
+  - type: LLMsTxt
+    url: llms/editalmd-llms.txt
+  - type: Authentication
+    url: authentication/editalmd-authentication.yml
+  - type: Conventions
+    url: conventions/editalmd-conventions.yml
+  - type: ErrorCatalog
+    url: errors/editalmd-problem-types.yml
+  - type: Webhooks
+    url: asyncapi/editalmd-webhooks.yml
+  - type: DataModel
+    url: data-model/editalmd-data-model.yml
+  - type: Conformance
+    url: conformance/editalmd-conformance.yml
+  - type: Lifecycle
+    url: lifecycle/editalmd-lifecycle.yml
+  - type: Plans
+    url: plans/editalmd-plans-pricing.yml
+  - type: RateLimits
+    url: rate-limits/editalmd-rate-limits.yml
+- aid: editalmd:editalmd-documento-api
+  name: EditalMD Documento API
+  description: The Documento API from EditalMD — 2 operation(s) for documento.
+  humanURL: https://editalmd.com/
+  baseURL: https://editalmd.com/api/
+  tags:
+  - Documento
+  properties:
+  - type: OpenAPI
+    url: openapi/editalmd-documento-api-openapi.yml
+  - type: LLMsTxt
+    url: https://editalmd.com/llms.txt
+  - type: LLMsTxt
+    url: https://editalmd.com/llms-full.txt
+  - type: Documentation
+    url: https://editalmd.com/okf/index.md
+  - type: Documentation
+    url: https://editalmd.com/api/
+  - type: APIReference
+    url: https://editalmd.com/llms-full.txt
+  - type: ToolCrosswalk
+    url: mcp/editalmd-tool-crosswalk.yml
+  - type: LLMsTxt
+    url: llms/editalmd-llms.txt
+  - type: Authentication
+    url: authentication/editalmd-authentication.yml
+  - type: Conventions
+    url: conventions/editalmd-conventions.yml
+  - type: ErrorCatalog
+    url: errors/editalmd-problem-types.yml
+  - type: Webhooks
+    url: asyncapi/editalmd-webhooks.yml
+  - type: DataModel
+    url: data-model/editalmd-data-model.yml
+  - type: Conformance
+    url: conformance/editalmd-conformance.yml
+  - type: Lifecycle
+    url: lifecycle/editalmd-lifecycle.yml
+  - type: Plans
+    url: plans/editalmd-plans-pricing.yml
+  - type: RateLimits
+    url: rate-limits/editalmd-rate-limits.yml
+- aid: editalmd:editalmd-dono-api
+  name: EditalMD Dono API
+  description: The Dono API from EditalMD — 3 operation(s) for dono.
+  humanURL: https://editalmd.com/
+  baseURL: https://editalmd.com/api/
+  tags:
+  - Dono
+  properties:
+  - type: OpenAPI
+    url: openapi/editalmd-dono-api-openapi.yml
+  - type: LLMsTxt
+    url: https://editalmd.com/llms.txt
+  - type: LLMsTxt
+    url: https://editalmd.com/llms-full.txt
+  - type: Documentation
+    url: https://editalmd.com/okf/index.md
+  - type: Documentation
+    url: https://editalmd.com/api/
+  - type: APIReference
+    url: https://editalmd.com/llms-full.txt
+  - type: ToolCrosswalk
+    url: mcp/editalmd-tool-crosswalk.yml
+  - type: LLMsTxt
+    url: llms/editalmd-llms.txt
+  - type: Authentication
+    url: authentication/editalmd-authentication.yml
+  - type: Conventions
+    url: conventions/editalmd-conventions.yml
+  - type: ErrorCatalog
+    url: errors/editalmd-problem-types.yml
+  - type: Webhooks
+    url: asyncapi/editalmd-webhooks.yml
+  - type: DataModel
+    url: data-model/editalmd-data-model.yml
+  - type: Conformance
+    url: conformance/editalmd-conformance.yml
+  - type: Lifecycle
+    url: lifecycle/editalmd-lifecycle.yml
+  - type: Plans
+    url: plans/editalmd-plans-pricing.yml
+  - type: RateLimits
+    url: rate-limits/editalmd-rate-limits.yml
+- aid: editalmd:editalmd-editalmd-api
+  name: EditalMD Editalmd API
+  description: The Editalmd API from EditalMD — 1 operation(s) for editalmd.
+  humanURL: https://editalmd.com/
+  baseURL: https://editalmd.com/api/
+  tags:
+  - Editalmd
+  properties:
+  - type: OpenAPI
+    url: openapi/editalmd-editalmd-api-openapi.yml
+  - type: LLMsTxt
+    url: https://editalmd.com/llms.txt
+  - type: LLMsTxt
+    url: https://editalmd.com/llms-full.txt
+  - type: Documentation
+    url: https://editalmd.com/okf/index.md
+  - type: Documentation
+    url: https://editalmd.com/api/
+  - type: APIReference
+    url: https://editalmd.com/llms-full.txt
+  - type: ToolCrosswalk
+    url: mcp/editalmd-tool-crosswalk.yml
+  - type: LLMsTxt
+    url: llms/editalmd-llms.txt
+  - type: Authentication
+    url: authentication/editalmd-authentication.yml
+  - type: Conventions
+    url: conventions/editalmd-conventions.yml
+  - type: ErrorCatalog
+    url: errors/editalmd-problem-types.yml
+  - type: Webhooks
+    url: asyncapi/editalmd-webhooks.yml
+  - type: DataModel
+    url: data-model/editalmd-data-model.yml
+  - type: Conformance
+    url: conformance/editalmd-conformance.yml
+  - type: Lifecycle
+    url: lifecycle/editalmd-lifecycle.yml
+  - type: Plans
+    url: plans/editalmd-plans-pricing.yml
+  - type: RateLimits
+    url: rate-limits/editalmd-rate-limits.yml
+- aid: editalmd:editalmd-feed-json-api
+  name: EditalMD Feed.json API
+  description: The Feed.json API from EditalMD — 1 operation(s) for feed.json.
+  humanURL: https://editalmd.com/
+  baseURL: https://editalmd.com/api/
+  tags:
+  - Feed.json
+  properties:
+  - type: OpenAPI
+    url: openapi/editalmd-feed-json-api-openapi.yml
+  - type: LLMsTxt
+    url: https://editalmd.com/llms.txt
+  - type: LLMsTxt
+    url: https://editalmd.com/llms-full.txt
+  - type: Documentation
+    url: https://editalmd.com/okf/index.md
+  - type: Documentation
+    url: https://editalmd.com/api/
+  - type: APIReference
+    url: https://editalmd.com/llms-full.txt
+  - type: ToolCrosswalk
+    url: mcp/editalmd-tool-crosswalk.yml
+  - type: LLMsTxt
+    url: llms/editalmd-llms.txt
+  - type: Authentication
+    url: authentication/editalmd-authentication.yml
+  - type: Conventions
+    url: conventions/editalmd-conventions.yml
+  - type: ErrorCatalog
+    url: errors/editalmd-problem-types.yml
+  - type: Webhooks
+    url: asyncapi/editalmd-webhooks.yml
+  - type: DataModel
+    url: data-model/editalmd-data-model.yml
+  - type: Conformance
+    url: conformance/editalmd-conformance.yml
+  - type: Lifecycle
+    url: lifecycle/editalmd-lifecycle.yml
+  - type: Plans
+    url: plans/editalmd-plans-pricing.yml
+  - type: RateLimits
+    url: rate-limits/editalmd-rate-limits.yml
+- aid: editalmd:editalmd-feed-xml-api
+  name: EditalMD Feed.xml API
+  description: The Feed.xml API from EditalMD — 1 operation(s) for feed.xml.
+  humanURL: https://editalmd.com/
+  baseURL: https://editalmd.com/api/
+  tags:
+  - Feed.xml
+  properties:
+  - type: OpenAPI
+    url: openapi/editalmd-feed-xml-api-openapi.yml
+  - type: LLMsTxt
+    url: https://editalmd.com/llms.txt
+  - type: LLMsTxt
+    url: https://editalmd.com/llms-full.txt
+  - type: Documentation
+    url: https://editalmd.com/okf/index.md
+  - type: Documentation
+    url: https://editalmd.com/api/
+  - type: APIReference
+    url: https://editalmd.com/llms-full.txt
+  - type: ToolCrosswalk
+    url: mcp/editalmd-tool-crosswalk.yml
+  - type: LLMsTxt
+    url: llms/editalmd-llms.txt
+  - type: Authentication
+    url: authentication/editalmd-authentication.yml
+  - type: Conventions
+    url: conventions/editalmd-conventions.yml
+  - type: ErrorCatalog
+    url: errors/editalmd-problem-types.yml
+  - type: Webhooks
+    url: asyncapi/editalmd-webhooks.yml
+  - type: DataModel
+    url: data-model/editalmd-data-model.yml
+  - type: Conformance
+    url: conformance/editalmd-conformance.yml
+  - type: Lifecycle
+    url: lifecycle/editalmd-lifecycle.yml
+  - type: Plans
+    url: plans/editalmd-plans-pricing.yml
+  - type: RateLimits
+    url: rate-limits/editalmd-rate-limits.yml
+- aid: editalmd:editalmd-health-api
+  name: EditalMD Health API
+  description: The Health API from EditalMD — 1 operation(s) for health.
+  humanURL: https://editalmd.com/
+  baseURL: https://editalmd.com/api/
+  tags:
+  - Health
+  properties:
+  - type: OpenAPI
+    url: openapi/editalmd-health-api-openapi.yml
+  - type: LLMsTxt
+    url: https://editalmd.com/llms.txt
+  - type: LLMsTxt
+    url: https://editalmd.com/llms-full.txt
+  - type: Documentation
+    url: https://editalmd.com/okf/index.md
+  - type: Documentation
+    url: https://editalmd.com/api/
+  - type: APIReference
+    url: https://editalmd.com/llms-full.txt
+  - type: ToolCrosswalk
+    url: mcp/editalmd-tool-crosswalk.yml
+  - type: LLMsTxt
+    url: llms/editalmd-llms.txt
+  - type: Authentication
+    url: authentication/editalmd-authentication.yml
+  - type: Conventions
+    url: conventions/editalmd-conventions.yml
+  - type: ErrorCatalog
+    url: errors/editalmd-problem-types.yml
+  - type: Webhooks
+    url: asyncapi/editalmd-webhooks.yml
+  - type: DataModel
+    url: data-model/editalmd-data-model.yml
+  - type: Conformance
+    url: conformance/editalmd-conformance.yml
+  - type: Lifecycle
+    url: lifecycle/editalmd-lifecycle.yml
+  - type: Plans
+    url: plans/editalmd-plans-pricing.yml
+  - type: RateLimits
+    url: rate-limits/editalmd-rate-limits.yml
+- aid: editalmd:editalmd-mcp-api
+  name: EditalMD MCP API
+  description: The Mcp API from EditalMD — 1 operation(s) for mcp.
+  humanURL: https://editalmd.com/
+  baseURL: https://editalmd.com/api/
+  tags:
+  - Mcp
+  properties:
+  - type: OpenAPI
+    url: openapi/editalmd-mcp-api-openapi.yml
+  - type: LLMsTxt
+    url: https://editalmd.com/llms.txt
+  - type: LLMsTxt
+    url: https://editalmd.com/llms-full.txt
+  - type: Documentation
+    url: https://editalmd.com/okf/index.md
+  - type: Documentation
+    url: https://editalmd.com/api/
+  - type: APIReference
+    url: https://editalmd.com/llms-full.txt
+  - type: ToolCrosswalk
+    url: mcp/editalmd-tool-crosswalk.yml
+  - type: LLMsTxt
+    url: llms/editalmd-llms.txt
+  - type: Authentication
+    url: authentication/editalmd-authentication.yml
+  - type: Conventions
+    url: conventions/editalmd-conventions.yml
+  - type: ErrorCatalog
+    url: errors/editalmd-problem-types.yml
+  - type: Webhooks
+    url: asyncapi/editalmd-webhooks.yml
+  - type: DataModel
+    url: data-model/editalmd-data-model.yml
+  - type: Conformance
+    url: conformance/editalmd-conformance.yml
+  - type: Lifecycle
+    url: lifecycle/editalmd-lifecycle.yml
+  - type: Plans
+    url: plans/editalmd-plans-pricing.yml
+  - type: RateLimits
+    url: rate-limits/editalmd-rate-limits.yml
+- aid: editalmd:editalmd-metrics-api
+  name: EditalMD Metrics API
+  description: The Metrics API from EditalMD — 1 operation(s) for metrics.
+  humanURL: https://editalmd.com/
+  baseURL: https://editalmd.com/api/
+  tags:
+  - Metrics
+  properties:
+  - type: OpenAPI
+    url: openapi/editalmd-metrics-api-openapi.yml
+  - type: LLMsTxt
+    url: https://editalmd.com/llms.txt
+  - type: LLMsTxt
+    url: https://editalmd.com/llms-full.txt
+  - type: Documentation
+    url: https://editalmd.com/okf/index.md
+  - type: Documentation
+    url: https://editalmd.com/api/
+  - type: APIReference
+    url: https://editalmd.com/llms-full.txt
+  - type: ToolCrosswalk
+    url: mcp/editalmd-tool-crosswalk.yml
+  - type: LLMsTxt
+    url: llms/editalmd-llms.txt
+  - type: Authentication
+    url: authentication/editalmd-authentication.yml
+  - type: Conventions
+    url: conventions/editalmd-conventions.yml
+  - type: ErrorCatalog
+    url: errors/editalmd-problem-types.yml
+  - type: Webhooks
+    url: asyncapi/editalmd-webhooks.yml
+  - type: DataModel
+    url: data-model/editalmd-data-model.yml
+  - type: Conformance
+    url: conformance/editalmd-conformance.yml
+  - type: Lifecycle
+    url: lifecycle/editalmd-lifecycle.yml
+  - type: Plans
+    url: plans/editalmd-plans-pricing.yml
+  - type: RateLimits
+    url: rate-limits/editalmd-rate-limits.yml
+- aid: editalmd:editalmd-okf-api
+  name: EditalMD Okf API
+  description: The Okf API from EditalMD — 1 operation(s) for okf.
+  humanURL: https://editalmd.com/
+  baseURL: https://editalmd.com/api/
+  tags:
+  - Okf
+  properties:
+  - type: OpenAPI
+    url: openapi/editalmd-okf-api-openapi.yml
+  - type: LLMsTxt
+    url: https://editalmd.com/llms.txt
+  - type: LLMsTxt
+    url: https://editalmd.com/llms-full.txt
+  - type: Documentation
+    url: https://editalmd.com/okf/index.md
+  - type: Documentation
+    url: https://editalmd.com/api/
+  - type: APIReference
+    url: https://editalmd.com/llms-full.txt
+  - type: ToolCrosswalk
+    url: mcp/editalmd-tool-crosswalk.yml
+  - type: LLMsTxt
+    url: llms/editalmd-llms.txt
+  - type: Authentication
+    url: authentication/editalmd-authentication.yml
+  - type: Conventions
+    url: conventions/editalmd-conventions.yml
+  - type: ErrorCatalog
+    url: errors/editalmd-problem-types.yml
+  - type: Webhooks
+    url: asyncapi/editalmd-webhooks.yml
+  - type: DataModel
+    url: data-model/editalmd-data-model.yml
+  - type: Conformance
+    url: conformance/editalmd-conformance.yml
+  - type: Lifecycle
+    url: lifecycle/editalmd-lifecycle.yml
+  - type: Plans
+    url: plans/editalmd-plans-pricing.yml
+  - type: RateLimits
+    url: rate-limits/editalmd-rate-limits.yml
+- aid: editalmd:editalmd-recibo-api
+  name: EditalMD Recibo API
+  description: The Recibo API from EditalMD — 1 operation(s) for recibo.
+  humanURL: https://editalmd.com/
+  baseURL: https://editalmd.com/api/
+  tags:
+  - Recibo
+  properties:
+  - type: OpenAPI
+    url: openapi/editalmd-recibo-api-openapi.yml
+  - type: LLMsTxt
+    url: https://editalmd.com/llms.txt
+  - type: LLMsTxt
+    url: https://editalmd.com/llms-full.txt
+  - type: Documentation
+    url: https://editalmd.com/okf/index.md
+  - type: Documentation
+    url: https://editalmd.com/api/
+  - type: APIReference
+    url: https://editalmd.com/llms-full.txt
+  - type: ToolCrosswalk
+    url: mcp/editalmd-tool-crosswalk.yml
+  - type: LLMsTxt
+    url: llms/editalmd-llms.txt
+  - type: Authentication
+    url: authentication/editalmd-authentication.yml
+  - type: Conventions
+    url: conventions/editalmd-conventions.yml
+  - type: ErrorCatalog
+    url: errors/editalmd-problem-types.yml
+  - type: Webhooks
+    url: asyncapi/editalmd-webhooks.yml
+  - type: DataModel
+    url: data-model/editalmd-data-model.yml
+  - type: Conformance
+    url: conformance/editalmd-conformance.yml
+  - type: Lifecycle
+    url: lifecycle/editalmd-lifecycle.yml
+  - type: Plans
+    url: plans/editalmd-plans-pricing.yml
+  - type: RateLimits
+    url: rate-limits/editalmd-rate-limits.yml
+- aid: editalmd:editalmd-vigias-api
+  name: EditalMD Vigias API
+  description: The Vigias API from EditalMD — 3 operation(s) for vigias.
+  humanURL: https://editalmd.com/
+  baseURL: https://editalmd.com/api/
+  tags:
+  - Vigias
+  properties:
+  - type: OpenAPI
+    url: openapi/editalmd-vigias-api-openapi.yml
+  - type: LLMsTxt
+    url: https://editalmd.com/llms.txt
+  - type: LLMsTxt
+    url: https://editalmd.com/llms-full.txt
+  - type: Documentation
+    url: https://editalmd.com/okf/index.md
+  - type: Documentation
+    url: https://editalmd.com/api/
+  - type: APIReference
+    url: https://editalmd.com/llms-full.txt
+  - type: ToolCrosswalk
+    url: mcp/editalmd-tool-crosswalk.yml
+  - type: LLMsTxt
+    url: llms/editalmd-llms.txt
+  - type: Authentication
+    url: authentication/editalmd-authentication.yml
+  - type: Conventions
+    url: conventions/editalmd-conventions.yml
+  - type: ErrorCatalog
+    url: errors/editalmd-problem-types.yml
+  - type: Webhooks
+    url: asyncapi/editalmd-webhooks.yml
+  - type: DataModel
+    url: data-model/editalmd-data-model.yml
+  - type: Conformance
+    url: conformance/editalmd-conformance.yml
+  - type: Lifecycle
+    url: lifecycle/editalmd-lifecycle.yml
+  - type: Plans
+    url: plans/editalmd-plans-pricing.yml
+  - type: RateLimits
+    url: rate-limits/editalmd-rate-limits.yml
+- aid: editalmd:editalmd-visit-api
+  name: EditalMD Visit API
+  description: The Visit API from EditalMD — 1 operation(s) for visit.
+  humanURL: https://editalmd.com/
+  baseURL: https://editalmd.com/api/
+  tags:
+  - Visit
+  properties:
+  - type: OpenAPI
+    url: openapi/editalmd-visit-api-openapi.yml
+  - type: LLMsTxt
+    url: https://editalmd.com/llms.txt
+  - type: LLMsTxt
+    url: https://editalmd.com/llms-full.txt
+  - type: Documentation
+    url: https://editalmd.com/okf/index.md
+  - type: Documentation
+    url: https://editalmd.com/api/
+  - type: APIReference
+    url: https://editalmd.com/llms-full.txt
+  - type: ToolCrosswalk
+    url: mcp/editalmd-tool-crosswalk.yml
+  - type: LLMsTxt
+    url: llms/editalmd-llms.txt
+  - type: Authentication
+    url: authentication/editalmd-authentication.yml
+  - type: Conventions
+    url: conventions/editalmd-conventions.yml
+  - type: ErrorCatalog
+    url: errors/editalmd-problem-types.yml
+  - type: Webhooks
+    url: asyncapi/editalmd-webhooks.yml
+  - type: DataModel
+    url: data-model/editalmd-data-model.yml
+  - type: Conformance
+    url: conformance/editalmd-conformance.yml
+  - type: Lifecycle
+    url: lifecycle/editalmd-lifecycle.yml
+  - type: Plans
+    url: plans/editalmd-plans-pricing.yml
+  - type: RateLimits
+    url: rate-limits/editalmd-rate-limits.yml
+- aid: editalmd:editalmd-well-known-api
+  name: EditalMD .well Known API
+  description: The .well Known API from EditalMD — 1 operation(s) for .well known.
+  humanURL: https://editalmd.com/
+  baseURL: https://editalmd.com/api/
+  tags:
+  - .well Known
+  properties:
+  - type: OpenAPI
+    url: openapi/editalmd-well-known-api-openapi.yml
+  - type: LLMsTxt
+    url: https://editalmd.com/llms.txt
+  - type: LLMsTxt
+    url: https://editalmd.com/llms-full.txt
+  - type: Documentation
+    url: https://editalmd.com/okf/index.md
+  - type: Documentation
+    url: https://editalmd.com/api/
+  - type: APIReference
+    url: https://editalmd.com/llms-full.txt
+  - type: ToolCrosswalk
+    url: mcp/editalmd-tool-crosswalk.yml
+  - type: LLMsTxt
+    url: llms/editalmd-llms.txt
+  - type: Authentication
+    url: authentication/editalmd-authentication.yml
+  - type: Conventions
+    url: conventions/editalmd-conventions.yml
+  - type: ErrorCatalog
+    url: errors/editalmd-problem-types.yml
+  - type: Webhooks
+    url: asyncapi/editalmd-webhooks.yml
+  - type: DataModel
+    url: data-model/editalmd-data-model.yml
+  - type: Conformance
+    url: conformance/editalmd-conformance.yml
+  - type: Lifecycle
+    url: lifecycle/editalmd-lifecycle.yml
+  - type: Plans
+    url: plans/editalmd-plans-pricing.yml
+  - type: RateLimits
+    url: rate-limits/editalmd-rate-limits.yml
 image: https://editalmd.com/icon.svg
 maintainers:
 - FN: EditalMD
@@ -104,6 +850,14 @@ x-generated:
   confidence: 98
   at: '2026-09-05T11:48:14.423Z'
 common:
+- type: MCPServer
+  url: https://editalmd.com/mcp
+- type: MCPServer
+  url: mcp/editalmd-mcp.yml
+- type: Overlay
+  url: overlays/editalmd-openapi-overlay.yaml
+- type: AgentSkill
+  url: skills/_index.yml
 - type: Website
   url: https://editalmd.com
 - type: VulnerabilityDisclosure
