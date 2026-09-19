@@ -89,6 +89,8 @@ apis:
   humanURL: https://editalmd.com/
   baseURL: https://editalmd.com/api/
   tags:
+  - APIs.json
+  tags_raw:
   - Apis.json
   properties:
   - type: OpenAPI
@@ -551,6 +553,8 @@ apis:
   humanURL: https://editalmd.com/
   baseURL: https://editalmd.com/api/
   tags:
+  - MCP
+  tags_raw:
   - Mcp
   properties:
   - type: OpenAPI
