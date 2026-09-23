@@ -1,0 +1,342 @@
+openapi: 3.2.0
+info:
+  version: 2d690e87
+  title: Editalmd Compra API
+servers:
+- url: https://editalmd.com
+tags:
+- name: Compra
+paths:
+  /api/compra/{id}:
+    get:
+      operationId: get_api_compra_by_id
+      summary: Ficha da compra com prazos de proposta e impugnação, documentos e o regime de…
+      description: 'Devolve: { compra{id,pncp,objeto,uf,modalidade,situacao,orgao,unidade,valor_estimado,publicado_em,informacao_complementar,processo,abertura_proposta,encerramento_proposta,amparo_legal,amparo_legal_codigo,modalidade_id,situacao_id,municipio,municipio_ibge,orgao_cnpj,ano_compra,sequencial_compra,atualizado_em,prazos,pncp_url,markdown_url,compra_url}, documentos[{id,titulo,tipo,sequencial,publicado_em,caracteres,paginas,motor,formato,sha256,extraido_em,gratuito,preco_usd,markdown_url,disponivel}], regime{gratuito,motivo,idade_dias}, prazos{proposta_inicio,proposta_ate,proposta_aberta,impugnacao_ate,impugnacao_aberta,estimado,base_legal,feriados,motivo} }'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: '{ compra{id,pncp,objeto,uf,modalidade,situacao,orgao,unidade,valor_estimado,publicado_em,informacao_complementar,processo,abertura_proposta,encerramento_proposta,amparo_legal,amparo_legal_codigo,modalidade_id,situacao_id,municipio,municipio_ibge,orgao_cnpj,ano_compra,sequencial_compra,atualizado_em,prazos,pncp_url,markdown_url,compra_url}, documentos[{id,titulo,tipo,sequencial,publicado_em,caracteres,paginas,motor,formato,sha256,extraido_em,gratuito,preco_usd,markdown_url,disponivel}], regime{gratuito,motivo,idade_dias}, prazos{proposta_inicio,proposta_ate,proposta_aberta,impugnacao_ate,impugnacao_aberta,estimado,base_legal,feriados,motivo} }'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FichaCompra'
+        '404':
+          description: Compra não encontrada.
+        '502':
+          description: Origem indisponível.
+      tags:
+      - Compra
+components:
+  schemas:
+    Documento:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Identificador do documento — é ele que se pede em markdown.
+        titulo:
+          type: string
+          description: Título do documento no PNCP.
+          nullable: true
+        tipo:
+          type: string
+          description: Tipo declarado (edital, anexo, ata…).
+          nullable: true
+        sequencial:
+          type: integer
+          description: Sequencial do documento dentro da compra no PNCP.
+          nullable: true
+        publicado_em:
+          type: string
+          description: Publicação do documento no PNCP.
+          nullable: true
+        caracteres:
+          type: integer
+          description: Tamanho do texto extraído, em caracteres.
+          nullable: true
+        paginas:
+          type: integer
+          description: Páginas do documento original.
+          nullable: true
+        motor:
+          type: string
+          description: Motor que extraiu (`ocr-api`, `tika`, …).
+          nullable: true
+        formato:
+          type: string
+          description: '`markdown` quando a extração é estruturada; `plain` no resto.'
+        sha256:
+          type: string
+          description: Hash do texto extraído na origem.
+          nullable: true
+        extraido_em:
+          type: string
+          description: Quando a extração rodou.
+          nullable: true
+        gratuito:
+          type: boolean
+          description: Se este documento sai sem pagamento (histórico) ou é cobrado.
+        preco_usd:
+          type: string
+          description: Preço da requisição quando é pago; nulo quando é amostra.
+          nullable: true
+        markdown_url:
+          type: string
+          description: Onde pedir o markdown deste documento.
+        disponivel:
+          type: boolean
+          description: Se o texto está neste acervo agora. `false` nunca é cobrado.
+      required:
+      - id
+      - titulo
+      - tipo
+      - sequencial
+      - publicado_em
+      - caracteres
+      - paginas
+      - motor
+      - formato
+      - sha256
+      - extraido_em
+      - gratuito
+      - preco_usd
+      - markdown_url
+      - disponivel
+      description: Um documento da compra que já teve o texto extraído.
+    FichaCompra:
+      type: object
+      properties:
+        compra:
+          allOf:
+          - $ref: '#/components/schemas/Compra'
+          description: A compra.
+        documentos:
+          type: array
+          items:
+            $ref: '#/components/schemas/Documento'
+          description: Documentos com texto extraído.
+        regime:
+          allOf:
+          - $ref: '#/components/schemas/Regime'
+          description: Grátis ou pago, e por quê.
+        prazos:
+          allOf:
+          - $ref: '#/components/schemas/Prazos'
+          description: Proposta e impugnação da compra — o mesmo objeto de `compra.prazos`.
+      required:
+      - compra
+      - documentos
+      - regime
+      - prazos
+      description: Compra + documentos disponíveis + o regime que se aplica a eles.
+    Compra:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Identificador interno da compra — é ele que abre a ficha.
+        pncp:
+          type: string
+          description: Número de controle PNCP da compra.
+          nullable: true
+        objeto:
+          type: string
+          description: Objeto da compra, como publicado.
+          nullable: true
+        uf:
+          type: string
+          description: Sigla da unidade da federação do órgão.
+          nullable: true
+        modalidade:
+          type: string
+          description: Modalidade (pregão eletrônico, dispensa…).
+          nullable: true
+        situacao:
+          type: string
+          description: Situação da compra no PNCP.
+          nullable: true
+        orgao:
+          type: string
+          description: Razão social do órgão comprador.
+          nullable: true
+        unidade:
+          type: string
+          description: Unidade administrativa responsável.
+          nullable: true
+        valor_estimado:
+          type: number
+          description: Valor total estimado em reais.
+          nullable: true
+        publicado_em:
+          type: string
+          description: Data de publicação no PNCP — é ela que define o regime de cobrança.
+          nullable: true
+        informacao_complementar:
+          type: string
+          description: Informação complementar publicada.
+          nullable: true
+        processo:
+          type: string
+          description: Número do processo administrativo.
+          nullable: true
+        abertura_proposta:
+          type: string
+          description: Início do recebimento de propostas, hora de Brasília.
+          nullable: true
+        encerramento_proposta:
+          type: string
+          description: Fim do recebimento de propostas, que é a abertura da sessão — a base da impugnação.
+          nullable: true
+        amparo_legal:
+          type: string
+          description: 'Amparo legal declarado, ex.: `Lei 14.133/2021, Art. 28, I`.'
+          nullable: true
+        amparo_legal_codigo:
+          type: integer
+          description: Código do amparo legal no PNCP.
+          nullable: true
+        modalidade_id:
+          type: integer
+          description: Código da modalidade no PNCP (6 = pregão eletrônico, 8 = dispensa…).
+          nullable: true
+        situacao_id:
+          type: integer
+          description: 'Código da situação: 1 divulgada, 2 revogada, 3 anulada, 4 suspensa.'
+          nullable: true
+        municipio:
+          type: string
+          description: Município da unidade compradora.
+          nullable: true
+        municipio_ibge:
+          type: string
+          description: Código IBGE do município.
+          nullable: true
+        orgao_cnpj:
+          type: string
+          description: CNPJ do órgão, só dígitos.
+          nullable: true
+        ano_compra:
+          type: integer
+          description: Ano da compra na numeração do PNCP.
+          nullable: true
+        sequencial_compra:
+          type: integer
+          description: Sequencial da compra no órgão e ano.
+          nullable: true
+        atualizado_em:
+          type: string
+          description: Última atualização da compra vista pelo acervo.
+          nullable: true
+        prazos:
+          allOf:
+          - $ref: '#/components/schemas/Prazos'
+          description: Proposta e impugnação, calculados pelo Worker.
+        pncp_url:
+          type: string
+          description: Página humana da compra no PNCP.
+          nullable: true
+        markdown_url:
+          type: string
+          description: Atalho para o markdown do documento.
+        compra_url:
+          type: string
+          description: Ficha completa da compra.
+      required:
+      - id
+      - pncp
+      - objeto
+      - uf
+      - modalidade
+      - situacao
+      - orgao
+      - unidade
+      - valor_estimado
+      - publicado_em
+      - informacao_complementar
+      - processo
+      - abertura_proposta
+      - encerramento_proposta
+      - amparo_legal
+      - amparo_legal_codigo
+      - modalidade_id
+      - situacao_id
+      - municipio
+      - municipio_ibge
+      - orgao_cnpj
+      - ano_compra
+      - sequencial_compra
+      - atualizado_em
+      - prazos
+      - pncp_url
+      - markdown_url
+      - compra_url
+      description: Uma compra pública do PNCP, como o acervo a conhece.
+    Regime:
+      type: object
+      properties:
+        gratuito:
+          type: boolean
+          description: '`true` = amostra sem cobrança.'
+        motivo:
+          type: string
+          description: '`amostra_historica`, `publicacao_recente` ou `sem_data_de_publicacao`.'
+        idade_dias:
+          type: integer
+          description: Dias desde a publicação no PNCP.
+          nullable: true
+      required:
+      - gratuito
+      - motivo
+      - idade_dias
+      description: Por que este documento é grátis ou pago — a regra de recência, explicada.
+    Prazos:
+      type: object
+      properties:
+        proposta_inicio:
+          type: string
+          description: Início do recebimento de propostas.
+          nullable: true
+        proposta_ate:
+          type: string
+          description: Fim do recebimento de propostas (abertura da sessão).
+          nullable: true
+        proposta_aberta:
+          type: boolean
+          description: Se ainda dá para enviar proposta agora.
+        impugnacao_ate:
+          type: string
+          description: 'Último dia (AAAA-MM-DD) para impugnar: 3 dias úteis antes da sessão, Lei 14.133 art. 164.'
+          nullable: true
+        impugnacao_aberta:
+          type: boolean
+          description: Se hoje, em Brasília, ainda cabe impugnação.
+        estimado:
+          type: boolean
+          description: 'Sempre `true`: feriado municipal não está em base nenhuma.'
+        base_legal:
+          type: string
+          description: Regra usada na impugnação.
+          nullable: true
+        feriados:
+          type: string
+          description: 'Calendário considerado: `nacionais`.'
+        motivo:
+          type: string
+          description: 'Por que não há impugnação: `sem_data_de_encerramento` ou `amparo_sem_regra`.'
+          nullable: true
+      required:
+      - proposta_inicio
+      - proposta_ate
+      - proposta_aberta
+      - impugnacao_ate
+      - impugnacao_aberta
+      - estimado
+      - base_legal
+      - feriados
+      - motivo
+      description: 'Os relógios da compra: proposta vem do PNCP; impugnação é estimada pela lei, com feriados nacionais.'

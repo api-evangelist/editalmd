@@ -1,0 +1,73 @@
+openapi: 3.2.0
+info:
+  version: 2d690e87
+  title: Editalmd API
+servers:
+- url: https://editalmd.com
+tags:
+- name: Editalmd
+paths:
+  /api/:
+    get:
+      operationId: get_api
+      summary: 'Índice auto-descrito: rotas, regime de cobrança, preço e MCP'
+      description: 'Devolve: { name, description, build, base_url, docs, regime, gratis_acima_de_dias, pago, endpoints, mcp_tools, cota }'
+      responses:
+        '200':
+          description: '{ name, description, build, base_url, docs, regime, gratis_acima_de_dias, pago, endpoints, mcp_tools, cota }'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  name:
+                    type: string
+                    description: Nome do produto.
+                  description:
+                    type: string
+                    description: O que o produto faz.
+                  build:
+                    type: string
+                    description: Commit publicado.
+                  base_url:
+                    type: string
+                    description: Origem em que esta API está servindo.
+                  docs:
+                    type: object
+                    description: Links para llms.txt, OpenAPI, MCP e a UI.
+                  regime:
+                    type: string
+                    description: A regra de cobrança por recência, em uma frase.
+                  gratis_acima_de_dias:
+                    type: integer
+                    description: Idade de publicação a partir da qual o documento é amostra grátis.
+                  pago:
+                    type: object
+                    description: Rota paga e o preço por requisição.
+                  endpoints:
+                    type: array
+                    items:
+                      type: object
+                    description: Catálogo de endpoints.
+                  mcp_tools:
+                    type: array
+                    items:
+                      type: string
+                    description: Tools do MCP.
+                  cota:
+                    type: object
+                    description: O que é grátis, o que é pago e como pagar.
+                required:
+                - name
+                - description
+                - build
+                - base_url
+                - docs
+                - regime
+                - gratis_acima_de_dias
+                - pago
+                - endpoints
+                - mcp_tools
+                - cota
+      tags:
+      - Editalmd

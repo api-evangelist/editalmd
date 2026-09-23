@@ -1,0 +1,178 @@
+openapi: 3.2.0
+info:
+  version: 2d690e87
+  title: Editalmd Documento API
+servers:
+- url: https://editalmd.com
+tags:
+- name: Documento
+paths:
+  /api/documento/{id}/markdown:
+    get:
+      operationId: get_api_documento_by_id_markdown
+      summary: Documento em markdown com front-matter de procedência e hash.
+      description: 'Devolve: `text/markdown`. Headers: `x-editalmd-regime`, `x-editalmd-recibo`, `x-editalmd-sha256`.'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: '`text/markdown`. Headers: `x-editalmd-regime`, `x-editalmd-recibo`, `x-editalmd-sha256`.'
+        '402':
+          description: Documento recente sem pagamento — o corpo traz `accepts[]` do x402 e o caminho da recarga de crédito.
+        '404':
+          description: Documento não encontrado (não cobra).
+        '409':
+          description: 'Documento ainda não baixado para o acervo: não há o que extrair (não cobra).'
+        '502':
+          description: 'Pago e sem entrega: o corpo traz o número do recibo.'
+      tags:
+      - Documento
+  /api/documento/{id}/habilitacao:
+    post:
+      operationId: post_api_documento_by_id_habilitacao
+      summary: 'Lista de habilitação do edital: cada exigência com o trecho literal de onde…'
+      description: 'Extraída por modelo de linguagem na origem e ancorada no texto: item cujo trecho não existe literalmente no edital é descartado (`descartados` conta). Cobre só o lado do edital — o que a empresa tem não entra. `impugnacao_texto` e `proposta_texto` são o que o próprio edital diz, copiado.
+
+        Devolve: { documento_id, compra_id, sha256_texto, modelo, cache, recibo, recibo_url, aviso, habilitacao{juridica,fiscal_social_trabalhista,economico_financeira,tecnica,exclusivo_me_epp,impugnacao_texto,proposta_texto,total,descartados} }'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: '{ documento_id, compra_id, sha256_texto, modelo, cache, recibo, recibo_url, aviso, habilitacao{juridica,fiscal_social_trabalhista,economico_financeira,tecnica,exclusivo_me_epp,impugnacao_texto,proposta_texto,total,descartados} }'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Habilitacao'
+        '402':
+          description: Compra recente sem pagamento — `accepts[]` do x402 e o caminho da recarga de crédito. Compra com 30+ dias e cache (mesmo `sha256_texto`) não cobram.
+        '404':
+          description: Documento não encontrado (não cobra).
+        '409':
+          description: Sem texto e sem binário no acervo, ou texto curto demais (não cobra).
+        '502':
+          description: 'Pago e sem entrega: o corpo traz o número do recibo.'
+        '503':
+          description: Extração por modelo desligada na origem.
+      tags:
+      - Documento
+components:
+  schemas:
+    Habilitacao:
+      type: object
+      properties:
+        documento_id:
+          type: integer
+          description: Documento lido.
+        compra_id:
+          type: integer
+          description: Compra do documento.
+          nullable: true
+        sha256_texto:
+          type: string
+          description: Hash do texto lido — a chave do cache.
+        modelo:
+          type: string
+          description: Modelo que extraiu.
+          nullable: true
+        cache:
+          type: boolean
+          description: '`true` quando saiu do cache, sem cobrança.'
+        recibo:
+          type: string
+          description: Recibo da entrega paga; nulo no cache.
+          nullable: true
+        recibo_url:
+          type: string
+          description: Onde consultar o recibo.
+          nullable: true
+        aviso:
+          type: string
+          description: Lembrete de conferir no edital.
+        habilitacao:
+          allOf:
+          - $ref: '#/components/schemas/ListaHabilitacao'
+          description: As exigências por família e o que o edital diz de prazo.
+      required:
+      - documento_id
+      - compra_id
+      - sha256_texto
+      - modelo
+      - cache
+      - recibo
+      - recibo_url
+      - aviso
+      - habilitacao
+      description: A lista de habilitação extraída de um edital, por família, com procedência.
+    ListaHabilitacao:
+      type: object
+      properties:
+        juridica:
+          type: array
+          items:
+            $ref: '#/components/schemas/Exigencia'
+          description: 'Habilitação jurídica: ato constitutivo, registro, procuração…'
+        fiscal_social_trabalhista:
+          type: array
+          items:
+            $ref: '#/components/schemas/Exigencia'
+          description: 'Regularidade fiscal, social e trabalhista: CND federal, FGTS, CNDT…'
+        economico_financeira:
+          type: array
+          items:
+            $ref: '#/components/schemas/Exigencia'
+          description: 'Qualificação econômico-financeira: balanço, certidão de falência, índices.'
+        tecnica:
+          type: array
+          items:
+            $ref: '#/components/schemas/Exigencia'
+          description: 'Qualificação técnica: atestados, registro em conselho, equipe.'
+        exclusivo_me_epp:
+          type: boolean
+          description: Participação exclusiva de ME/EPP, quando o edital diz.
+          nullable: true
+        impugnacao_texto:
+          type: string
+          description: O que o edital diz sobre o prazo de impugnação, copiado.
+          nullable: true
+        proposta_texto:
+          type: string
+          description: O que o edital diz sobre a sessão ou o fim das propostas, copiado.
+          nullable: true
+        total:
+          type: integer
+          description: Exigências aceitas, somando as quatro famílias.
+        descartados:
+          type: integer
+          description: Itens que o modelo sugeriu sem trecho literal no texto e foram descartados.
+      required:
+      - juridica
+      - fiscal_social_trabalhista
+      - economico_financeira
+      - tecnica
+      - exclusivo_me_epp
+      - impugnacao_texto
+      - proposta_texto
+      - total
+      - descartados
+      description: Exigências de habilitação por família, mais as marcações que o edital traz em texto.
+    Exigencia:
+      type: object
+      properties:
+        exigencia:
+          type: string
+          description: 'Descrição curta, ex.: `Certidão negativa de débitos trabalhistas (CNDT)`.'
+        trecho:
+          type: string
+          description: Cópia literal do edital, até 300 caracteres — existe no texto, sempre.
+      required:
+      - exigencia
+      - trecho
+      description: Um documento ou requisito de habilitação e a linha do edital que o exige.

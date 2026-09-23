@@ -1,0 +1,62 @@
+openapi: 3.2.0
+info:
+  version: 2d690e87
+  title: Editalmd Health API
+servers:
+- url: https://editalmd.com
+tags:
+- name: Health
+paths:
+  /api/health:
+    get:
+      operationId: get_api_health
+      summary: Saúde da origem e tamanho do acervo
+      description: 'Devolve: { ok, acervo{compras,documentos_lidos}, preco_markdown_usd, gratis_acima_de_dias }'
+      responses:
+        '200':
+          description: '{ ok, acervo{compras,documentos_lidos}, preco_markdown_usd, gratis_acima_de_dias }'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Saude'
+        '503':
+          description: Origem indisponível.
+      tags:
+      - Health
+components:
+  schemas:
+    Acervo:
+      type: object
+      properties:
+        compras:
+          type: integer
+          description: Compras públicas indexadas.
+        documentos_lidos:
+          type: integer
+          description: Documentos com texto extraído e disponível.
+      required:
+      - compras
+      - documentos_lidos
+      description: Tamanho do acervo lido na origem.
+    Saude:
+      type: object
+      properties:
+        ok:
+          type: boolean
+          description: '`true` quando a origem respondeu.'
+        acervo:
+          allOf:
+          - $ref: '#/components/schemas/Acervo'
+          description: Números do acervo.
+        preco_markdown_usd:
+          type: string
+          description: Preço vigente do documento recente.
+        gratis_acima_de_dias:
+          type: integer
+          description: Idade a partir da qual o documento é amostra grátis.
+      required:
+      - ok
+      - acervo
+      - preco_markdown_usd
+      - gratis_acima_de_dias
+      description: Saúde do Worker e da origem.

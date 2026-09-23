@@ -1,0 +1,19 @@
+openapi: 3.2.0
+info:
+  version: 2d690e87
+  title: Editalmd Feed.json API
+servers:
+- url: https://editalmd.com
+tags:
+- name: Feed.json
+paths:
+  /feed.json:
+    get:
+      operationId: get_feed_json
+      summary: JSON Feed 1.1 das compras publicadas mais recentemente — o mesmo stream do RSS
+      description: 'Devolve: `application/feed+json`.'
+      responses:
+        '200':
+          description: '`application/feed+json`.'
+      tags:
+      - Feed.json

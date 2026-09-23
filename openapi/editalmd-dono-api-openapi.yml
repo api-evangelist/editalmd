@@ -1,0 +1,168 @@
+openapi: 3.2.0
+info:
+  version: 2d690e87
+  title: Editalmd Dono API
+servers:
+- url: https://editalmd.com
+tags:
+- name: Dono
+paths:
+  /api/dono:
+    post:
+      operationId: post_api_dono
+      summary: Cria o token de dono que abre alertas e vigias, e o segredo que assina os…
+      description: 'Teto por rede e por dia (`TETO_DONOS_REDE_DIA`), para a franquia grátis não virar infinita. O token é mostrado uma única vez e não tem recuperação; o `webhook_segredo` pode ser relido em `GET /api/dono`. Todo POST do webhook leva `webhook-id`, `webhook-timestamp` (segundos Unix) e `webhook-signature: v1,`: HMAC-SHA256 de `id.timestamp.corpo` com a chave do seu `whsec_…` (o base64 depois do prefixo). É o padrão Standard Webhooks — qualquer biblioteca dele confere; rejeite timestamp fora de 5 minutos. Depois de `POST /api/dono/segredo`, o anterior ainda assina por 24 h (duas partes `v1,` no cabeçalho).
+
+        Devolve: { token, aviso, webhook_segredo, webhook_assinatura, franquia }'
+      responses:
+        '200':
+          description: '{ token, aviso, webhook_segredo, webhook_assinatura, franquia }'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dono'
+        '429':
+          description: A rede já criou o teto de donos do dia.
+        '503':
+          description: Banco indisponível.
+      tags:
+      - Dono
+    get:
+      operationId: get_api_dono
+      summary: 'O estado do dono: e-mail confirmado, franquia e o segredo que assina os webhooks'
+      description: 'Todo POST do webhook leva `webhook-id`, `webhook-timestamp` (segundos Unix) e `webhook-signature: v1,`: HMAC-SHA256 de `id.timestamp.corpo` com a chave do seu `whsec_…` (o base64 depois do prefixo). É o padrão Standard Webhooks — qualquer biblioteca dele confere; rejeite timestamp fora de 5 minutos. Depois de `POST /api/dono/segredo`, o anterior ainda assina por 24 h (duas partes `v1,` no cabeçalho).
+
+        Devolve: { email_confirmado, email_confirmado_em, webhook_segredo, assinatura, franquia }'
+      responses:
+        '200':
+          description: '{ email_confirmado, email_confirmado_em, webhook_segredo, assinatura, franquia }'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  email_confirmado:
+                    type: boolean
+                    description: Se há e-mail confirmado para os alertas por e-mail.
+                  email_confirmado_em:
+                    type: string
+                    description: Instante da confirmação em ISO 8601; nulo sem e-mail.
+                    nullable: true
+                  webhook_segredo:
+                    type: string
+                    description: '`whsec_…` — a chave que assina cada POST de webhook.'
+                  assinatura:
+                    type: string
+                    description: Como conferir a assinatura, em uma linha.
+                  franquia:
+                    type: object
+                    description: '`alertas_gratis` e `vigias_gratis` incluídos.'
+                required:
+                - email_confirmado
+                - email_confirmado_em
+                - webhook_segredo
+                - assinatura
+                - franquia
+        '401':
+          description: Sem token de dono, ou token desconhecido.
+      tags:
+      - Dono
+  /api/dono/segredo:
+    post:
+      operationId: post_api_dono_segredo
+      summary: Rotaciona o segredo do webhook.
+      description: 'Durante as 24 h o cabeçalho `webhook-signature` traz duas partes `v1,…`: uma com o novo, outra com o anterior. Basta o receptor aceitar qualquer uma que bata.
+
+        Devolve: { webhook_segredo, anterior_valido_ate }'
+      responses:
+        '200':
+          description: '{ webhook_segredo, anterior_valido_ate }'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  webhook_segredo:
+                    type: string
+                    description: O novo `whsec_…`.
+                  anterior_valido_ate:
+                    type: string
+                    description: Até quando o segredo anterior ainda assina (ISO 8601).
+                required:
+                - webhook_segredo
+                - anterior_valido_ate
+        '401':
+          description: Sem token de dono, ou token desconhecido.
+      tags:
+      - Dono
+  /api/dono/confirmar-email:
+    post:
+      operationId: post_api_dono_confirmar_email
+      summary: Confirma o e-mail de destino dos alertas com o código de 6 dígitos recebido
+      description: 'Devolve: { ok, email_confirmado_em }'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                codigo:
+                  type: string
+                  description: Os 6 dígitos que chegaram no e-mail; vale 30 minutos.
+              required:
+              - codigo
+            example:
+              codigo: '123456'
+      responses:
+        '200':
+          description: '{ ok, email_confirmado_em }'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    description: '`true` quando o e-mail passou a valer.'
+                  email_confirmado_em:
+                    type: string
+                    description: Instante da confirmação em ISO 8601.
+                required:
+                - ok
+                - email_confirmado_em
+        '400':
+          description: Código inválido, expirado ou sem confirmação pendente.
+        '401':
+          description: Sem token de dono, ou token desconhecido.
+        '429':
+          description: 'Cinco tentativas erradas: peça outro código.'
+      tags:
+      - Dono
+components:
+  schemas:
+    Dono:
+      type: object
+      properties:
+        token:
+          type: string
+          description: '`edm_…` — guarde; não é mostrado de novo nem recuperável.'
+        aviso:
+          type: string
+          description: Lembrete de guardar o token e como usá-lo.
+        webhook_segredo:
+          type: string
+          description: '`whsec_…` — assina todo POST de webhook (Standard Webhooks). Releia em `GET /api/dono`; rotacione em `POST /api/dono/segredo`.'
+        webhook_assinatura:
+          type: string
+          description: Como conferir a assinatura, em uma linha.
+        franquia:
+          type: object
+          description: '`alertas_gratis` e `vigias_gratis` incluídos.'
+      required:
+      - token
+      - aviso
+      - webhook_segredo
+      - webhook_assinatura
+      - franquia
+      description: O token de dono, mostrado uma única vez, o segredo que assina os webhooks e a franquia.

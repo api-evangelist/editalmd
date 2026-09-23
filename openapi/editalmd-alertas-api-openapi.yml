@@ -1,0 +1,685 @@
+openapi: 3.2.0
+info:
+  version: 2d690e87
+  title: Editalmd Alertas API
+servers:
+- url: https://editalmd.com
+tags:
+- name: Alertas
+paths:
+  /api/alertas:
+    post:
+      operationId: post_api_alertas
+      summary: 'Cria alertas de compra nova: por termos do objeto e UF, ou pelo CNPJ da empresa…'
+      description: 'Dois modos. Por `termos`: espaço exige todas as palavras, `|` aceita qualquer uma do grupo (`uniforme|fardamento escolar`). Por `cnpj`: a ficha da empresa (Radar CNPJ) dá os CNAEs, o dicionário (`GET /api/cnaes`) transforma cada CNAE numa família de termos e sai um alerta por família distinta, principal primeiro, até `max_familias`; CNAE fora do dicionário não vira alerta e é listado em `empresa.cnaes` com `familia: null`. O primeiro alerta ativo é grátis (`FRANQUIA_ALERTAS`); os seguintes custam `PRECO_ALERTA` por 30 dias cada — no modo CNPJ, numa cobrança só (N × preço), por x402 ou crédito. O cron confere a cada 30 minutos. Canal e-mail exige confirmação do destinatário e só existe com `EMAIL_ALERTAS=1`.
+
+        Devolve: { alerta?{id,termos,origem,uf,canal,destino,ativo,pago_ate,ultimo_check,falhas_seguidas,criado_em,alerta_url,compras_url}, alertas?[{id,termos,origem,uf,canal,destino,ativo,pago_ate,ultimo_check,falhas_seguidas,criado_em,alerta_url,compras_url}], empresa?{cnpj,cnpj_formatado,razao_social,nome_fantasia,situacao,uf,municipio,cnaes}, nao_criados?[{familia,nome,termos,cnaes,motivo}], pagamento, email_confirmacao? }'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                termos:
+                  type: string
+                  description: Palavras do objeto da compra (3 a 200 letras); espaço = todas, `|` = qualquer uma do grupo. Obrigatório sem `cnpj`; ignorado com `cnpj`.
+                cnpj:
+                  type: string
+                  description: 'CNPJ da empresa (14 dígitos, com ou sem pontuação): os termos saem das atividades (CNAE) dela, um alerta por família.'
+                max_familias:
+                  type: integer
+                  description: 'Só com `cnpj`: quantas famílias viram alerta, principal primeiro (1 a 8).'
+                uf:
+                  type: string
+                  description: Sigla da UF para restringir; sem UF vale o Brasil inteiro.
+                canal:
+                  type: string
+                  description: '`pull` (só a API), `webhook` (POST na sua URL https) ou `email`.'
+                destino:
+                  type: string
+                  description: URL https pública (webhook) ou e-mail (email). Ignorado no pull.
+            example:
+              termos: uniforme|fardamento escolar
+              uf: GO
+              canal: pull
+      responses:
+        '200':
+          description: '{ alerta?{id,termos,origem,uf,canal,destino,ativo,pago_ate,ultimo_check,falhas_seguidas,criado_em,alerta_url,compras_url}, alertas?[{id,termos,origem,uf,canal,destino,ativo,pago_ate,ultimo_check,falhas_seguidas,criado_em,alerta_url,compras_url}], empresa?{cnpj,cnpj_formatado,razao_social,nome_fantasia,situacao,uf,municipio,cnaes}, nao_criados?[{familia,nome,termos,cnaes,motivo}], pagamento, email_confirmacao? }'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  alerta:
+                    allOf:
+                    - $ref: '#/components/schemas/Alerta'
+                    description: O alerta criado (modo termos).
+                  alertas:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Alerta'
+                    description: Os alertas criados, um por família (modo CNPJ).
+                  empresa:
+                    allOf:
+                    - $ref: '#/components/schemas/Empresa'
+                    description: A ficha resumida e cada CNAE com a família que o acionou (modo CNPJ).
+                  nao_criados:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FamiliaNaoCriada'
+                    description: Famílias que ficaram de fora por `max_familias` (modo CNPJ).
+                  pagamento:
+                    type: object
+                    description: '`via` (franquia, credito ou x402), `preco_usd`, `pago_ate` e, no modo CNPJ, `alertas_pagos` e `preco_unitario_usd`.'
+                  email_confirmacao:
+                    type: string
+                    description: '`confirmado`, `pendente` ou `falhou_envio`, só no canal e-mail.'
+                required:
+                - pagamento
+        '400':
+          description: Termos, CNPJ, UF, canal ou destino inválidos.
+        '401':
+          description: Sem token de dono, ou token desconhecido.
+        '402':
+          description: Acima da franquia sem pagamento — `accepts[]` do x402 e o caminho do crédito.
+        '404':
+          description: CNPJ não existe na base da Receita.
+        '422':
+          description: 'CNPJ sem nenhuma atividade no dicionário: crie por termos (a resposta traz os CNAEs).'
+        '503':
+          description: Canal e-mail desligado, ou a consulta ao CNPJ indisponível agora (`retry_after`).
+      tags:
+      - Alertas
+    get:
+      operationId: get_api_alertas
+      summary: Lista os alertas deste dono, os mais novos primeiro
+      description: 'Devolve: { itens[{id,termos,origem,uf,canal,destino,ativo,pago_ate,ultimo_check,falhas_seguidas,criado_em,alerta_url,compras_url}], franquia_alertas }'
+      responses:
+        '200':
+          description: '{ itens[{id,termos,origem,uf,canal,destino,ativo,pago_ate,ultimo_check,falhas_seguidas,criado_em,alerta_url,compras_url}], franquia_alertas }'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  itens:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Alerta'
+                    description: Até 50 alertas do dono.
+                  franquia_alertas:
+                    type: integer
+                    description: Quantos alertas ativos são grátis.
+                required:
+                - itens
+                - franquia_alertas
+        '401':
+          description: Sem token de dono, ou token desconhecido.
+      tags:
+      - Alertas
+  /api/alertas/{id}:
+    get:
+      operationId: get_api_alertas_by_id
+      summary: Um alerta do dono, com o cursor da última verificação do cron
+      description: 'Devolve: { alerta{id,termos,origem,uf,canal,destino,ativo,pago_ate,ultimo_check,falhas_seguidas,criado_em,alerta_url,compras_url} }'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: '{ alerta{id,termos,origem,uf,canal,destino,ativo,pago_ate,ultimo_check,falhas_seguidas,criado_em,alerta_url,compras_url} }'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  alerta:
+                    allOf:
+                    - $ref: '#/components/schemas/Alerta'
+                    description: O alerta.
+                required:
+                - alerta
+        '401':
+          description: Sem token de dono, ou token desconhecido.
+        '404':
+          description: Alerta inexistente ou de outro dono.
+      tags:
+      - Alertas
+    patch:
+      operationId: patch_api_alertas_by_id
+      summary: Pausa, reativa ou muda termos, UF, canal e destino de um alerta
+      description: 'Devolve: { alerta{id,termos,origem,uf,canal,destino,ativo,pago_ate,ultimo_check,falhas_seguidas,criado_em,alerta_url,compras_url}, email_confirmacao? }'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ativo:
+                  type: boolean
+                  description: '`false` pausa sem apagar; `true` reativa.'
+                termos:
+                  type: string
+                  description: Novos termos do objeto (3 a 200 letras; `|` = qualquer uma do grupo).
+                uf:
+                  type: string
+                  description: Nova UF; vazio tira a restrição.
+                canal:
+                  type: string
+                  description: 'Novo canal: `pull`, `webhook` ou `email`.'
+                destino:
+                  type: string
+                  description: Nova URL https ou novo e-mail, conforme o canal.
+            example:
+              ativo: false
+      responses:
+        '200':
+          description: '{ alerta{id,termos,origem,uf,canal,destino,ativo,pago_ate,ultimo_check,falhas_seguidas,criado_em,alerta_url,compras_url}, email_confirmacao? }'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  alerta:
+                    allOf:
+                    - $ref: '#/components/schemas/Alerta'
+                    description: O alerta depois da mudança.
+                  email_confirmacao:
+                    type: string
+                    description: Estado da confirmação, só no canal e-mail.
+                required:
+                - alerta
+        '400':
+          description: Nada para mudar ou valor inválido.
+        '401':
+          description: Sem token de dono, ou token desconhecido.
+        '404':
+          description: Alerta inexistente ou de outro dono.
+        '503':
+          description: Canal e-mail desligado.
+      tags:
+      - Alertas
+    delete:
+      operationId: delete_api_alertas_by_id
+      summary: Apaga o alerta e o histórico de compras casadas. Sem volta
+      description: 'Devolve: 204 sem corpo.'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: 204 sem corpo.
+        '401':
+          description: Sem token de dono, ou token desconhecido.
+        '404':
+          description: Alerta inexistente ou de outro dono.
+      tags:
+      - Alertas
+  /api/alertas/{id}/compras:
+    get:
+      operationId: get_api_alertas_by_id_compras
+      summary: As compras que já casaram com o alerta — é o canal pull, e a prova do que foi…
+      description: 'Devolve: { alerta{id,termos,origem,uf,canal,destino,ativo,pago_ate,ultimo_check,falhas_seguidas,criado_em,alerta_url,compras_url}, itens[{compra_id,status,visto_em,compra}], limite }'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: limite
+        in: query
+        required: false
+        schema:
+          type: integer
+        description: 1 a 100 (padrão 50), mais recentes primeiro.
+      responses:
+        '200':
+          description: '{ alerta{id,termos,origem,uf,canal,destino,ativo,pago_ate,ultimo_check,falhas_seguidas,criado_em,alerta_url,compras_url}, itens[{compra_id,status,visto_em,compra}], limite }'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  alerta:
+                    allOf:
+                    - $ref: '#/components/schemas/Alerta'
+                    description: O alerta.
+                  itens:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AlertaCompra'
+                    description: Compras casadas, com o status da entrega.
+                  limite:
+                    type: integer
+                    description: Teto aplicado.
+                required:
+                - alerta
+                - itens
+                - limite
+        '401':
+          description: Sem token de dono, ou token desconhecido.
+        '404':
+          description: Alerta inexistente ou de outro dono.
+      tags:
+      - Alertas
+components:
+  schemas:
+    Empresa:
+      type: object
+      properties:
+        cnpj:
+          type: string
+          description: 14 dígitos.
+        cnpj_formatado:
+          type: string
+          description: Com pontuação, para gente.
+        razao_social:
+          type: string
+          description: Razão social na Receita.
+          nullable: true
+        nome_fantasia:
+          type: string
+          description: O nome comercial, quando difere da razão social.
+          nullable: true
+        situacao:
+          type: string
+          description: Situação cadastral (Ativa, Baixada…).
+          nullable: true
+        uf:
+          type: string
+          description: UF da sede.
+          nullable: true
+        municipio:
+          type: string
+          description: Município da sede.
+          nullable: true
+        cnaes:
+          type: array
+          items:
+            $ref: '#/components/schemas/CnaeDaEmpresa'
+          description: Principal primeiro, depois os secundários.
+      required:
+      - cnpj
+      - cnpj_formatado
+      - razao_social
+      - nome_fantasia
+      - situacao
+      - uf
+      - municipio
+      - cnaes
+      description: A ficha resumida da empresa consultada pelo CNPJ, com a leitura do dicionário para cada CNAE.
+    OrigemCnae:
+      type: object
+      properties:
+        cnpj:
+          type: string
+          description: CNPJ da empresa, 14 dígitos.
+        familia:
+          type: string
+          description: Identificador da família de termos no dicionário.
+        cnae:
+          type: string
+          description: O primeiro CNAE da empresa que acionou a família, 7 dígitos.
+        descricao:
+          type: string
+          description: Descrição oficial (IBGE) desse CNAE.
+          nullable: true
+        cnaes:
+          type: array
+          items:
+            type: string
+          description: Todos os CNAEs da empresa que caem nesta família.
+      required:
+      - cnpj
+      - familia
+      - cnae
+      - descricao
+      - cnaes
+      description: A empresa e a atividade (CNAE) que geraram um alerta por CNPJ.
+    FamiliaNaoCriada:
+      type: object
+      properties:
+        familia:
+          type: string
+          description: Identificador da família.
+        nome:
+          type: string
+          description: Nome da família.
+        termos:
+          type: string
+          description: Os termos que o alerta teria.
+        cnaes:
+          type: array
+          items:
+            type: string
+          description: CNAEs da empresa que caem nela.
+        motivo:
+          type: string
+          description: '`acima_de_max_familias`.'
+      required:
+      - familia
+      - nome
+      - termos
+      - cnaes
+      - motivo
+      description: Uma família da empresa que não virou alerta neste pedido.
+    Compra:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Identificador interno da compra — é ele que abre a ficha.
+        pncp:
+          type: string
+          description: Número de controle PNCP da compra.
+          nullable: true
+        objeto:
+          type: string
+          description: Objeto da compra, como publicado.
+          nullable: true
+        uf:
+          type: string
+          description: Sigla da unidade da federação do órgão.
+          nullable: true
+        modalidade:
+          type: string
+          description: Modalidade (pregão eletrônico, dispensa…).
+          nullable: true
+        situacao:
+          type: string
+          description: Situação da compra no PNCP.
+          nullable: true
+        orgao:
+          type: string
+          description: Razão social do órgão comprador.
+          nullable: true
+        unidade:
+          type: string
+          description: Unidade administrativa responsável.
+          nullable: true
+        valor_estimado:
+          type: number
+          description: Valor total estimado em reais.
+          nullable: true
+        publicado_em:
+          type: string
+          description: Data de publicação no PNCP — é ela que define o regime de cobrança.
+          nullable: true
+        informacao_complementar:
+          type: string
+          description: Informação complementar publicada.
+          nullable: true
+        processo:
+          type: string
+          description: Número do processo administrativo.
+          nullable: true
+        abertura_proposta:
+          type: string
+          description: Início do recebimento de propostas, hora de Brasília.
+          nullable: true
+        encerramento_proposta:
+          type: string
+          description: Fim do recebimento de propostas, que é a abertura da sessão — a base da impugnação.
+          nullable: true
+        amparo_legal:
+          type: string
+          description: 'Amparo legal declarado, ex.: `Lei 14.133/2021, Art. 28, I`.'
+          nullable: true
+        amparo_legal_codigo:
+          type: integer
+          description: Código do amparo legal no PNCP.
+          nullable: true
+        modalidade_id:
+          type: integer
+          description: Código da modalidade no PNCP (6 = pregão eletrônico, 8 = dispensa…).
+          nullable: true
+        situacao_id:
+          type: integer
+          description: 'Código da situação: 1 divulgada, 2 revogada, 3 anulada, 4 suspensa.'
+          nullable: true
+        municipio:
+          type: string
+          description: Município da unidade compradora.
+          nullable: true
+        municipio_ibge:
+          type: string
+          description: Código IBGE do município.
+          nullable: true
+        orgao_cnpj:
+          type: string
+          description: CNPJ do órgão, só dígitos.
+          nullable: true
+        ano_compra:
+          type: integer
+          description: Ano da compra na numeração do PNCP.
+          nullable: true
+        sequencial_compra:
+          type: integer
+          description: Sequencial da compra no órgão e ano.
+          nullable: true
+        atualizado_em:
+          type: string
+          description: Última atualização da compra vista pelo acervo.
+          nullable: true
+        prazos:
+          allOf:
+          - $ref: '#/components/schemas/Prazos'
+          description: Proposta e impugnação, calculados pelo Worker.
+        pncp_url:
+          type: string
+          description: Página humana da compra no PNCP.
+          nullable: true
+        markdown_url:
+          type: string
+          description: Atalho para o markdown do documento.
+        compra_url:
+          type: string
+          description: Ficha completa da compra.
+      required:
+      - id
+      - pncp
+      - objeto
+      - uf
+      - modalidade
+      - situacao
+      - orgao
+      - unidade
+      - valor_estimado
+      - publicado_em
+      - informacao_complementar
+      - processo
+      - abertura_proposta
+      - encerramento_proposta
+      - amparo_legal
+      - amparo_legal_codigo
+      - modalidade_id
+      - situacao_id
+      - municipio
+      - municipio_ibge
+      - orgao_cnpj
+      - ano_compra
+      - sequencial_compra
+      - atualizado_em
+      - prazos
+      - pncp_url
+      - markdown_url
+      - compra_url
+      description: Uma compra pública do PNCP, como o acervo a conhece.
+    Prazos:
+      type: object
+      properties:
+        proposta_inicio:
+          type: string
+          description: Início do recebimento de propostas.
+          nullable: true
+        proposta_ate:
+          type: string
+          description: Fim do recebimento de propostas (abertura da sessão).
+          nullable: true
+        proposta_aberta:
+          type: boolean
+          description: Se ainda dá para enviar proposta agora.
+        impugnacao_ate:
+          type: string
+          description: 'Último dia (AAAA-MM-DD) para impugnar: 3 dias úteis antes da sessão, Lei 14.133 art. 164.'
+          nullable: true
+        impugnacao_aberta:
+          type: boolean
+          description: Se hoje, em Brasília, ainda cabe impugnação.
+        estimado:
+          type: boolean
+          description: 'Sempre `true`: feriado municipal não está em base nenhuma.'
+        base_legal:
+          type: string
+          description: Regra usada na impugnação.
+          nullable: true
+        feriados:
+          type: string
+          description: 'Calendário considerado: `nacionais`.'
+        motivo:
+          type: string
+          description: 'Por que não há impugnação: `sem_data_de_encerramento` ou `amparo_sem_regra`.'
+          nullable: true
+      required:
+      - proposta_inicio
+      - proposta_ate
+      - proposta_aberta
+      - impugnacao_ate
+      - impugnacao_aberta
+      - estimado
+      - base_legal
+      - feriados
+      - motivo
+      description: 'Os relógios da compra: proposta vem do PNCP; impugnação é estimada pela lei, com feriados nacionais.'
+    Alerta:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Identificador do alerta.
+        termos:
+          type: string
+          description: Palavras do objeto que o alerta procura (`|` = qualquer uma do grupo).
+        origem:
+          allOf:
+          - $ref: '#/components/schemas/OrigemCnae'
+          description: De onde veio um alerta criado por CNPJ; nulo no alerta por termos.
+          nullable: true
+        uf:
+          type: string
+          description: UF restrita, ou nulo para o Brasil.
+          nullable: true
+        canal:
+          type: string
+          description: '`pull`, `webhook` ou `email`.'
+        destino:
+          type: string
+          description: URL do webhook, ou e-mail mascarado; nulo no pull.
+          nullable: true
+        ativo:
+          type: boolean
+          description: Se o cron ainda confere este alerta.
+        pago_ate:
+          type: string
+          description: Fim da validade paga; nulo na franquia.
+          nullable: true
+        ultimo_check:
+          type: string
+          description: 'Cursor: até quando a origem já foi conferida.'
+          nullable: true
+        falhas_seguidas:
+          type: integer
+          description: Entregas seguidas que falharam; em 10 o alerta pausa.
+        criado_em:
+          type: string
+          description: Criação em ISO 8601.
+        alerta_url:
+          type: string
+          description: URL deste alerta.
+        compras_url:
+          type: string
+          description: Onde ler as compras casadas (pull).
+      required:
+      - id
+      - termos
+      - origem
+      - uf
+      - canal
+      - destino
+      - ativo
+      - pago_ate
+      - ultimo_check
+      - falhas_seguidas
+      - criado_em
+      - alerta_url
+      - compras_url
+      description: 'Um alerta de compra nova: termos + UF, canal de entrega e o cursor do cron.'
+    CnaeDaEmpresa:
+      type: object
+      properties:
+        codigo:
+          type: string
+          description: 7 dígitos.
+        cnae:
+          type: string
+          description: Formatado como o IBGE escreve, ex. `1412-6/01`.
+        descricao:
+          type: string
+          description: Descrição oficial.
+          nullable: true
+        principal:
+          type: boolean
+          description: Se é o CNAE principal da empresa.
+        familia:
+          type: string
+          description: Família de termos que este CNAE aciona; nulo fora do dicionário.
+          nullable: true
+        termos:
+          type: string
+          description: Os termos dessa família; nulo fora do dicionário.
+          nullable: true
+      required:
+      - codigo
+      - cnae
+      - descricao
+      - principal
+      - familia
+      - termos
+      description: Um CNAE da empresa e o que o dicionário faz com ele.
+    AlertaCompra:
+      type: object
+      properties:
+        compra_id:
+          type: integer
+          description: Identificador da compra no acervo.
+        status:
+          type: string
+          description: '`pull`, `webhook:ok`, `webhook:falhou`, `email:ok`, `email:falhou`, `email:nao_confirmado`, `email:teto_do_dia` ou `pendente`.'
+        visto_em:
+          type: string
+          description: Quando o cron viu a compra.
+        compra:
+          allOf:
+          - $ref: '#/components/schemas/Compra'
+          description: A compra como estava quando casou, com prazos.
+          nullable: true
+      required:
+      - compra_id
+      - status
+      - visto_em
+      - compra
+      description: Uma compra que casou com o alerta e o que aconteceu com a entrega.

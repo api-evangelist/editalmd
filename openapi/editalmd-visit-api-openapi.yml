@@ -1,0 +1,53 @@
+openapi: 3.2.0
+info:
+  version: 2d690e87
+  title: Editalmd Visit API
+servers:
+- url: https://editalmd.com
+tags:
+- name: Visit
+paths:
+  /api/visit:
+    post:
+      operationId: post_api_visit
+      summary: Ping da interface que incrementa a visita do dia no painel do operador.
+      description: 'Smoke não conta: `X-MM-Smoke`, User-Agent `mm-smoke` ou `smoke: true` no corpo entram como `counted: false`.
+
+        Devolve: { ok, counted, reason? }'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                p:
+                  type: string
+                  description: Caminho da página visitada, só para agrupar.
+                smoke:
+                  type: boolean
+                  description: '`true` marca a chamada como teste e ela fica fora da contagem.'
+            example:
+              p: /
+      responses:
+        '200':
+          description: '{ ok, counted, reason? }'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    description: Sempre `true`.
+                  counted:
+                    type: boolean
+                    description: Se a visita entrou na contagem do dia.
+                  reason:
+                    type: string
+                    description: Por que não contou, quando `counted` é `false`.
+                required:
+                - ok
+                - counted
+      tags:
+      - Visit

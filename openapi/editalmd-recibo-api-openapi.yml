@@ -1,0 +1,78 @@
+openapi: 3.2.0
+info:
+  version: 2d690e87
+  title: Editalmd Recibo API
+servers:
+- url: https://editalmd.com
+tags:
+- name: Recibo
+paths:
+  /api/recibo/{id}:
+    get:
+      operationId: get_api_recibo_by_id
+      summary: Recibo de uma entrega — a prova de o que saiu, quanto custou e com qual hash
+      description: 'Devolve: { recibo{id,recurso,documento_id,preco_usd,modo,sha256_entregue,bytes,criado_em} }'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: '{ recibo{id,recurso,documento_id,preco_usd,modo,sha256_entregue,bytes,criado_em} }'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  recibo:
+                    allOf:
+                    - $ref: '#/components/schemas/Recibo'
+                    description: O recibo.
+                required:
+                - recibo
+        '404':
+          description: Recibo não encontrado.
+      tags:
+      - Recibo
+components:
+  schemas:
+    Recibo:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Identificador do recibo (32 hex).
+        recurso:
+          type: string
+          description: 'Recurso entregue, ex.: `documento/123/markdown`.'
+        documento_id:
+          type: integer
+          description: Documento entregue.
+          nullable: true
+        preco_usd:
+          type: string
+          description: Preço cobrado — `$0.00` em amostra.
+        modo:
+          type: string
+          description: '`gratuito`, `homolog` ou `onchain`.'
+        sha256_entregue:
+          type: string
+          description: SHA-256 do markdown entregue, ou `nao_entregue`.
+        bytes:
+          type: integer
+          description: Tamanho do que foi entregue.
+        criado_em:
+          type: string
+          description: Instante da entrega em ISO 8601.
+      required:
+      - id
+      - recurso
+      - documento_id
+      - preco_usd
+      - modo
+      - sha256_entregue
+      - bytes
+      - criado_em
+      description: 'Prova da entrega: o que foi pago, quanto, como e o hash do que saiu.'

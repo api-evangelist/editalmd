@@ -1,0 +1,19 @@
+openapi: 3.2.0
+info:
+  version: 2d690e87
+  title: Editalmd Feed.xml API
+servers:
+- url: https://editalmd.com
+tags:
+- name: Feed.xml
+paths:
+  /feed.xml:
+    get:
+      operationId: get_feed_xml
+      summary: RSS 2.0 das compras publicadas mais recentemente no acervo
+      description: 'Devolve: `application/rss+xml`.'
+      responses:
+        '200':
+          description: '`application/rss+xml`.'
+      tags:
+      - Feed.xml
