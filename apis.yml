@@ -20,10 +20,11 @@ tags:
 - CNAE
 - SICAF
 - Document Extraction
-- agent-native
+- Agent-Native
 - MCP
 - x402
 - Machine-Payable
+- Procurement
 tags_raw:
 - GovTech
 - Public Procurement
@@ -40,6 +41,8 @@ tags_raw:
 - MCP
 - x402
 - Machine-Payable
+- agent-native
+- Procurement
 apis:
 - aid: editalmd:editalmd-alertas-api
   name: EditalMD Alertas API

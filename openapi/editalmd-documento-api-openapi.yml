@@ -111,6 +111,19 @@ components:
       - aviso
       - habilitacao
       description: A lista de habilitação extraída de um edital, por família, com procedência.
+    Exigencia:
+      type: object
+      properties:
+        exigencia:
+          type: string
+          description: 'Descrição curta, ex.: `Certidão negativa de débitos trabalhistas (CNDT)`.'
+        trecho:
+          type: string
+          description: Cópia literal do edital, até 300 caracteres — existe no texto, sempre.
+      required:
+      - exigencia
+      - trecho
+      description: Um documento ou requisito de habilitação e a linha do edital que o exige.
     ListaHabilitacao:
       type: object
       properties:
@@ -163,16 +176,3 @@ components:
       - total
       - descartados
       description: Exigências de habilitação por família, mais as marcações que o edital traz em texto.
-    Exigencia:
-      type: object
-      properties:
-        exigencia:
-          type: string
-          description: 'Descrição curta, ex.: `Certidão negativa de débitos trabalhistas (CNDT)`.'
-        trecho:
-          type: string
-          description: Cópia literal do edital, até 300 caracteres — existe no texto, sempre.
-      required:
-      - exigencia
-      - trecho
-      description: Um documento ou requisito de habilitação e a linha do edital que o exige.
