@@ -65,6 +65,58 @@ paths:
       - Documento
 components:
   schemas:
+    ListaHabilitacao:
+      type: object
+      properties:
+        juridica:
+          type: array
+          items:
+            $ref: '#/components/schemas/Exigencia'
+          description: 'Habilitação jurídica: ato constitutivo, registro, procuração…'
+        fiscal_social_trabalhista:
+          type: array
+          items:
+            $ref: '#/components/schemas/Exigencia'
+          description: 'Regularidade fiscal, social e trabalhista: CND federal, FGTS, CNDT…'
+        economico_financeira:
+          type: array
+          items:
+            $ref: '#/components/schemas/Exigencia'
+          description: 'Qualificação econômico-financeira: balanço, certidão de falência, índices.'
+        tecnica:
+          type: array
+          items:
+            $ref: '#/components/schemas/Exigencia'
+          description: 'Qualificação técnica: atestados, registro em conselho, equipe.'
+        exclusivo_me_epp:
+          type: boolean
+          description: Participação exclusiva de ME/EPP, quando o edital diz.
+          nullable: true
+        impugnacao_texto:
+          type: string
+          description: O que o edital diz sobre o prazo de impugnação, copiado.
+          nullable: true
+        proposta_texto:
+          type: string
+          description: O que o edital diz sobre a sessão ou o fim das propostas, copiado.
+          nullable: true
+        total:
+          type: integer
+          description: Exigências aceitas, somando as quatro famílias.
+        descartados:
+          type: integer
+          description: Itens que o modelo sugeriu sem trecho literal no texto e foram descartados.
+      required:
+      - juridica
+      - fiscal_social_trabalhista
+      - economico_financeira
+      - tecnica
+      - exclusivo_me_epp
+      - impugnacao_texto
+      - proposta_texto
+      - total
+      - descartados
+      description: Exigências de habilitação por família, mais as marcações que o edital traz em texto.
     Habilitacao:
       type: object
       properties:
@@ -124,55 +176,3 @@ components:
       - exigencia
       - trecho
       description: Um documento ou requisito de habilitação e a linha do edital que o exige.
-    ListaHabilitacao:
-      type: object
-      properties:
-        juridica:
-          type: array
-          items:
-            $ref: '#/components/schemas/Exigencia'
-          description: 'Habilitação jurídica: ato constitutivo, registro, procuração…'
-        fiscal_social_trabalhista:
-          type: array
-          items:
-            $ref: '#/components/schemas/Exigencia'
-          description: 'Regularidade fiscal, social e trabalhista: CND federal, FGTS, CNDT…'
-        economico_financeira:
-          type: array
-          items:
-            $ref: '#/components/schemas/Exigencia'
-          description: 'Qualificação econômico-financeira: balanço, certidão de falência, índices.'
-        tecnica:
-          type: array
-          items:
-            $ref: '#/components/schemas/Exigencia'
-          description: 'Qualificação técnica: atestados, registro em conselho, equipe.'
-        exclusivo_me_epp:
-          type: boolean
-          description: Participação exclusiva de ME/EPP, quando o edital diz.
-          nullable: true
-        impugnacao_texto:
-          type: string
-          description: O que o edital diz sobre o prazo de impugnação, copiado.
-          nullable: true
-        proposta_texto:
-          type: string
-          description: O que o edital diz sobre a sessão ou o fim das propostas, copiado.
-          nullable: true
-        total:
-          type: integer
-          description: Exigências aceitas, somando as quatro famílias.
-        descartados:
-          type: integer
-          description: Itens que o modelo sugeriu sem trecho literal no texto e foram descartados.
-      required:
-      - juridica
-      - fiscal_social_trabalhista
-      - economico_financeira
-      - tecnica
-      - exclusivo_me_epp
-      - impugnacao_texto
-      - proposta_texto
-      - total
-      - descartados
-      description: Exigências de habilitação por família, mais as marcações que o edital traz em texto.

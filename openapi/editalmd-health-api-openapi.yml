@@ -25,6 +25,19 @@ paths:
       - Health
 components:
   schemas:
+    Acervo:
+      type: object
+      properties:
+        compras:
+          type: integer
+          description: Compras públicas indexadas.
+        documentos_lidos:
+          type: integer
+          description: Documentos com texto extraído e disponível.
+      required:
+      - compras
+      - documentos_lidos
+      description: Tamanho do acervo lido na origem.
     Saude:
       type: object
       properties:
@@ -47,16 +60,3 @@ components:
       - preco_markdown_usd
       - gratis_acima_de_dias
       description: Saúde do Worker e da origem.
-    Acervo:
-      type: object
-      properties:
-        compras:
-          type: integer
-          description: Compras públicas indexadas.
-        documentos_lidos:
-          type: integer
-          description: Documentos com texto extraído e disponível.
-      required:
-      - compras
-      - documentos_lidos
-      description: Tamanho do acervo lido na origem.

@@ -54,75 +54,6 @@ paths:
       - Busca
 components:
   schemas:
-    Busca:
-      type: object
-      properties:
-        itens:
-          type: array
-          items:
-            $ref: '#/components/schemas/Compra'
-          description: Compras que casaram com o termo.
-        preco_markdown_usd:
-          type: string
-          description: Preço do documento recente.
-        gratis_acima_de_dias:
-          type: integer
-          description: Janela de amostra grátis, em dias.
-        pago:
-          type: boolean
-          description: 'Sempre `false`: buscar não custa.'
-      required:
-      - itens
-      - preco_markdown_usd
-      - gratis_acima_de_dias
-      - pago
-      description: Resultado da busca — sempre grátis.
-    Prazos:
-      type: object
-      properties:
-        proposta_inicio:
-          type: string
-          description: Início do recebimento de propostas.
-          nullable: true
-        proposta_ate:
-          type: string
-          description: Fim do recebimento de propostas (abertura da sessão).
-          nullable: true
-        proposta_aberta:
-          type: boolean
-          description: Se ainda dá para enviar proposta agora.
-        impugnacao_ate:
-          type: string
-          description: 'Último dia (AAAA-MM-DD) para impugnar: 3 dias úteis antes da sessão, Lei 14.133 art. 164.'
-          nullable: true
-        impugnacao_aberta:
-          type: boolean
-          description: Se hoje, em Brasília, ainda cabe impugnação.
-        estimado:
-          type: boolean
-          description: 'Sempre `true`: feriado municipal não está em base nenhuma.'
-        base_legal:
-          type: string
-          description: Regra usada na impugnação.
-          nullable: true
-        feriados:
-          type: string
-          description: 'Calendário considerado: `nacionais`.'
-        motivo:
-          type: string
-          description: 'Por que não há impugnação: `sem_data_de_encerramento` ou `amparo_sem_regra`.'
-          nullable: true
-      required:
-      - proposta_inicio
-      - proposta_ate
-      - proposta_aberta
-      - impugnacao_ate
-      - impugnacao_aberta
-      - estimado
-      - base_legal
-      - feriados
-      - motivo
-      description: 'Os relógios da compra: proposta vem do PNCP; impugnação é estimada pela lei, com feriados nacionais.'
     Compra:
       type: object
       properties:
@@ -265,3 +196,72 @@ components:
       - markdown_url
       - compra_url
       description: Uma compra pública do PNCP, como o acervo a conhece.
+    Busca:
+      type: object
+      properties:
+        itens:
+          type: array
+          items:
+            $ref: '#/components/schemas/Compra'
+          description: Compras que casaram com o termo.
+        preco_markdown_usd:
+          type: string
+          description: Preço do documento recente.
+        gratis_acima_de_dias:
+          type: integer
+          description: Janela de amostra grátis, em dias.
+        pago:
+          type: boolean
+          description: 'Sempre `false`: buscar não custa.'
+      required:
+      - itens
+      - preco_markdown_usd
+      - gratis_acima_de_dias
+      - pago
+      description: Resultado da busca — sempre grátis.
+    Prazos:
+      type: object
+      properties:
+        proposta_inicio:
+          type: string
+          description: Início do recebimento de propostas.
+          nullable: true
+        proposta_ate:
+          type: string
+          description: Fim do recebimento de propostas (abertura da sessão).
+          nullable: true
+        proposta_aberta:
+          type: boolean
+          description: Se ainda dá para enviar proposta agora.
+        impugnacao_ate:
+          type: string
+          description: 'Último dia (AAAA-MM-DD) para impugnar: 3 dias úteis antes da sessão, Lei 14.133 art. 164.'
+          nullable: true
+        impugnacao_aberta:
+          type: boolean
+          description: Se hoje, em Brasília, ainda cabe impugnação.
+        estimado:
+          type: boolean
+          description: 'Sempre `true`: feriado municipal não está em base nenhuma.'
+        base_legal:
+          type: string
+          description: Regra usada na impugnação.
+          nullable: true
+        feriados:
+          type: string
+          description: 'Calendário considerado: `nacionais`.'
+        motivo:
+          type: string
+          description: 'Por que não há impugnação: `sem_data_de_encerramento` ou `amparo_sem_regra`.'
+          nullable: true
+      required:
+      - proposta_inicio
+      - proposta_ate
+      - proposta_aberta
+      - impugnacao_ate
+      - impugnacao_aberta
+      - estimado
+      - base_legal
+      - feriados
+      - motivo
+      description: 'Os relógios da compra: proposta vem do PNCP; impugnação é estimada pela lei, com feriados nacionais.'
