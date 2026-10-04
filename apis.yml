@@ -857,6 +857,9 @@ x-generated:
   confidence: 98
   at: '2026-09-05T11:48:14.423Z'
 common:
+- type: CapabilityMap
+  url: capabilities/editalmd-capability-edges.yml
+  name: EditalMD Business Capability Map
 - type: MCPServer
   url: https://editalmd.com/mcp
 - type: MCPServer

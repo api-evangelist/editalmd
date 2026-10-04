@@ -1,0 +1,25 @@
+slug: editalmd
+provider: EditalMD
+generated_by: planning/capability-mapping/scripts/classify_capabilities.py
+model: claude-opus-5
+frame:
+- Software & Technology
+min_confidence: 0.7
+capability_model:
+  source: https://github.com/vincentmakes/turbo-ea-capabilities
+  license: CC-BY-4.0
+  attribution: Turbo EA Capabilities by Vincent Verdet — Turbo EA, https://github.com/vincentmakes/turbo-ea-capabilities,
+    CC BY 4.0
+  notice: NOTICE
+edge_count: 1
+edges:
+- tag: Dono
+  spec_file: editalmd-dono-api-openapi.yml
+  capability_id: BC-4270.40
+  capability_id_l1: BC-4270
+  capability_name: Developer Identity & Credential Management
+  confidence: 0.72
+  evidence: Cria o token de dono que abre alertas e vigias, e o segredo que assina os… ; Rotaciona o segredo
+    do webhook.
+  reason: Operations issue and rotate the API owner token and webhook signing secret — developer credential
+    issuance and stewardship for an API platform, not a business-domain capability.
