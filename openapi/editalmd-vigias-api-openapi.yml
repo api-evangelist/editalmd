@@ -206,6 +206,38 @@ paths:
       - Vigias
 components:
   schemas:
+    Evento:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Identificador do evento.
+        tipo:
+          type: string
+          description: '`situacao`, `prazo_adiado`, `valor`, `documento_novo`, `documento_removido`, `prazo_impugnacao` ou `prazo_proposta`.'
+        antes:
+          type: string
+          description: Valor anterior; nulo em documento novo e nos avisos de prazo.
+          nullable: true
+        depois:
+          type: string
+          description: Valor novo; nulo em documento removido.
+          nullable: true
+        visto_em:
+          type: string
+          description: Quando o cron viu.
+        entregue_em:
+          type: string
+          description: Quando o aviso saiu por webhook ou e-mail; nulo no pull ou em falha.
+          nullable: true
+      required:
+      - id
+      - tipo
+      - antes
+      - depois
+      - visto_em
+      - entregue_em
+      description: Uma mudança vista na compra vigiada, ou um aviso de prazo.
     Vigia:
       type: object
       properties:
@@ -258,38 +290,6 @@ components:
       - eventos_url
       - compra_url
       description: 'Uma compra vigiada: canal de aviso, validade e o cursor do cron.'
-    Evento:
-      type: object
-      properties:
-        id:
-          type: string
-          description: Identificador do evento.
-        tipo:
-          type: string
-          description: '`situacao`, `prazo_adiado`, `valor`, `documento_novo`, `documento_removido`, `prazo_impugnacao` ou `prazo_proposta`.'
-        antes:
-          type: string
-          description: Valor anterior; nulo em documento novo e nos avisos de prazo.
-          nullable: true
-        depois:
-          type: string
-          description: Valor novo; nulo em documento removido.
-          nullable: true
-        visto_em:
-          type: string
-          description: Quando o cron viu.
-        entregue_em:
-          type: string
-          description: Quando o aviso saiu por webhook ou e-mail; nulo no pull ou em falha.
-          nullable: true
-      required:
-      - id
-      - tipo
-      - antes
-      - depois
-      - visto_em
-      - entregue_em
-      description: Uma mudança vista na compra vigiada, ou um aviso de prazo.
     Snapshot:
       type: object
       properties:

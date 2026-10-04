@@ -54,6 +54,29 @@ paths:
       - Busca
 components:
   schemas:
+    Busca:
+      type: object
+      properties:
+        itens:
+          type: array
+          items:
+            $ref: '#/components/schemas/Compra'
+          description: Compras que casaram com o termo.
+        preco_markdown_usd:
+          type: string
+          description: Preço do documento recente.
+        gratis_acima_de_dias:
+          type: integer
+          description: Janela de amostra grátis, em dias.
+        pago:
+          type: boolean
+          description: 'Sempre `false`: buscar não custa.'
+      required:
+      - itens
+      - preco_markdown_usd
+      - gratis_acima_de_dias
+      - pago
+      description: Resultado da busca — sempre grátis.
     Compra:
       type: object
       properties:
@@ -196,29 +219,6 @@ components:
       - markdown_url
       - compra_url
       description: Uma compra pública do PNCP, como o acervo a conhece.
-    Busca:
-      type: object
-      properties:
-        itens:
-          type: array
-          items:
-            $ref: '#/components/schemas/Compra'
-          description: Compras que casaram com o termo.
-        preco_markdown_usd:
-          type: string
-          description: Preço do documento recente.
-        gratis_acima_de_dias:
-          type: integer
-          description: Janela de amostra grátis, em dias.
-        pago:
-          type: boolean
-          description: 'Sempre `false`: buscar não custa.'
-      required:
-      - itens
-      - preco_markdown_usd
-      - gratis_acima_de_dias
-      - pago
-      description: Resultado da busca — sempre grátis.
     Prazos:
       type: object
       properties:

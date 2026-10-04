@@ -278,6 +278,105 @@ paths:
       - Alertas
 components:
   schemas:
+    OrigemCnae:
+      type: object
+      properties:
+        cnpj:
+          type: string
+          description: CNPJ da empresa, 14 dígitos.
+        familia:
+          type: string
+          description: Identificador da família de termos no dicionário.
+        cnae:
+          type: string
+          description: O primeiro CNAE da empresa que acionou a família, 7 dígitos.
+        descricao:
+          type: string
+          description: Descrição oficial (IBGE) desse CNAE.
+          nullable: true
+        cnaes:
+          type: array
+          items:
+            type: string
+          description: Todos os CNAEs da empresa que caem nesta família.
+      required:
+      - cnpj
+      - familia
+      - cnae
+      - descricao
+      - cnaes
+      description: A empresa e a atividade (CNAE) que geraram um alerta por CNPJ.
+    Empresa:
+      type: object
+      properties:
+        cnpj:
+          type: string
+          description: 14 dígitos.
+        cnpj_formatado:
+          type: string
+          description: Com pontuação, para gente.
+        razao_social:
+          type: string
+          description: Razão social na Receita.
+          nullable: true
+        nome_fantasia:
+          type: string
+          description: O nome comercial, quando difere da razão social.
+          nullable: true
+        situacao:
+          type: string
+          description: Situação cadastral (Ativa, Baixada…).
+          nullable: true
+        uf:
+          type: string
+          description: UF da sede.
+          nullable: true
+        municipio:
+          type: string
+          description: Município da sede.
+          nullable: true
+        cnaes:
+          type: array
+          items:
+            $ref: '#/components/schemas/CnaeDaEmpresa'
+          description: Principal primeiro, depois os secundários.
+      required:
+      - cnpj
+      - cnpj_formatado
+      - razao_social
+      - nome_fantasia
+      - situacao
+      - uf
+      - municipio
+      - cnaes
+      description: A ficha resumida da empresa consultada pelo CNPJ, com a leitura do dicionário para cada CNAE.
+    FamiliaNaoCriada:
+      type: object
+      properties:
+        familia:
+          type: string
+          description: Identificador da família.
+        nome:
+          type: string
+          description: Nome da família.
+        termos:
+          type: string
+          description: Os termos que o alerta teria.
+        cnaes:
+          type: array
+          items:
+            type: string
+          description: CNAEs da empresa que caem nela.
+        motivo:
+          type: string
+          description: '`acima_de_max_familias`.'
+      required:
+      - familia
+      - nome
+      - termos
+      - cnaes
+      - motivo
+      description: Uma família da empresa que não virou alerta neste pedido.
     Compra:
       type: object
       properties:
@@ -420,124 +519,6 @@ components:
       - markdown_url
       - compra_url
       description: Uma compra pública do PNCP, como o acervo a conhece.
-    Alerta:
-      type: object
-      properties:
-        id:
-          type: string
-          description: Identificador do alerta.
-        termos:
-          type: string
-          description: Palavras do objeto que o alerta procura (`|` = qualquer uma do grupo).
-        origem:
-          allOf:
-          - $ref: '#/components/schemas/OrigemCnae'
-          description: De onde veio um alerta criado por CNPJ; nulo no alerta por termos.
-          nullable: true
-        uf:
-          type: string
-          description: UF restrita, ou nulo para o Brasil.
-          nullable: true
-        canal:
-          type: string
-          description: '`pull`, `webhook` ou `email`.'
-        destino:
-          type: string
-          description: URL do webhook, ou e-mail mascarado; nulo no pull.
-          nullable: true
-        ativo:
-          type: boolean
-          description: Se o cron ainda confere este alerta.
-        pago_ate:
-          type: string
-          description: Fim da validade paga; nulo na franquia.
-          nullable: true
-        ultimo_check:
-          type: string
-          description: 'Cursor: até quando a origem já foi conferida.'
-          nullable: true
-        falhas_seguidas:
-          type: integer
-          description: Entregas seguidas que falharam; em 10 o alerta pausa.
-        criado_em:
-          type: string
-          description: Criação em ISO 8601.
-        alerta_url:
-          type: string
-          description: URL deste alerta.
-        compras_url:
-          type: string
-          description: Onde ler as compras casadas (pull).
-      required:
-      - id
-      - termos
-      - origem
-      - uf
-      - canal
-      - destino
-      - ativo
-      - pago_ate
-      - ultimo_check
-      - falhas_seguidas
-      - criado_em
-      - alerta_url
-      - compras_url
-      description: 'Um alerta de compra nova: termos + UF, canal de entrega e o cursor do cron.'
-    OrigemCnae:
-      type: object
-      properties:
-        cnpj:
-          type: string
-          description: CNPJ da empresa, 14 dígitos.
-        familia:
-          type: string
-          description: Identificador da família de termos no dicionário.
-        cnae:
-          type: string
-          description: O primeiro CNAE da empresa que acionou a família, 7 dígitos.
-        descricao:
-          type: string
-          description: Descrição oficial (IBGE) desse CNAE.
-          nullable: true
-        cnaes:
-          type: array
-          items:
-            type: string
-          description: Todos os CNAEs da empresa que caem nesta família.
-      required:
-      - cnpj
-      - familia
-      - cnae
-      - descricao
-      - cnaes
-      description: A empresa e a atividade (CNAE) que geraram um alerta por CNPJ.
-    FamiliaNaoCriada:
-      type: object
-      properties:
-        familia:
-          type: string
-          description: Identificador da família.
-        nome:
-          type: string
-          description: Nome da família.
-        termos:
-          type: string
-          description: Os termos que o alerta teria.
-        cnaes:
-          type: array
-          items:
-            type: string
-          description: CNAEs da empresa que caem nela.
-        motivo:
-          type: string
-          description: '`acima_de_max_familias`.'
-      required:
-      - familia
-      - nome
-      - termos
-      - cnaes
-      - motivo
-      description: Uma família da empresa que não virou alerta neste pedido.
     Prazos:
       type: object
       properties:
@@ -616,50 +597,69 @@ components:
       - familia
       - termos
       description: Um CNAE da empresa e o que o dicionário faz com ele.
-    Empresa:
+    Alerta:
       type: object
       properties:
-        cnpj:
+        id:
           type: string
-          description: 14 dígitos.
-        cnpj_formatado:
+          description: Identificador do alerta.
+        termos:
           type: string
-          description: Com pontuação, para gente.
-        razao_social:
-          type: string
-          description: Razão social na Receita.
-          nullable: true
-        nome_fantasia:
-          type: string
-          description: O nome comercial, quando difere da razão social.
-          nullable: true
-        situacao:
-          type: string
-          description: Situação cadastral (Ativa, Baixada…).
+          description: Palavras do objeto que o alerta procura (`|` = qualquer uma do grupo).
+        origem:
+          allOf:
+          - $ref: '#/components/schemas/OrigemCnae'
+          description: De onde veio um alerta criado por CNPJ; nulo no alerta por termos.
           nullable: true
         uf:
           type: string
-          description: UF da sede.
+          description: UF restrita, ou nulo para o Brasil.
           nullable: true
-        municipio:
+        canal:
           type: string
-          description: Município da sede.
+          description: '`pull`, `webhook` ou `email`.'
+        destino:
+          type: string
+          description: URL do webhook, ou e-mail mascarado; nulo no pull.
           nullable: true
-        cnaes:
-          type: array
-          items:
-            $ref: '#/components/schemas/CnaeDaEmpresa'
-          description: Principal primeiro, depois os secundários.
+        ativo:
+          type: boolean
+          description: Se o cron ainda confere este alerta.
+        pago_ate:
+          type: string
+          description: Fim da validade paga; nulo na franquia.
+          nullable: true
+        ultimo_check:
+          type: string
+          description: 'Cursor: até quando a origem já foi conferida.'
+          nullable: true
+        falhas_seguidas:
+          type: integer
+          description: Entregas seguidas que falharam; em 10 o alerta pausa.
+        criado_em:
+          type: string
+          description: Criação em ISO 8601.
+        alerta_url:
+          type: string
+          description: URL deste alerta.
+        compras_url:
+          type: string
+          description: Onde ler as compras casadas (pull).
       required:
-      - cnpj
-      - cnpj_formatado
-      - razao_social
-      - nome_fantasia
-      - situacao
+      - id
+      - termos
+      - origem
       - uf
-      - municipio
-      - cnaes
-      description: A ficha resumida da empresa consultada pelo CNPJ, com a leitura do dicionário para cada CNAE.
+      - canal
+      - destino
+      - ativo
+      - pago_ate
+      - ultimo_check
+      - falhas_seguidas
+      - criado_em
+      - alerta_url
+      - compras_url
+      description: 'Um alerta de compra nova: termos + UF, canal de entrega e o cursor do cron.'
     AlertaCompra:
       type: object
       properties:

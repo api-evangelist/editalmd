@@ -33,6 +33,32 @@ paths:
       - Compra
 components:
   schemas:
+    FichaCompra:
+      type: object
+      properties:
+        compra:
+          allOf:
+          - $ref: '#/components/schemas/Compra'
+          description: A compra.
+        documentos:
+          type: array
+          items:
+            $ref: '#/components/schemas/Documento'
+          description: Documentos com texto extraído.
+        regime:
+          allOf:
+          - $ref: '#/components/schemas/Regime'
+          description: Grátis ou pago, e por quê.
+        prazos:
+          allOf:
+          - $ref: '#/components/schemas/Prazos'
+          description: Proposta e impugnação da compra — o mesmo objeto de `compra.prazos`.
+      required:
+      - compra
+      - documentos
+      - regime
+      - prazos
+      description: Compra + documentos disponíveis + o regime que se aplica a eles.
     Documento:
       type: object
       properties:
@@ -268,32 +294,6 @@ components:
       - motivo
       - idade_dias
       description: Por que este documento é grátis ou pago — a regra de recência, explicada.
-    FichaCompra:
-      type: object
-      properties:
-        compra:
-          allOf:
-          - $ref: '#/components/schemas/Compra'
-          description: A compra.
-        documentos:
-          type: array
-          items:
-            $ref: '#/components/schemas/Documento'
-          description: Documentos com texto extraído.
-        regime:
-          allOf:
-          - $ref: '#/components/schemas/Regime'
-          description: Grátis ou pago, e por quê.
-        prazos:
-          allOf:
-          - $ref: '#/components/schemas/Prazos'
-          description: Proposta e impugnação da compra — o mesmo objeto de `compra.prazos`.
-      required:
-      - compra
-      - documentos
-      - regime
-      - prazos
-      description: Compra + documentos disponíveis + o regime que se aplica a eles.
     Prazos:
       type: object
       properties:
