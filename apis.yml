@@ -6,7 +6,7 @@ description: Agent-native data API over Brazil's public-procurement portal PNCP 
   no signup.
 url: https://raw.githubusercontent.com/api-evangelist/editalmd/refs/heads/main/apis.yml
 created: '2026-09-05'
-modified: '2026-09-05'
+modified: '2026-10-06'
 specificationVersion: '0.21'
 tags:
 - GovTech
@@ -857,6 +857,8 @@ x-generated:
   confidence: 98
   at: '2026-09-05T11:48:14.423Z'
 common:
+- url: https://editalmd.com/feed.xml
+  type: BlogRSS
 - type: CapabilityMap
   url: capabilities/editalmd-capability-edges.yml
   name: EditalMD Business Capability Map
