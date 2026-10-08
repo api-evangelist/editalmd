@@ -857,6 +857,10 @@ x-generated:
   confidence: 98
   at: '2026-09-05T11:48:14.423Z'
 common:
+- type: Plans
+  url: plans/editalmd-plans-pricing.yml
+- type: RateLimits
+  url: rate-limits/editalmd-rate-limits.yml
 - url: https://editalmd.com/feed.xml
   type: BlogRSS
 - type: CapabilityMap
