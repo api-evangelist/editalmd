@@ -33,107 +33,52 @@ paths:
       - Compra
 components:
   schemas:
-    FichaCompra:
+    Prazos:
       type: object
       properties:
-        compra:
-          allOf:
-          - $ref: '#/components/schemas/Compra'
-          description: A compra.
-        documentos:
-          type: array
-          items:
-            $ref: '#/components/schemas/Documento'
-          description: Documentos com texto extraído.
-        regime:
-          allOf:
-          - $ref: '#/components/schemas/Regime'
-          description: Grátis ou pago, e por quê.
-        prazos:
-          allOf:
-          - $ref: '#/components/schemas/Prazos'
-          description: Proposta e impugnação da compra — o mesmo objeto de `compra.prazos`.
-      required:
-      - compra
-      - documentos
-      - regime
-      - prazos
-      description: Compra + documentos disponíveis + o regime que se aplica a eles.
-    Documento:
-      type: object
-      properties:
-        id:
-          type: integer
-          description: Identificador do documento — é ele que se pede em markdown.
-        titulo:
+        proposta_inicio:
           type: string
-          description: Título do documento no PNCP.
+          description: Início do recebimento de propostas.
           nullable: true
-        tipo:
+        proposta_ate:
           type: string
-          description: Tipo declarado (edital, anexo, ata…).
+          description: Fim do recebimento de propostas (abertura da sessão).
           nullable: true
-        sequencial:
-          type: integer
-          description: Sequencial do documento dentro da compra no PNCP.
-          nullable: true
-        publicado_em:
-          type: string
-          description: Publicação do documento no PNCP.
-          nullable: true
-        caracteres:
-          type: integer
-          description: Tamanho do texto extraído, em caracteres.
-          nullable: true
-        paginas:
-          type: integer
-          description: Páginas do documento original.
-          nullable: true
-        motor:
-          type: string
-          description: Motor que extraiu (`ocr-api`, `tika`, …).
-          nullable: true
-        formato:
-          type: string
-          description: '`markdown` quando a extração é estruturada; `plain` no resto.'
-        sha256:
-          type: string
-          description: Hash do texto extraído na origem.
-          nullable: true
-        extraido_em:
-          type: string
-          description: Quando a extração rodou.
-          nullable: true
-        gratuito:
+        proposta_aberta:
           type: boolean
-          description: Se este documento sai sem pagamento (histórico) ou é cobrado.
-        preco_usd:
+          description: Se ainda dá para enviar proposta agora.
+        impugnacao_ate:
           type: string
-          description: Preço da requisição quando é pago; nulo quando é amostra.
+          description: 'Último dia (AAAA-MM-DD) para impugnar: 3 dias úteis antes da sessão, Lei 14.133 art. 164.'
           nullable: true
-        markdown_url:
-          type: string
-          description: Onde pedir o markdown deste documento.
-        disponivel:
+        impugnacao_aberta:
           type: boolean
-          description: Se o texto está neste acervo agora. `false` nunca é cobrado.
+          description: Se hoje, em Brasília, ainda cabe impugnação.
+        estimado:
+          type: boolean
+          description: 'Sempre `true`: feriado municipal não está em base nenhuma.'
+        base_legal:
+          type: string
+          description: Regra usada na impugnação.
+          nullable: true
+        feriados:
+          type: string
+          description: 'Calendário considerado: `nacionais`.'
+        motivo:
+          type: string
+          description: 'Por que não há impugnação: `sem_data_de_encerramento` ou `amparo_sem_regra`.'
+          nullable: true
       required:
-      - id
-      - titulo
-      - tipo
-      - sequencial
-      - publicado_em
-      - caracteres
-      - paginas
-      - motor
-      - formato
-      - sha256
-      - extraido_em
-      - gratuito
-      - preco_usd
-      - markdown_url
-      - disponivel
-      description: Um documento da compra que já teve o texto extraído.
+      - proposta_inicio
+      - proposta_ate
+      - proposta_aberta
+      - impugnacao_ate
+      - impugnacao_aberta
+      - estimado
+      - base_legal
+      - feriados
+      - motivo
+      description: 'Os relógios da compra: proposta vem do PNCP; impugnação é estimada pela lei, com feriados nacionais.'
     Compra:
       type: object
       properties:
@@ -276,6 +221,32 @@ components:
       - markdown_url
       - compra_url
       description: Uma compra pública do PNCP, como o acervo a conhece.
+    FichaCompra:
+      type: object
+      properties:
+        compra:
+          allOf:
+          - $ref: '#/components/schemas/Compra'
+          description: A compra.
+        documentos:
+          type: array
+          items:
+            $ref: '#/components/schemas/Documento'
+          description: Documentos com texto extraído.
+        regime:
+          allOf:
+          - $ref: '#/components/schemas/Regime'
+          description: Grátis ou pago, e por quê.
+        prazos:
+          allOf:
+          - $ref: '#/components/schemas/Prazos'
+          description: Proposta e impugnação da compra — o mesmo objeto de `compra.prazos`.
+      required:
+      - compra
+      - documentos
+      - regime
+      - prazos
+      description: Compra + documentos disponíveis + o regime que se aplica a eles.
     Regime:
       type: object
       properties:
@@ -294,49 +265,78 @@ components:
       - motivo
       - idade_dias
       description: Por que este documento é grátis ou pago — a regra de recência, explicada.
-    Prazos:
+    Documento:
       type: object
       properties:
-        proposta_inicio:
+        id:
+          type: integer
+          description: Identificador do documento — é ele que se pede em markdown.
+        titulo:
           type: string
-          description: Início do recebimento de propostas.
+          description: Título do documento no PNCP.
           nullable: true
-        proposta_ate:
+        tipo:
           type: string
-          description: Fim do recebimento de propostas (abertura da sessão).
+          description: Tipo declarado (edital, anexo, ata…).
           nullable: true
-        proposta_aberta:
+        sequencial:
+          type: integer
+          description: Sequencial do documento dentro da compra no PNCP.
+          nullable: true
+        publicado_em:
+          type: string
+          description: Publicação do documento no PNCP.
+          nullable: true
+        caracteres:
+          type: integer
+          description: Tamanho do texto extraído, em caracteres.
+          nullable: true
+        paginas:
+          type: integer
+          description: Páginas do documento original.
+          nullable: true
+        motor:
+          type: string
+          description: Motor que extraiu (`ocr-api`, `tika`, …).
+          nullable: true
+        formato:
+          type: string
+          description: '`markdown` quando a extração é estruturada; `plain` no resto.'
+        sha256:
+          type: string
+          description: Hash do texto extraído na origem.
+          nullable: true
+        extraido_em:
+          type: string
+          description: Quando a extração rodou.
+          nullable: true
+        gratuito:
           type: boolean
-          description: Se ainda dá para enviar proposta agora.
-        impugnacao_ate:
+          description: Se este documento sai sem pagamento (histórico) ou é cobrado.
+        preco_usd:
           type: string
-          description: 'Último dia (AAAA-MM-DD) para impugnar: 3 dias úteis antes da sessão, Lei 14.133 art. 164.'
+          description: Preço da requisição quando é pago; nulo quando é amostra.
           nullable: true
-        impugnacao_aberta:
+        markdown_url:
+          type: string
+          description: Onde pedir o markdown deste documento.
+        disponivel:
           type: boolean
-          description: Se hoje, em Brasília, ainda cabe impugnação.
-        estimado:
-          type: boolean
-          description: 'Sempre `true`: feriado municipal não está em base nenhuma.'
-        base_legal:
-          type: string
-          description: Regra usada na impugnação.
-          nullable: true
-        feriados:
-          type: string
-          description: 'Calendário considerado: `nacionais`.'
-        motivo:
-          type: string
-          description: 'Por que não há impugnação: `sem_data_de_encerramento` ou `amparo_sem_regra`.'
-          nullable: true
+          description: Se o texto está neste acervo agora. `false` nunca é cobrado.
       required:
-      - proposta_inicio
-      - proposta_ate
-      - proposta_aberta
-      - impugnacao_ate
-      - impugnacao_aberta
-      - estimado
-      - base_legal
-      - feriados
-      - motivo
-      description: 'Os relógios da compra: proposta vem do PNCP; impugnação é estimada pela lei, com feriados nacionais.'
+      - id
+      - titulo
+      - tipo
+      - sequencial
+      - publicado_em
+      - caracteres
+      - paginas
+      - motor
+      - formato
+      - sha256
+      - extraido_em
+      - gratuito
+      - preco_usd
+      - markdown_url
+      - disponivel
+      description: Um documento da compra que já teve o texto extraído.
