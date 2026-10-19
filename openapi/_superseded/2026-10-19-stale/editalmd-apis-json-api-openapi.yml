@@ -1,0 +1,19 @@
+openapi: 3.2.0
+info:
+  version: 2d690e87
+  title: Editalmd Apis.json API
+servers:
+- url: https://editalmd.com
+tags:
+- name: Apis.json
+paths:
+  /apis.json:
+    get:
+      operationId: get_apis_json
+      summary: 'APIs.json (apisjson.org, 0.19): o índice que o APIs.io colhe — a API, o MCP…'
+      description: 'Devolve: `application/json` no formato APIs.json 0.19: `apis[]` com `baseURL`, `humanURL` e `properties[]`.'
+      responses:
+        '200':
+          description: '`application/json` no formato APIs.json 0.19: `apis[]` com `baseURL`, `humanURL` e `properties[]`.'
+      tags:
+      - Apis.json

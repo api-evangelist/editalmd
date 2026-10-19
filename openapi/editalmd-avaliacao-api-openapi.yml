@@ -1,0 +1,84 @@
+openapi: 3.2.0
+info:
+  title: EditalMD Avaliacao API
+  version: 1d751aaf
+servers:
+- url: https://editalmd.com
+tags:
+- name: Avaliacao
+paths:
+  /api/avaliacao:
+    get:
+      operationId: get_api_avaliacao
+      summary: 'Document quotas of this agent: one sponsored premium and 100 basic readings'
+      description: 'Returns: { expires_at, premium, basic }'
+      parameters:
+      - name: X-Agent-Pass
+        in: header
+        required: true
+        schema:
+          type: string
+        description: Persistent individual credential obtained at POST https://api.editalmd.com/licitacoes/api/agente. It is not the User-Agent.
+      responses:
+        '200':
+          description: '{ expires_at, premium, basic }'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  expires_at:
+                    type: string
+                    description: End of the individual grant, limited by the pilot.
+                  premium:
+                    type: object
+                    description: granted:1, used, document_id e max_pages:50.
+                  basic:
+                    type: object
+                    description: granted:100, used, max_pages:50 e reviewed:false.
+                required:
+                - expires_at
+                - premium
+                - basic
+        '400':
+          description: Unknown fields or query; POST accepts an absent body or {}.
+        '401':
+          description: Missing or invalid agent credential.
+        '402':
+          description: Individual quota used or expired; see purchase_url to buy.
+        '404':
+          description: Document or request of this agent not found.
+        '409':
+          description: Source or quote unavailable/changed; no charge.
+        '422':
+          description: Premium up to 50 pages; basic PDF up to 50 pages and 32 MiB.
+        '503':
+          description: Pilot ended, budget exhausted or queue without capacity; keep the credential and try later.
+      tags:
+      - Avaliacao
+components:
+  securitySchemes:
+    globalAccount:
+      type: apiKey
+      in: cookie
+      name: __Host-mm-auth
+      description: Global session in the product's HttpOnly cookie; writes require exact Origin and X-CSRF-Token.
+    contaChaveApi:
+      type: http
+      scheme: bearer
+      bearerFormat: mmk_…
+      description: 'Account API key: `Authorization: Bearer mmk_…` or `X-Api-Key: mmk_…`. Created on the account page (API keys), valid only in the product where it was created; it acts as the account (or the organization that owns it).'
+    carteiraAgente:
+      type: http
+      scheme: bearer
+      bearerFormat: mmw_…
+      description: 'Wallet credential of an agent without an account (`Authorization: Bearer mmw_…`, 30 days, this product only): POST /api/auth/wallet/agent/start, sign the message with the wallet, POST /api/auth/wallet/agent/token. The owner is `x402:<address>`.'
+x-service-info:
+  categories:
+  - public-procurement
+  - documents
+  - data
+  docs:
+    homepage: https://editalmd.com/
+    apiReference: https://editalmd.com/developers
+    llms: https://editalmd.com/llms.txt

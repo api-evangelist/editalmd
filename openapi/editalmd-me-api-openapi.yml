@@ -1,0 +1,1015 @@
+openapi: 3.2.0
+info:
+  title: EditalMD Me API
+  version: 1d751aaf
+servers:
+- url: https://editalmd.com
+tags:
+- name: Me
+paths:
+  /api/me/empresas/{cnpj}/documentos:
+    get:
+      operationId: get_api_me_empresas_by_cnpj_documentos
+      summary: Lists the private attachments of the company; it does not start reading or…
+      description: 'Returns: { itens[{id,nome,tipo,bytes,paginas,enviado_em}], revisao, limite, limite_bytes, limite_paginas }'
+      parameters:
+      - name: cnpj
+        in: path
+        required: true
+        schema:
+          type: string
+        description: CNPJ of 14 characters (digits or alphanumeric) linked to the owner.
+        example: 00394460000141
+      responses:
+        '200':
+          description: '{ itens[{id,nome,tipo,bytes,paginas,enviado_em}], revisao, limite, limite_bytes, limite_paginas }'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentosEmpresa'
+        '400':
+          description: Invalid input.
+        '401':
+          description: Account session or valid guest required.
+        '402':
+          description: Access to the tender document required.
+        '403':
+          description: Origem recusada.
+        '404':
+          description: Company or document missing for this owner.
+        '409':
+          description: Sources or checkpoint unavailable.
+        '413':
+          description: Limit of documents, pages or bytes.
+        '429':
+          description: Processing in progress; try again later.
+        '502':
+          description: Core unavailable.
+        '503':
+          description: Configuration or processing budget unavailable.
+      tags:
+      - Me
+    post:
+      operationId: post_api_me_empresas_by_cnpj_documentos
+      summary: Adds a PDF of a certificate of performance, a certificate or another proof to…
+      description: '201. JSON up to 11,200,000 bytes; PDF up to 8 MiB, 20 documents/80 MiB/50 pages per company. An identical file is reused. The automatic reading happens only when the analysis is requested.
+
+        Returns: { itens[{id,nome,tipo,bytes,paginas,enviado_em}], revisao, limite, limite_bytes, limite_paginas }'
+      parameters:
+      - name: cnpj
+        in: path
+        required: true
+        schema:
+          type: string
+        description: CNPJ of 14 characters (digits or alphanumeric) linked to the owner.
+        example: 00394460000141
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nome:
+                  type: string
+                  description: Name up to 160 characters.
+                tipo:
+                  type: string
+                  description: atestado, certidao, licenca, contrato_social or outro.
+                arquivo_base64:
+                  type: string
+                  description: 'PDF in canonical base64, without the data: prefix. Prefer an HTTP upload from the local file.'
+      responses:
+        '200':
+          description: '{ itens[{id,nome,tipo,bytes,paginas,enviado_em}], revisao, limite, limite_bytes, limite_paginas }'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentosEmpresa'
+        '400':
+          description: Invalid input.
+        '401':
+          description: Account session or valid guest required.
+        '402':
+          description: Access to the tender document required.
+        '403':
+          description: Origem recusada.
+        '404':
+          description: Company or document missing for this owner.
+        '409':
+          description: Sources or checkpoint unavailable.
+        '413':
+          description: Limit of documents, pages or bytes.
+        '429':
+          description: Processing in progress; try again later.
+        '502':
+          description: Core unavailable.
+        '503':
+          description: Configuration or processing budget unavailable.
+      tags:
+      - Me
+  /api/me/empresas/{cnpj}/documentos/{arquivo}:
+    get:
+      operationId: get_api_me_empresas_by_cnpj_documentos_by_arquivo
+      summary: Downloads the private PDF, without an AI call
+      description: 'Returns: binary PDF with Content-Disposition: attachment; use authenticated HTTP to download.'
+      parameters:
+      - name: cnpj
+        in: path
+        required: true
+        schema:
+          type: string
+        description: CNPJ of 14 characters (digits or alphanumeric) linked to the owner.
+        example: 00394460000141
+      - name: arquivo
+        in: path
+        required: true
+        schema:
+          type: string
+        description: SHA-256 retornado no envio.
+        example: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+      responses:
+        '200':
+          description: 'Binary PDF with Content-Disposition: attachment; use authenticated HTTP to download.'
+        '400':
+          description: Invalid input.
+        '401':
+          description: Account session or valid guest required.
+        '402':
+          description: Access to the tender document required.
+        '403':
+          description: Origem recusada.
+        '404':
+          description: Company or document missing for this owner.
+        '409':
+          description: Sources or checkpoint unavailable.
+        '413':
+          description: Limit of documents, pages or bytes.
+        '429':
+          description: Processing in progress; try again later.
+        '502':
+          description: Core unavailable.
+        '503':
+          description: Configuration or processing budget unavailable.
+      tags:
+      - Me
+    delete:
+      operationId: delete_api_me_empresas_by_cnpj_documentos_by_arquivo
+      summary: Removes the attachment of this company and invalidates the analysis that used it
+      description: 'Returns: { itens[{id,nome,tipo,bytes,paginas,enviado_em}], revisao, limite, limite_bytes, limite_paginas }'
+      parameters:
+      - name: cnpj
+        in: path
+        required: true
+        schema:
+          type: string
+        description: CNPJ of 14 characters (digits or alphanumeric) linked to the owner.
+        example: 00394460000141
+      - name: arquivo
+        in: path
+        required: true
+        schema:
+          type: string
+        description: SHA-256 of the attachment.
+        example: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+      responses:
+        '200':
+          description: '{ itens[{id,nome,tipo,bytes,paginas,enviado_em}], revisao, limite, limite_bytes, limite_paginas }'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentosEmpresa'
+        '400':
+          description: Invalid input.
+        '401':
+          description: Account session or valid guest required.
+        '402':
+          description: Access to the tender document required.
+        '403':
+          description: Origem recusada.
+        '404':
+          description: Company or document missing for this owner.
+        '409':
+          description: Sources or checkpoint unavailable.
+        '413':
+          description: Limit of documents, pages or bytes.
+        '429':
+          description: Processing in progress; try again later.
+        '502':
+          description: Core unavailable.
+        '503':
+          description: Configuration or processing budget unavailable.
+      tags:
+      - Me
+  /api/me/empresas/{cnpj}/analises/{id}:
+    post:
+      operationId: post_api_me_empresas_by_cnpj_analises_by_id
+      summary: Starts or resumes the comparison of requirements, certificates of performance…
+      description: '202 after accepting and keeping the request; 200 when reusing a completed analysis. It uses the profile and attachments of this owner. Interrupted requests can resume; failures give the reason and the next action. An explicit POST resumes a pause. Up to 2 thousand facts and 100 tender documents per company, subject to the available capacity and budget. This operation does not charge a new purchase. Follow-up only through GET. The analysis offers screening with evidence, not a final qualification decision or an external legal opinion.
+
+        Returns: { analise }'
+      parameters:
+      - name: cnpj
+        in: path
+        required: true
+        schema:
+          type: string
+        description: CNPJ of 14 characters (digits or alphanumeric) linked to the owner.
+        example: 00394460000141
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: ID of the document with a ready dossier and authorized access.
+        example: 1993401
+      - name: v
+        in: query
+        required: true
+        schema:
+          type: string
+        description: SHA-256 of the opened Markdown, 64 lowercase hex characters.
+      responses:
+        '200':
+          description: '{ analise }'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  analise:
+                    type: object
+                    description: 'Estado inicial: id, status, etapa, processados, total, CNPJ, hashes e datas.'
+                required:
+                - analise
+        '400':
+          description: Invalid input.
+        '401':
+          description: Account session or valid guest required.
+        '402':
+          description: Access to the tender document required.
+        '403':
+          description: Origem recusada.
+        '404':
+          description: Company or document missing for this owner.
+        '409':
+          description: Sources or checkpoint unavailable.
+        '413':
+          description: Limit of documents, pages or bytes.
+        '429':
+          description: Processing in progress; try again later.
+        '502':
+          description: Core unavailable.
+        '503':
+          description: Configuration or processing budget unavailable.
+      tags:
+      - Me
+    get:
+      operationId: get_api_me_empresas_by_cnpj_analises_by_id
+      summary: Reads the progress or the paginated results; it does not start AI or change the…
+      description: 'Pending items group precisa_comprovar (proof missing), divergente (incompatible evidence) and acompanhar (future obligation). A different registry, attachments or dossier return outdated without current results. The reference date is kept on resume; a previous day returns data_atual=false. The validated batches stay available during failures/processing with parcial=true and processados/total; they never represent a conclusion on the requirements not compared yet. GET does not run the queue or start AI.
+
+        Returns: { analise, itens, contagens?, tipos?, next }'
+      parameters:
+      - name: cnpj
+        in: path
+        required: true
+        schema:
+          type: string
+        description: CNPJ of 14 characters (digits or alphanumeric) linked to the owner.
+        example: 00394460000141
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Document ID.
+        example: 1993401
+      - name: v
+        in: query
+        required: true
+        schema:
+          type: string
+        description: SHA-256 of the opened Markdown, 64 lowercase hex characters.
+      - name: grupo
+        in: query
+        required: false
+        schema:
+          type: string
+        description: pendencias, atendidos or nao_aplicavel; when omitted, all are returned.
+      - name: kind
+        in: query
+        required: false
+        schema:
+          type: string
+        description: requirement, attestation or obligation.
+      - name: after
+        in: query
+        required: false
+        schema:
+          type: integer
+        description: Last received ID; default 0.
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+        description: 1 to 30; default 30.
+      responses:
+        '200':
+          description: '{ analise, itens, contagens?, tipos?, next }'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnaliseParticipacao'
+        '400':
+          description: Invalid input.
+        '401':
+          description: Account session or valid guest required.
+        '402':
+          description: Access to the tender document required.
+        '403':
+          description: Origem recusada.
+        '404':
+          description: Company or document missing for this owner.
+        '409':
+          description: Sources or checkpoint unavailable.
+        '413':
+          description: Limit of documents, pages or bytes.
+        '429':
+          description: Processing in progress; try again later.
+        '502':
+          description: Core unavailable.
+        '503':
+          description: Configuration or processing budget unavailable.
+      tags:
+      - Me
+  /api/me/empresas:
+    get:
+      operationId: get_api_me_empresas
+      summary: Lists the requester's companies (the account organizations with EditalMD) and…
+      description: 'Returns: { itens[{cnpj,razao_social,nome_fantasia,situacao,situacao_desde,porte,natureza_juridica,inicio_atividade,matriz_filial,capital_social,municipio,uf,cnaes,fonte,importado_em,organizacao}], selecionada, selecionada_organizacao, limite, conta_necessaria }'
+      responses:
+        '200':
+          description: '{ itens[{cnpj,razao_social,nome_fantasia,situacao,situacao_desde,porte,natureza_juridica,inicio_atividade,matriz_filial,capital_social,municipio,uf,cnaes,fonte,importado_em,organizacao}], selecionada, selecionada_organizacao, limite, conta_necessaria }'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmpresasConta'
+        '400':
+          description: Invalid CNPJ or search.
+        '401':
+          description: Account required (conta_necessaria) or session ended; the search accepts the guest.
+        '403':
+          description: Origin refused, account key (organization_key_required), role without management (organization_role_required) or shared without 2FA (organization_mfa_required).
+        '404':
+          description: Company not in the requester's organizations, or CNPJ not in the base.
+        '405':
+          description: Method not allowed.
+        '409':
+          description: Limit of 100 companies, a given organization that already has a company, or an organization that the requester left.
+        '429':
+          description: Cap of new organizations of the account.
+        '503':
+          description: Origin, account or budget unavailable.
+      tags:
+      - Me
+  /api/me/empresas/busca:
+    get:
+      operationId: get_api_me_empresas_busca
+      summary: Searches up to eight suggestions by corporate name or full CNPJ; it does not…
+      description: 'Returns: { itens[{cnpj,nome,municipio,uf,situacao}] }'
+      parameters:
+      - name: q
+        in: query
+        required: true
+        schema:
+          type: string
+        description: CNPJ with or without punctuation, or corporate name, from 3 to 120 characters.
+      responses:
+        '200':
+          description: '{ itens[{cnpj,nome,municipio,uf,situacao}] }'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  itens:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SugestaoEmpresa'
+                    description: Up to eight results; refine the search when necessary.
+                required:
+                - itens
+        '400':
+          description: Invalid CNPJ or search.
+        '401':
+          description: Account required (conta_necessaria) or session ended; the search accepts the guest.
+        '403':
+          description: Origin refused, account key (organization_key_required), role without management (organization_role_required) or shared without 2FA (organization_mfa_required).
+        '404':
+          description: Company not in the requester's organizations, or CNPJ not in the base.
+        '405':
+          description: Method not allowed.
+        '409':
+          description: Limit of 100 companies, a given organization that already has a company, or an organization that the requester left.
+        '429':
+          description: Cap of new organizations of the account.
+        '503':
+          description: Origin, account or budget unavailable.
+      tags:
+      - Me
+  /api/me/empresas/{cnpj}:
+    put:
+      operationId: put_api_me_empresas_by_cnpj
+      summary: Imports the registry data into an organization of the account
+      description: 'Without X-Organization-Id, it creates the organization with the corporate name and EditalMD enabled, or returns the one that the person removed from the list (201). With X-Organization-Id or an organization key, the record goes to this organization, if the requester manages it and it has no company. 200 when the CNPJ is already in an organization of the requester. Up to 100 companies; without partners or contacts; no analysis is started.
+
+        Returns: { itens[{cnpj,razao_social,nome_fantasia,situacao,situacao_desde,porte,natureza_juridica,inicio_atividade,matriz_filial,capital_social,municipio,uf,cnaes,fonte,importado_em,organizacao}], selecionada, selecionada_organizacao, limite, conta_necessaria }'
+      parameters:
+      - name: cnpj
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Full CNPJ, 14 digits with valid check digits.
+        example: 00394460000141
+      responses:
+        '200':
+          description: '{ itens[{cnpj,razao_social,nome_fantasia,situacao,situacao_desde,porte,natureza_juridica,inicio_atividade,matriz_filial,capital_social,municipio,uf,cnaes,fonte,importado_em,organizacao}], selecionada, selecionada_organizacao, limite, conta_necessaria }'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmpresasConta'
+        '400':
+          description: Invalid CNPJ or search.
+        '401':
+          description: Account required (conta_necessaria) or session ended; the search accepts the guest.
+        '403':
+          description: Origin refused, account key (organization_key_required), role without management (organization_role_required) or shared without 2FA (organization_mfa_required).
+        '404':
+          description: Company not in the requester's organizations, or CNPJ not in the base.
+        '405':
+          description: Method not allowed.
+        '409':
+          description: Limit of 100 companies, a given organization that already has a company, or an organization that the requester left.
+        '429':
+          description: Cap of new organizations of the account.
+        '503':
+          description: Origin, account or budget unavailable.
+      tags:
+      - Me
+    delete:
+      operationId: delete_api_me_empresas_by_cnpj
+      summary: Removes the company from the list (owner or administrator); the organization…
+      description: 'Returns: { itens[{cnpj,razao_social,nome_fantasia,situacao,situacao_desde,porte,natureza_juridica,inicio_atividade,matriz_filial,capital_social,municipio,uf,cnaes,fonte,importado_em,organizacao}], selecionada, selecionada_organizacao, limite, conta_necessaria }'
+      parameters:
+      - name: cnpj
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Full CNPJ, 14 digits with valid check digits.
+        example: 00394460000141
+      responses:
+        '200':
+          description: '{ itens[{cnpj,razao_social,nome_fantasia,situacao,situacao_desde,porte,natureza_juridica,inicio_atividade,matriz_filial,capital_social,municipio,uf,cnaes,fonte,importado_em,organizacao}], selecionada, selecionada_organizacao, limite, conta_necessaria }'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmpresasConta'
+        '400':
+          description: Invalid CNPJ or search.
+        '401':
+          description: Account required (conta_necessaria) or session ended; the search accepts the guest.
+        '403':
+          description: Origin refused, account key (organization_key_required), role without management (organization_role_required) or shared without 2FA (organization_mfa_required).
+        '404':
+          description: Company not in the requester's organizations, or CNPJ not in the base.
+        '405':
+          description: Method not allowed.
+        '409':
+          description: Limit of 100 companies, a given organization that already has a company, or an organization that the requester left.
+        '429':
+          description: Cap of new organizations of the account.
+        '503':
+          description: Origin, account or budget unavailable.
+      tags:
+      - Me
+  /api/me/empresas/{cnpj}/selecionar:
+    put:
+      operationId: put_api_me_empresas_by_cnpj_selecionar
+      summary: Selects a company already registered to work on the tender document
+      description: 'The choice of each person, kept in the account. It does not run an analysis; repeating the current choice does not write.
+
+        Returns: { itens[{cnpj,razao_social,nome_fantasia,situacao,situacao_desde,porte,natureza_juridica,inicio_atividade,matriz_filial,capital_social,municipio,uf,cnaes,fonte,importado_em,organizacao}], selecionada, selecionada_organizacao, limite, conta_necessaria }'
+      parameters:
+      - name: cnpj
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Full CNPJ, 14 digits with valid check digits.
+        example: 00394460000141
+      responses:
+        '200':
+          description: '{ itens[{cnpj,razao_social,nome_fantasia,situacao,situacao_desde,porte,natureza_juridica,inicio_atividade,matriz_filial,capital_social,municipio,uf,cnaes,fonte,importado_em,organizacao}], selecionada, selecionada_organizacao, limite, conta_necessaria }'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmpresasConta'
+        '400':
+          description: Invalid CNPJ or search.
+        '401':
+          description: Account required (conta_necessaria) or session ended; the search accepts the guest.
+        '403':
+          description: Origin refused, account key (organization_key_required), role without management (organization_role_required) or shared without 2FA (organization_mfa_required).
+        '404':
+          description: Company not in the requester's organizations, or CNPJ not in the base.
+        '405':
+          description: Method not allowed.
+        '409':
+          description: Limit of 100 companies, a given organization that already has a company, or an organization that the requester left.
+        '429':
+          description: Cap of new organizations of the account.
+        '503':
+          description: Origin, account or budget unavailable.
+      tags:
+      - Me
+  /api/me:
+    get:
+      operationId: get_api_me
+      summary: Identifies your account, counts your accesses and follow-ups and points to the…
+      description: 'The global account is already the person in EditalMD: there is no activation per product.
+
+        Returns: { user, documentos_url, compras_url, totais, acompanhamento_vinculado, locais_vinculados }'
+      parameters:
+      - name: locais
+        in: query
+        required: false
+        schema:
+          type: string
+        description: Up to 90 positive document IDs separated by commas, at most 1529 characters; omit it if there are no local accesses to reconcile.
+      responses:
+        '200':
+          description: '{ user, documentos_url, compras_url, totais, acompanhamento_vinculado, locais_vinculados }'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    type: object
+                    description: id (the id of the global account) and email of the account.
+                  documentos_url:
+                    type: string
+                    description: Biblioteca privada.
+                  compras_url:
+                    type: string
+                    description: Private history.
+                  totais:
+                    type: object
+                    description: documentos (distinct IDs with a purchased right), salvas and alertas (including paused ones) of the account; zero when empty.
+                  acompanhamento_vinculado:
+                    type: boolean
+                    description: 'Always true: the account directly owns its lists.'
+                  locais_vinculados:
+                    type: array
+                    items:
+                      type: integer
+                    description: Of the IDs given in locais, only the ones that already belong to the current account; it avoids doubling the browser counter. It does not grant access.
+                required:
+                - user
+                - documentos_url
+                - compras_url
+                - totais
+                - acompanhamento_vinculado
+                - locais_vinculados
+        '400':
+          description: Invalid body/cursor.
+        '401':
+          description: 'Session missing, invalid or ended (`session_ended`: sign in again).'
+        '403':
+          description: Mutation origin or CSRF refused.
+        '404':
+          description: Purchase not found for this client.
+        '405':
+          description: Method not allowed.
+        '503':
+          description: Account or global limit unavailable.
+      security:
+      - globalAccount: []
+      tags:
+      - Me
+  /api/me/documentos:
+    get:
+      operationId: get_api_me_documentos
+      summary: Documents purchased by this account; reopening without a new payment
+      description: 'Returns: { itens, proximo_antes }'
+      parameters:
+      - name: antes
+        in: query
+        required: false
+        schema:
+          type: string
+        description: proximo_antes of the previous page; hex, a cursor exclusive to the client.
+      responses:
+        '200':
+          description: '{ itens, proximo_antes }'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  itens:
+                    type: array
+                    items:
+                      type: object
+                    description: 'Document rights of the account (global right of the payment): id, documento_id, via (x402, credito, deposito, the plan allowance, or simulado, the test payment), created_at, abrir_url, geracao_url, markdown_url.'
+                  proximo_antes:
+                    type: string
+                    description: 'Always null: the collection comes whole, up to 200.'
+                    nullable: true
+                required:
+                - itens
+                - proximo_antes
+        '400':
+          description: Invalid body/cursor.
+        '401':
+          description: 'Session missing, invalid or ended (`session_ended`: sign in again).'
+        '403':
+          description: Mutation origin or CSRF refused.
+        '404':
+          description: Purchase not found for this client.
+        '405':
+          description: Method not allowed.
+        '503':
+          description: Account or global limit unavailable.
+      tags:
+      - Me
+  /api/me/compras:
+    get:
+      operationId: get_api_me_compras
+      summary: Private history of the purchases, most recent first
+      description: 'Returns: { itens, proximo_antes }'
+      parameters:
+      - name: antes
+        in: query
+        required: false
+        schema:
+          type: string
+        description: proximo_antes of the previous page; hex, a cursor exclusive to the client.
+      responses:
+        '200':
+          description: '{ itens, proximo_antes }'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  itens:
+                    type: array
+                    items:
+                      type: object
+                    description: 'Document rights of the account (global right of the payment): id, documento_id, via (x402, credito, deposito, the plan allowance, or simulado, the test payment), created_at, abrir_url, geracao_url, markdown_url.'
+                  proximo_antes:
+                    type: string
+                    description: 'Always null: the collection comes whole, up to 200.'
+                    nullable: true
+                required:
+                - itens
+                - proximo_antes
+        '400':
+          description: Invalid body/cursor.
+        '401':
+          description: 'Session missing, invalid or ended (`session_ended`: sign in again).'
+        '403':
+          description: Mutation origin or CSRF refused.
+        '404':
+          description: Purchase not found for this client.
+        '405':
+          description: Method not allowed.
+        '503':
+          description: Account or global limit unavailable.
+      tags:
+      - Me
+  /api/me/acompanhamento:
+    get:
+      operationId: get_api_me_acompanhamento
+      summary: Confirms that Saved/Alerts/Watches belong to the session account
+      description: 'The lists of an edm_… guest move to the account at `POST /api/auth/claim`; the POST of this route answers 410 with the path.
+
+        Returns: { vinculado }'
+      responses:
+        '200':
+          description: '{ vinculado }'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  vinculado:
+                    type: boolean
+                    description: 'Always true with a session: the account directly owns its lists.'
+                required:
+                - vinculado
+        '400':
+          description: Invalid body/cursor.
+        '401':
+          description: 'Session missing, invalid or ended (`session_ended`: sign in again).'
+        '403':
+          description: Mutation origin or CSRF refused.
+        '404':
+          description: Purchase not found for this client.
+        '405':
+          description: Method not allowed.
+        '503':
+          description: Account or global limit unavailable.
+      tags:
+      - Me
+components:
+  schemas:
+    OrganizacaoEmpresa:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Organization id (the same in all the products).
+        nome:
+          type: string
+          description: Organization name; it starts with the corporate name. null through the organization key.
+          nullable: true
+        papel:
+          type: string
+          description: owner, admin or member; null through the organization key.
+          nullable: true
+        exige_mfa:
+          type: boolean
+          description: 'Shared: whoever manages it needs 2FA in this session to use it.'
+      required:
+      - id
+      - nome
+      - papel
+      - exige_mfa
+      description: The company is an organization of the global account with EditalMD enabled; members and roles are managed in the account.
+    DocumentosEmpresa:
+      type: object
+      properties:
+        itens:
+          type: array
+          items:
+            $ref: '#/components/schemas/DocumentoEmpresa'
+          description: Up to 20 attachments of this owner's company.
+        revisao:
+          type: string
+          description: Hash of the set of documents; changes invalidate previous analyses.
+        limite:
+          type: integer
+          description: 20 documentos.
+        limite_bytes:
+          type: integer
+          description: 8 MiB por PDF; 80 MiB no conjunto.
+        limite_paginas:
+          type: integer
+          description: 50 pages added up across the attachments.
+      required:
+      - itens
+      - revisao
+      - limite
+      - limite_bytes
+      - limite_paginas
+    AtividadeEmpresa:
+      type: object
+      properties:
+        codigo:
+          type: string
+          description: 7-digit code.
+        descricao:
+          type: string
+          description: Known description.
+          nullable: true
+        principal:
+          type: boolean
+          description: Atividade principal.
+      required:
+      - codigo
+      - descricao
+      - principal
+    SugestaoEmpresa:
+      type: object
+      properties:
+        cnpj:
+          type: string
+          description: Full CNPJ, 14 digits with valid check digits.
+        nome:
+          type: string
+          description: Name shown by the base.
+          nullable: true
+        municipio:
+          type: string
+          description: Municipality.
+          nullable: true
+        uf:
+          type: string
+          description: Code of the federative unit.
+          nullable: true
+        situacao:
+          type: string
+          description: Registration status.
+          nullable: true
+      required:
+      - cnpj
+      - nome
+      - municipio
+      - uf
+      - situacao
+    AnaliseParticipacao:
+      type: object
+      properties:
+        analise:
+          type: object
+          description: null when never requested; id, status (queued/processing/retrying/paused/ready/failed/outdated/interrupted), atual, parcial, data_atual, etapa, processados, total, CNPJ, hashes, dates, erro, falha_etapa, problema (motivo/acao/automatico), historico and proxima_tentativa_em. atual allows reading validated batches; only ready is completed coverage. data_atual=false requires checking the reference date. interrupted allows resuming a request without a queue entry, legacy ones included.
+          nullable: true
+        itens:
+          type: array
+          items:
+            type: object
+          description: 'Up to 30 fact/analysis pairs: a dossier fact and an evaluation with fact_id, status, reason, action, evidence (source_id/page/quote), edital_quote and edital_page.'
+        contagens:
+          type: object
+          description: Totals pendencias, atendidos and nao_aplicavel of the batches already validated in the current analysis, also during processing or a pause; parcial=true does not represent complete coverage.
+        tipos:
+          type: object
+          description: Mesmas contagens separadas por requirement, attestation e obligation.
+        next:
+          type: integer
+          description: Last ID of this page; use after until null.
+          nullable: true
+      required:
+      - analise
+      - itens
+      - next
+    EmpresaConta:
+      type: object
+      properties:
+        cnpj:
+          type: string
+          description: Full CNPJ, 14 digits with valid check digits.
+        razao_social:
+          type: string
+          description: Registered corporate name.
+          nullable: true
+        nome_fantasia:
+          type: string
+          description: Registered trade name.
+          nullable: true
+        situacao:
+          type: string
+          description: Registration status.
+          nullable: true
+        situacao_desde:
+          type: string
+          description: Status date.
+          nullable: true
+        porte:
+          type: string
+          description: Porte cadastral.
+          nullable: true
+        natureza_juridica:
+          type: string
+          description: Legal nature.
+          nullable: true
+        inicio_atividade:
+          type: string
+          description: Start date of the activities.
+          nullable: true
+        matriz_filial:
+          type: string
+          description: Head office or branch.
+          nullable: true
+        capital_social:
+          type: number
+          description: Share capital in reais.
+          nullable: true
+        municipio:
+          type: string
+          description: Municipality of the establishment.
+          nullable: true
+        uf:
+          type: string
+          description: Code of the federative unit.
+          nullable: true
+        cnaes:
+          type: array
+          items:
+            $ref: '#/components/schemas/AtividadeEmpresa'
+          description: Main one first; secondary ones can have no description.
+        fonte:
+          type: string
+          description: Source attribution of the registry.
+        importado_em:
+          type: string
+          description: Import instant; it is not the update date of the registry.
+        organizacao:
+          allOf:
+          - $ref: '#/components/schemas/OrganizacaoEmpresa'
+          description: The account organization that is this company.
+      required:
+      - cnpj
+      - razao_social
+      - nome_fantasia
+      - situacao
+      - situacao_desde
+      - porte
+      - natureza_juridica
+      - inicio_atividade
+      - matriz_filial
+      - capital_social
+      - municipio
+      - uf
+      - cnaes
+      - fonte
+      - importado_em
+      - organizacao
+      description: Registry projection imported by the owner, up to 24 KiB and 100 CNAEs. It does not prove representation or qualification.
+    DocumentoEmpresa:
+      type: object
+      properties:
+        id:
+          type: string
+          description: SHA-256 of the private PDF.
+        nome:
+          type: string
+          description: Name given by the holder.
+        tipo:
+          type: string
+          description: atestado, certidao, licenca, contrato_social or outro.
+        bytes:
+          type: integer
+          description: PDF size.
+        paginas:
+          type: integer
+          description: Pages confirmed in the file.
+        enviado_em:
+          type: string
+          description: Sending instant.
+      required:
+      - id
+      - nome
+      - tipo
+      - bytes
+      - paginas
+      - enviado_em
+    EmpresasConta:
+      type: object
+      properties:
+        itens:
+          type: array
+          items:
+            $ref: '#/components/schemas/EmpresaConta'
+          description: The organizations of the requester with EditalMD enabled and a CNPJ, by ascending CNPJ; full collection.
+        selecionada:
+          type: string
+          description: CNPJ chosen by the requester, or null.
+          nullable: true
+        selecionada_organizacao:
+          type: string
+          description: Organization of the chosen company, or null.
+          nullable: true
+        limite:
+          type: integer
+          description: 100 companies per person.
+        conta_necessaria:
+          type: boolean
+          description: 'Only without an account: the list comes empty; registering requires sign-in.'
+      required:
+      - itens
+      - selecionada
+      - selecionada_organizacao
+      - limite
+      - conta_necessaria
+  securitySchemes:
+    globalAccount:
+      type: apiKey
+      in: cookie
+      name: __Host-mm-auth
+      description: Global session in the product's HttpOnly cookie; writes require exact Origin and X-CSRF-Token.
+    contaChaveApi:
+      type: http
+      scheme: bearer
+      bearerFormat: mmk_…
+      description: 'Account API key: `Authorization: Bearer mmk_…` or `X-Api-Key: mmk_…`. Created on the account page (API keys), valid only in the product where it was created; it acts as the account (or the organization that owns it).'
+    carteiraAgente:
+      type: http
+      scheme: bearer
+      bearerFormat: mmw_…
+      description: 'Wallet credential of an agent without an account (`Authorization: Bearer mmw_…`, 30 days, this product only): POST /api/auth/wallet/agent/start, sign the message with the wallet, POST /api/auth/wallet/agent/token. The owner is `x402:<address>`.'
+x-service-info:
+  categories:
+  - public-procurement
+  - documents
+  - data
+  docs:
+    homepage: https://editalmd.com/
+    apiReference: https://editalmd.com/developers
+    llms: https://editalmd.com/llms.txt

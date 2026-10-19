@@ -846,6 +846,266 @@ apis:
     url: plans/editalmd-plans-pricing.yml
   - type: RateLimits
     url: rate-limits/editalmd-rate-limits.yml
+- aid: editalmd:editalmd-account-api
+  name: EditalMD Account API
+  description: The Account API from EditalMD — 7 operation(s) for account.
+  humanURL: https://editalmd.com/
+  baseURL: https://editalmd.com/api/
+  tags:
+  - Account
+  properties:
+  - type: OpenAPI
+    url: openapi/editalmd-account-api-openapi.yml
+- aid: editalmd:editalmd-acesso-api
+  name: EditalMD Acesso API
+  description: The Acesso API from EditalMD — 1 operation(s) for acesso.
+  humanURL: https://editalmd.com/
+  baseURL: https://editalmd.com/api/
+  tags:
+  - Acesso
+  properties:
+  - type: OpenAPI
+    url: openapi/editalmd-acesso-api-openapi.yml
+- aid: editalmd:editalmd-agent-json-api
+  name: EditalMD Agent.json API
+  description: The Agent.json API from EditalMD — 1 operation(s) for agent.json.
+  humanURL: https://editalmd.com/
+  baseURL: https://editalmd.com/api/
+  tags:
+  - Agent.json
+  properties:
+  - type: OpenAPI
+    url: openapi/editalmd-agent-json-api-openapi.yml
+- aid: editalmd:editalmd-atas-api
+  name: EditalMD Atas API
+  description: The Atas API from EditalMD — 1 operation(s) for atas.
+  humanURL: https://editalmd.com/
+  baseURL: https://editalmd.com/api/
+  tags:
+  - Atas
+  properties:
+  - type: OpenAPI
+    url: openapi/editalmd-atas-api-openapi.yml
+- aid: editalmd:editalmd-auth-api
+  name: EditalMD Auth API
+  description: The Auth API from EditalMD — 6 operation(s) for auth.
+  humanURL: https://editalmd.com/
+  baseURL: https://editalmd.com/api/
+  tags:
+  - Auth
+  properties:
+  - type: OpenAPI
+    url: openapi/editalmd-auth-api-openapi.yml
+- aid: editalmd:editalmd-avaliacao-api
+  name: EditalMD Avaliacao API
+  description: The Avaliacao API from EditalMD — 1 operation(s) for avaliacao.
+  humanURL: https://editalmd.com/
+  baseURL: https://editalmd.com/api/
+  tags:
+  - Avaliacao
+  properties:
+  - type: OpenAPI
+    url: openapi/editalmd-avaliacao-api-openapi.yml
+- aid: editalmd:editalmd-billing-api
+  name: EditalMD Billing API
+  description: The Billing API from EditalMD — 1 operation(s) for billing.
+  humanURL: https://editalmd.com/
+  baseURL: https://editalmd.com/api/
+  tags:
+  - Billing
+  properties:
+  - type: OpenAPI
+    url: openapi/editalmd-billing-api-openapi.yml
+- aid: editalmd:editalmd-cobranca-api
+  name: EditalMD Cobranca API
+  description: The Cobranca API from EditalMD — 1 operation(s) for cobranca.
+  humanURL: https://editalmd.com/
+  baseURL: https://editalmd.com/api/
+  tags:
+  - Cobranca
+  properties:
+  - type: OpenAPI
+    url: openapi/editalmd-cobranca-api-openapi.yml
+- aid: editalmd:editalmd-consulta-api
+  name: EditalMD Consulta API
+  description: The Consulta API from EditalMD — 7 operation(s) for consulta.
+  humanURL: https://editalmd.com/
+  baseURL: https://editalmd.com/api/
+  tags:
+  - Consulta
+  properties:
+  - type: OpenAPI
+    url: openapi/editalmd-consulta-api-openapi.yml
+- aid: editalmd:editalmd-contact-api
+  name: EditalMD Contact API
+  description: The Contact API from EditalMD — 1 operation(s) for contact.
+  humanURL: https://editalmd.com/
+  baseURL: https://editalmd.com/api/
+  tags:
+  - Contact
+  properties:
+  - type: OpenAPI
+    url: openapi/editalmd-contact-api-openapi.yml
+- aid: editalmd:editalmd-entregas-api
+  name: EditalMD Entregas API
+  description: The Entregas API from EditalMD — 1 operation(s) for entregas.
+  humanURL: https://editalmd.com/
+  baseURL: https://editalmd.com/api/
+  tags:
+  - Entregas
+  properties:
+  - type: OpenAPI
+    url: openapi/editalmd-entregas-api-openapi.yml
+- aid: editalmd:editalmd-erro-cliente-api
+  name: EditalMD Erro Cliente API
+  description: The Erro Cliente API from EditalMD — 1 operation(s) for erro cliente.
+  humanURL: https://editalmd.com/
+  baseURL: https://editalmd.com/api/
+  tags:
+  - Erro Cliente
+  properties:
+  - type: OpenAPI
+    url: openapi/editalmd-erro-cliente-api-openapi.yml
+- aid: editalmd:editalmd-exemplos-api
+  name: EditalMD Exemplos API
+  description: The Exemplos API from EditalMD — 2 operation(s) for exemplos.
+  humanURL: https://editalmd.com/
+  baseURL: https://editalmd.com/api/
+  tags:
+  - Exemplos
+  properties:
+  - type: OpenAPI
+    url: openapi/editalmd-exemplos-api-openapi.yml
+- aid: editalmd:editalmd-funil-api
+  name: EditalMD Funil API
+  description: The Funil API from EditalMD — 3 operation(s) for funil.
+  humanURL: https://editalmd.com/
+  baseURL: https://editalmd.com/api/
+  tags:
+  - Funil
+  properties:
+  - type: OpenAPI
+    url: openapi/editalmd-funil-api-openapi.yml
+- aid: editalmd:editalmd-licitacoes-api
+  name: EditalMD Licitacoes API
+  description: The Licitacoes API from EditalMD — 2 operation(s) for licitacoes.
+  humanURL: https://editalmd.com/
+  baseURL: https://editalmd.com/api/
+  tags:
+  - Licitacoes
+  properties:
+  - type: OpenAPI
+    url: openapi/editalmd-licitacoes-api-openapi.yml
+- aid: editalmd:editalmd-me-api
+  name: EditalMD Me API
+  description: The Me API from EditalMD — 11 operation(s) for me.
+  humanURL: https://editalmd.com/
+  baseURL: https://editalmd.com/api/
+  tags:
+  - Me
+  properties:
+  - type: OpenAPI
+    url: openapi/editalmd-me-api-openapi.yml
+- aid: editalmd:editalmd-pagamento-api
+  name: EditalMD Pagamento API
+  description: The Pagamento API from EditalMD — 1 operation(s) for pagamento.
+  humanURL: https://editalmd.com/
+  baseURL: https://editalmd.com/api/
+  tags:
+  - Pagamento
+  properties:
+  - type: OpenAPI
+    url: openapi/editalmd-pagamento-api-openapi.yml
+- aid: editalmd:editalmd-partners-api
+  name: EditalMD Partners API
+  description: The Partners API from EditalMD — 1 operation(s) for partners.
+  humanURL: https://editalmd.com/
+  baseURL: https://editalmd.com/api/
+  tags:
+  - Partners
+  properties:
+  - type: OpenAPI
+    url: openapi/editalmd-partners-api-openapi.yml
+- aid: editalmd:editalmd-planos-api
+  name: EditalMD Planos API
+  description: The Planos API from EditalMD — 1 operation(s) for planos.
+  humanURL: https://editalmd.com/
+  baseURL: https://editalmd.com/api/
+  tags:
+  - Planos
+  properties:
+  - type: OpenAPI
+    url: openapi/editalmd-planos-api-openapi.yml
+- aid: editalmd:editalmd-plans-api
+  name: EditalMD Plans API
+  description: The Plans API from EditalMD — 4 operation(s) for plans.
+  humanURL: https://editalmd.com/
+  baseURL: https://editalmd.com/api/
+  tags:
+  - Plans
+  properties:
+  - type: OpenAPI
+    url: openapi/editalmd-plans-api-openapi.yml
+- aid: editalmd:editalmd-precos-api
+  name: EditalMD Precos API
+  description: The Precos API from EditalMD — 2 operation(s) for precos.
+  humanURL: https://editalmd.com/
+  baseURL: https://editalmd.com/api/
+  tags:
+  - Precos
+  properties:
+  - type: OpenAPI
+    url: openapi/editalmd-precos-api-openapi.yml
+- aid: editalmd:editalmd-pricing-api
+  name: EditalMD Pricing API
+  description: The Pricing API from EditalMD — 1 operation(s) for pricing.
+  humanURL: https://editalmd.com/
+  baseURL: https://editalmd.com/api/
+  tags:
+  - Pricing
+  properties:
+  - type: OpenAPI
+    url: openapi/editalmd-pricing-api-openapi.yml
+- aid: editalmd:editalmd-ref-api
+  name: EditalMD Ref API
+  description: The Ref API from EditalMD — 1 operation(s) for ref.
+  humanURL: https://editalmd.com/
+  baseURL: https://editalmd.com/api/
+  tags:
+  - Ref
+  properties:
+  - type: OpenAPI
+    url: openapi/editalmd-ref-api-openapi.yml
+- aid: editalmd:editalmd-salvas-api
+  name: EditalMD Salvas API
+  description: The Salvas API from EditalMD — 2 operation(s) for salvas.
+  humanURL: https://editalmd.com/
+  baseURL: https://editalmd.com/api/
+  tags:
+  - Salvas
+  properties:
+  - type: OpenAPI
+    url: openapi/editalmd-salvas-api-openapi.yml
+- aid: editalmd:editalmd-servicos-api
+  name: EditalMD Servicos API
+  description: The Servicos API from EditalMD — 2 operation(s) for servicos.
+  humanURL: https://editalmd.com/
+  baseURL: https://editalmd.com/api/
+  tags:
+  - Servicos
+  properties:
+  - type: OpenAPI
+    url: openapi/editalmd-servicos-api-openapi.yml
+- aid: editalmd:editalmd-vitrine-api
+  name: EditalMD Vitrine API
+  description: The Vitrine API from EditalMD — 4 operation(s) for vitrine.
+  humanURL: https://editalmd.com/
+  baseURL: https://editalmd.com/api/
+  tags:
+  - Vitrine
+  properties:
+  - type: OpenAPI
+    url: openapi/editalmd-vitrine-api-openapi.yml
 image: https://editalmd.com/icon.svg
 maintainers:
 - FN: EditalMD

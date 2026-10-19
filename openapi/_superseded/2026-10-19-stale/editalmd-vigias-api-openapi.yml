@@ -1,0 +1,328 @@
+openapi: 3.2.0
+info:
+  version: 2d690e87
+  title: Editalmd Vigias API
+servers:
+- url: https://editalmd.com
+tags:
+- name: Vigias
+paths:
+  /api/vigias:
+    post:
+      operationId: post_api_vigias
+      summary: 'Vigia uma compra: fotografa agora e avisa quando mudar — documento novo…'
+      description: 'A primeira vigia ativa é grátis (`FRANQUIA_VIGIAS`); as seguintes custam `PRECO_VIGIA` até 30 dias após o encerramento. O cron reconfere a cada hora; compra que o acervo não revisita há mais de 3 dias é conferida direto no PNCP. Avisos `prazo_impugnacao` (no dia) e `prazo_proposta` (24 h antes) saem uma vez cada.
+
+        Devolve: { vigia{id,compra_id,canal,destino,ativo,pago_ate,ultimo_check,criado_em,vigia_url,eventos_url,compra_url}, snapshot{situacao_id,situacao,encerramento_proposta,valor_estimado,atualizado_em,documentos}, pagamento }'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                compra_id:
+                  type: integer
+                  description: Identificador da compra no acervo, vindo da busca.
+                canal:
+                  type: string
+                  description: '`pull` (ler em `/eventos`), `webhook` ou `email`.'
+                destino:
+                  type: string
+                  description: URL https pública (webhook) ou e-mail confirmado (email).
+              required:
+              - compra_id
+            example:
+              compra_id: 42
+              canal: pull
+      responses:
+        '200':
+          description: '{ vigia{id,compra_id,canal,destino,ativo,pago_ate,ultimo_check,criado_em,vigia_url,eventos_url,compra_url}, snapshot{situacao_id,situacao,encerramento_proposta,valor_estimado,atualizado_em,documentos}, pagamento }'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  vigia:
+                    allOf:
+                    - $ref: '#/components/schemas/Vigia'
+                    description: A vigia criada.
+                  snapshot:
+                    allOf:
+                    - $ref: '#/components/schemas/Snapshot'
+                    description: A fotografia inicial da compra.
+                  pagamento:
+                    type: object
+                    description: '`via` (franquia, credito ou x402), `preco_usd` e `pago_ate`.'
+                required:
+                - vigia
+                - snapshot
+                - pagamento
+        '400':
+          description: '`compra_id`, canal ou destino inválidos.'
+        '401':
+          description: Sem token de dono, ou token desconhecido.
+        '402':
+          description: Acima da franquia sem pagamento — `accepts[]` do x402 e o caminho do crédito.
+        '404':
+          description: Compra não encontrada no acervo.
+        '503':
+          description: Canal e-mail desligado, ou origem indisponível.
+      tags:
+      - Vigias
+    get:
+      operationId: get_api_vigias
+      summary: Lista as vigias deste dono, as mais novas primeiro
+      description: 'Devolve: { itens[{id,compra_id,canal,destino,ativo,pago_ate,ultimo_check,criado_em,vigia_url,eventos_url,compra_url}], franquia_vigias }'
+      responses:
+        '200':
+          description: '{ itens[{id,compra_id,canal,destino,ativo,pago_ate,ultimo_check,criado_em,vigia_url,eventos_url,compra_url}], franquia_vigias }'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  itens:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Vigia'
+                    description: Até 50 vigias do dono.
+                  franquia_vigias:
+                    type: integer
+                    description: Quantas vigias ativas são grátis.
+                required:
+                - itens
+                - franquia_vigias
+        '401':
+          description: Sem token de dono, ou token desconhecido.
+      tags:
+      - Vigias
+  /api/vigias/{id}:
+    get:
+      operationId: get_api_vigias_by_id
+      summary: Uma vigia do dono com a fotografia mais recente da compra
+      description: 'Devolve: { vigia{id,compra_id,canal,destino,ativo,pago_ate,ultimo_check,criado_em,vigia_url,eventos_url,compra_url}, snapshot{situacao_id,situacao,encerramento_proposta,valor_estimado,atualizado_em,documentos} }'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: '{ vigia{id,compra_id,canal,destino,ativo,pago_ate,ultimo_check,criado_em,vigia_url,eventos_url,compra_url}, snapshot{situacao_id,situacao,encerramento_proposta,valor_estimado,atualizado_em,documentos} }'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  vigia:
+                    allOf:
+                    - $ref: '#/components/schemas/Vigia'
+                    description: A vigia.
+                  snapshot:
+                    allOf:
+                    - $ref: '#/components/schemas/Snapshot'
+                    description: O que o cron viu por último.
+                required:
+                - vigia
+                - snapshot
+        '401':
+          description: Sem token de dono, ou token desconhecido.
+        '404':
+          description: Vigia inexistente ou de outro dono.
+      tags:
+      - Vigias
+    delete:
+      operationId: delete_api_vigias_by_id
+      summary: Apaga a vigia e seus eventos. Sem volta
+      description: 'Devolve: 204 sem corpo.'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: 204 sem corpo.
+        '401':
+          description: Sem token de dono, ou token desconhecido.
+        '404':
+          description: Vigia inexistente ou de outro dono.
+      tags:
+      - Vigias
+  /api/vigias/{id}/eventos:
+    get:
+      operationId: get_api_vigias_by_id_eventos
+      summary: O que mudou na compra vigiada, evento a evento — é a série temporal e o canal…
+      description: 'Devolve: { vigia{id,compra_id,canal,destino,ativo,pago_ate,ultimo_check,criado_em,vigia_url,eventos_url,compra_url}, snapshot{situacao_id,situacao,encerramento_proposta,valor_estimado,atualizado_em,documentos}, itens[{id,tipo,antes,depois,visto_em,entregue_em}], limite }'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: limite
+        in: query
+        required: false
+        schema:
+          type: integer
+        description: 1 a 100 (padrão 50), mais recentes primeiro.
+      responses:
+        '200':
+          description: '{ vigia{id,compra_id,canal,destino,ativo,pago_ate,ultimo_check,criado_em,vigia_url,eventos_url,compra_url}, snapshot{situacao_id,situacao,encerramento_proposta,valor_estimado,atualizado_em,documentos}, itens[{id,tipo,antes,depois,visto_em,entregue_em}], limite }'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  vigia:
+                    allOf:
+                    - $ref: '#/components/schemas/Vigia'
+                    description: A vigia.
+                  snapshot:
+                    allOf:
+                    - $ref: '#/components/schemas/Snapshot'
+                    description: A fotografia atual.
+                  itens:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Evento'
+                    description: Eventos registrados.
+                  limite:
+                    type: integer
+                    description: Teto aplicado.
+                required:
+                - vigia
+                - snapshot
+                - itens
+                - limite
+        '401':
+          description: Sem token de dono, ou token desconhecido.
+        '404':
+          description: Vigia inexistente ou de outro dono.
+      tags:
+      - Vigias
+components:
+  schemas:
+    Snapshot:
+      type: object
+      properties:
+        situacao_id:
+          type: integer
+          description: 'Situação: 1 divulgada, 2 revogada, 3 anulada, 4 suspensa.'
+          nullable: true
+        situacao:
+          type: string
+          description: Situação por extenso.
+          nullable: true
+        encerramento_proposta:
+          type: string
+          description: Fim das propostas visto na fotografia.
+          nullable: true
+        valor_estimado:
+          type: number
+          description: Valor estimado visto na fotografia.
+          nullable: true
+        atualizado_em:
+          type: string
+          description: Última atualização conhecida da compra.
+          nullable: true
+        documentos:
+          type: array
+          items:
+            type: object
+          description: 'Documentos por sequencial do PNCP: `sequencial`, `id`, `titulo`, `tipo`.'
+      required:
+      - situacao_id
+      - situacao
+      - encerramento_proposta
+      - valor_estimado
+      - atualizado_em
+      - documentos
+      description: A fotografia da compra que a vigia compara.
+    Evento:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Identificador do evento.
+        tipo:
+          type: string
+          description: '`situacao`, `prazo_adiado`, `valor`, `documento_novo`, `documento_removido`, `prazo_impugnacao` ou `prazo_proposta`.'
+        antes:
+          type: string
+          description: Valor anterior; nulo em documento novo e nos avisos de prazo.
+          nullable: true
+        depois:
+          type: string
+          description: Valor novo; nulo em documento removido.
+          nullable: true
+        visto_em:
+          type: string
+          description: Quando o cron viu.
+        entregue_em:
+          type: string
+          description: Quando o aviso saiu por webhook ou e-mail; nulo no pull ou em falha.
+          nullable: true
+      required:
+      - id
+      - tipo
+      - antes
+      - depois
+      - visto_em
+      - entregue_em
+      description: Uma mudança vista na compra vigiada, ou um aviso de prazo.
+    Vigia:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Identificador da vigia.
+        compra_id:
+          type: integer
+          description: Compra vigiada no acervo.
+        canal:
+          type: string
+          description: '`pull`, `webhook` ou `email`.'
+        destino:
+          type: string
+          description: URL do webhook; nulo no pull e no e-mail.
+          nullable: true
+        ativo:
+          type: boolean
+          description: Se o cron ainda reconfere; encerra 30 dias após o fim das propostas.
+        pago_ate:
+          type: string
+          description: Fim da validade paga; nulo na franquia.
+          nullable: true
+        ultimo_check:
+          type: string
+          description: Última reconferência.
+          nullable: true
+        criado_em:
+          type: string
+          description: Criação em ISO 8601.
+        vigia_url:
+          type: string
+          description: URL desta vigia.
+        eventos_url:
+          type: string
+          description: Onde ler os eventos (pull).
+        compra_url:
+          type: string
+          description: Ficha da compra.
+      required:
+      - id
+      - compra_id
+      - canal
+      - destino
+      - ativo
+      - pago_ate
+      - ultimo_check
+      - criado_em
+      - vigia_url
+      - eventos_url
+      - compra_url
+      description: 'Uma compra vigiada: canal de aviso, validade e o cursor do cron.'

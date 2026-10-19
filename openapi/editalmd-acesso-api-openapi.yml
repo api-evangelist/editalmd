@@ -1,0 +1,277 @@
+openapi: 3.2.0
+info:
+  title: EditalMD Acesso API
+  version: 1d751aaf
+servers:
+- url: https://editalmd.com
+tags:
+- name: Acesso
+paths:
+  /api/acesso:
+    get:
+      operationId: get_api_acesso
+      summary: Discover the monthly data package or inspect a private purchase
+      description: 'Returns: { offer{id,price_usd,credits,days,auto_renew,unit,products,purchase,method,status,header,payment_methods,prepaid_credit,instructions,generate_pass,client,guide,workflow,evaluation}, enabled?, id?, status?, granted_credits?, expires_at?, receipt?, via?, message? }'
+      parameters:
+      - name: X-API-Pass
+        in: header
+        required: false
+        schema:
+          type: string
+        description: 'Private pass: api_<32 random hex>_<64 random hex>. Save before buying.'
+      responses:
+        '200':
+          description: '{ offer{id,price_usd,credits,days,auto_renew,unit,products,purchase,method,status,header,payment_methods,prepaid_credit,instructions,generate_pass,client,guide,workflow,evaluation}, enabled?, id?, status?, granted_credits?, expires_at?, receipt?, via?, message? }'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiAccess'
+        '400':
+          description: Invalid pass.
+        '404':
+          description: Unknown purchase or wrong owner.
+        '503':
+          description: Purchases disabled.
+      tags:
+      - Acesso
+    post:
+      operationId: post_api_acesso
+      summary: Buy 1000 basic data reads for US$1, valid for 30 days
+      description: 'Same pass in retries recovers the same purchase. No automatic renewal. OCR, AI, documents and delivery keep their own tariffs. Send X-API-Pass on eligible data reads; remaining credits come in X-API-Credits-Remaining.
+
+        Returns: { offer{id,price_usd,credits,days,auto_renew,unit,products,purchase,method,status,header,payment_methods,prepaid_credit,instructions,generate_pass,client,guide,workflow,evaluation}, enabled?, id?, status?, granted_credits?, expires_at?, receipt?, via?, message? }'
+      x-price-usd: 1
+      parameters:
+      - name: X-API-Pass
+        in: header
+        required: true
+        schema:
+          type: string
+        description: 'Private pass: api_<32 random hex>_<64 random hex>. Save before buying.'
+      - name: X-Credito
+        in: header
+        required: false
+        schema:
+          type: string
+        description: Existing prepaid credit token; alternative to x402.
+      - name: Authorization
+        in: header
+        required: false
+        schema:
+          type: string
+        description: Bearer cred_… alternative to X-Credito.
+      - name: X-PAYMENT
+        in: header
+        required: false
+        schema:
+          type: string
+        description: Signed x402 authorization from the 402 quote, maximum 16 KiB.
+      - name: PAYMENT-SIGNATURE
+        in: header
+        required: false
+        schema:
+          type: string
+        description: Alternative name for X-PAYMENT.
+      - name: X-API-Transaction
+        in: header
+        required: false
+        schema:
+          type: string
+        description: Confirmed Base transaction hash for reconciliation with the original pass and signed payment. Never creates another charge.
+      responses:
+        '200':
+          description: '{ offer{id,price_usd,credits,days,auto_renew,unit,products,purchase,method,status,header,payment_methods,prepaid_credit,instructions,generate_pass,client,guide,workflow,evaluation}, enabled?, id?, status?, granted_credits?, expires_at?, receipt?, via?, message? }'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiAccess'
+        '400':
+          description: Missing or invalid pass/payment.
+        '401':
+          description: Invalid prepaid credit.
+        '402':
+          description: 'Payment required: x402 accepts[] and prepaid-credit instructions.'
+        '409':
+          description: Payment pending; retain the same pass and do not pay again.
+        '429':
+          description: Purchase attempt limit; respect Retry-After.
+        '503':
+          description: Payment unavailable or pending reconciliation.
+      tags:
+      - Acesso
+components:
+  schemas:
+    ApiAccessOffer:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Package identifier.
+        price_usd:
+          type: number
+          description: Price in USD.
+        credits:
+          type: integer
+          description: Basic reads included.
+        days:
+          type: integer
+          description: Validity after payment, in days.
+        auto_renew:
+          type: boolean
+          description: 'False: the client explicitly buys another package.'
+        unit:
+          type: string
+          description: basic_data_read; one page of up to 20 metadata records.
+        products:
+          type: array
+          items:
+            type: string
+          description: Data indexes sharing the same package.
+        purchase:
+          type: string
+          description: Absolute purchase URL.
+        method:
+          type: string
+          description: 'HTTP method for the explicit package purchase: POST.'
+        status:
+          type: string
+          description: GET with X-API-Pass checks the private purchase status.
+        header:
+          type: string
+          description: X-API-Pass.
+        payment_methods:
+          type: array
+          items:
+            type: string
+          description: x402 or prepaid_credit.
+        prepaid_credit:
+          type: object
+          description: 'Brazilian portals: buy prepaid credit in BRL by Pix (`pix`, POST), list packages and rate (`packages`), then send it in `header` (X-Credito).'
+          nullable: true
+        instructions:
+          type: string
+          description: Generate and retain the pass before payment.
+        generate_pass:
+          type: string
+          description: JavaScript example using cryptographic randomness.
+        client:
+          type: string
+          description: Auditable ES module client; orchestrates purchase and data retry with caller-owned wallet and durable state.
+          nullable: true
+        guide:
+          type: string
+          description: Client setup, explicit budget, recovery and data value.
+          nullable: true
+        workflow:
+          allOf:
+          - $ref: '#/components/schemas/ApiAccessWorkflow'
+          description: Machine-readable purchase and recovery contract.
+        evaluation:
+          type: object
+          description: 'Free evaluation: register URL, X-Agent-Pass header, 1,000 reads per product, 30 days, no renewal. Registration grants independent quotas on the three indexes; preserve the credential.'
+          nullable: true
+      required:
+      - id
+      - price_usd
+      - credits
+      - days
+      - auto_renew
+      - unit
+      - products
+      - purchase
+      - method
+      - status
+      - header
+      - payment_methods
+      - prepaid_credit
+      - instructions
+      - generate_pass
+      - client
+      - guide
+      - workflow
+      - evaluation
+    ApiAccess:
+      type: object
+      properties:
+        offer:
+          allOf:
+          - $ref: '#/components/schemas/ApiAccessOffer'
+          description: Current offer and payment instructions.
+        enabled:
+          type: boolean
+          description: Present in public discovery; false means no purchases.
+        id:
+          type: string
+          description: Purchase ID; not a credential.
+        status:
+          type: string
+          description: paid, unpaid or pending.
+        granted_credits:
+          type: integer
+          description: Original grant, not remaining usage.
+        expires_at:
+          type: string
+          description: ISO expiry, 30 days after purchase.
+          nullable: true
+        receipt:
+          type: string
+          description: Confirmed payment receipt.
+          nullable: true
+        via:
+          type: string
+          description: x402, credito or gated homolog.
+          nullable: true
+        message:
+          type: string
+          description: Next action in the requested language.
+      required:
+      - offer
+    ApiAccessWorkflow:
+      type: object
+      properties:
+        version:
+          type: integer
+          description: Workflow version.
+        kind:
+          type: string
+          description: 'package_then_retry: buy at purchase, then retry the original data URL.'
+        purchase_requires_authority:
+          type: boolean
+          description: The client needs an explicit spending budget.
+        retry_same_pass:
+          type: boolean
+          description: Persist the pass and original signed proof before submitting.
+        on_unknown_payment:
+          type: string
+          description: Query the purchase or reconcile the original proof; never sign again automatically.
+      required:
+      - version
+      - kind
+      - purchase_requires_authority
+      - retry_same_pass
+      - on_unknown_payment
+  securitySchemes:
+    globalAccount:
+      type: apiKey
+      in: cookie
+      name: __Host-mm-auth
+      description: Global session in the product's HttpOnly cookie; writes require exact Origin and X-CSRF-Token.
+    contaChaveApi:
+      type: http
+      scheme: bearer
+      bearerFormat: mmk_…
+      description: 'Account API key: `Authorization: Bearer mmk_…` or `X-Api-Key: mmk_…`. Created on the account page (API keys), valid only in the product where it was created; it acts as the account (or the organization that owns it).'
+    carteiraAgente:
+      type: http
+      scheme: bearer
+      bearerFormat: mmw_…
+      description: 'Wallet credential of an agent without an account (`Authorization: Bearer mmw_…`, 30 days, this product only): POST /api/auth/wallet/agent/start, sign the message with the wallet, POST /api/auth/wallet/agent/token. The owner is `x402:<address>`.'
+x-service-info:
+  categories:
+  - public-procurement
+  - documents
+  - data
+  docs:
+    homepage: https://editalmd.com/
+    apiReference: https://editalmd.com/developers
+    llms: https://editalmd.com/llms.txt

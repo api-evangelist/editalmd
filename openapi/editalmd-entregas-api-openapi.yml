@@ -1,0 +1,45 @@
+openapi: 3.2.0
+info:
+  title: EditalMD Entregas API
+  version: 1d751aaf
+servers:
+- url: https://editalmd.com
+tags:
+- name: Entregas
+paths:
+  /entregas:
+    get:
+      operationId: get_entregas
+      summary: 'Examples of what you receive, marked as examples: the full winning-price…'
+      description: 'Returns: HTML with one section per deliverable (the anchor that the "See an example" link of the record opens).'
+      responses:
+        '200':
+          description: HTML with one section per deliverable (the anchor that the "See an example" link of the record opens).
+      tags:
+      - Entregas
+components:
+  securitySchemes:
+    globalAccount:
+      type: apiKey
+      in: cookie
+      name: __Host-mm-auth
+      description: Global session in the product's HttpOnly cookie; writes require exact Origin and X-CSRF-Token.
+    contaChaveApi:
+      type: http
+      scheme: bearer
+      bearerFormat: mmk_…
+      description: 'Account API key: `Authorization: Bearer mmk_…` or `X-Api-Key: mmk_…`. Created on the account page (API keys), valid only in the product where it was created; it acts as the account (or the organization that owns it).'
+    carteiraAgente:
+      type: http
+      scheme: bearer
+      bearerFormat: mmw_…
+      description: 'Wallet credential of an agent without an account (`Authorization: Bearer mmw_…`, 30 days, this product only): POST /api/auth/wallet/agent/start, sign the message with the wallet, POST /api/auth/wallet/agent/token. The owner is `x402:<address>`.'
+x-service-info:
+  categories:
+  - public-procurement
+  - documents
+  - data
+  docs:
+    homepage: https://editalmd.com/
+    apiReference: https://editalmd.com/developers
+    llms: https://editalmd.com/llms.txt

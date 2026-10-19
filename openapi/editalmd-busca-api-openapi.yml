@@ -1,7 +1,7 @@
 openapi: 3.2.0
 info:
-  version: 2d690e87
-  title: Editalmd Busca API
+  title: EditalMD Busca API
+  version: 1d751aaf
 servers:
 - url: https://editalmd.com
 tags:
@@ -10,21 +10,21 @@ paths:
   /api/busca:
     get:
       operationId: get_api_busca
-      summary: Busca compras do PNCP por termo. Sempre grátis — é a descoberta
-      description: 'Devolve: { itens[{id,pncp,objeto,uf,modalidade,situacao,orgao,unidade,valor_estimado,publicado_em,informacao_complementar,processo,abertura_proposta,encerramento_proposta,amparo_legal,amparo_legal_codigo,modalidade_id,situacao_id,municipio,municipio_ibge,orgao_cnpj,ano_compra,sequencial_compra,atualizado_em,prazos,pncp_url,markdown_url,compra_url}], preco_markdown_usd, gratis_acima_de_dias, pago }'
+      summary: Searches public procurements by term. Free lookup
+      description: 'Returns: { itens[{id,pncp,objeto,uf,modalidade,situacao,orgao,unidade,valor_estimado,publicado_em,informacao_complementar,processo,abertura_proposta,encerramento_proposta,amparo_legal,amparo_legal_codigo,modalidade_id,situacao_id,municipio,municipio_ibge,orgao_cnpj,ano_compra,sequencial_compra,atualizado_em,prazos,pncp_url,markdown_url,compra_url}], preco_markdown_usd, gratis_acima_de_dias, pago, filtros?{excluir?,modalidades?,municipios?,orgao_cnpj?,valor_min?,valor_max?} }'
       parameters:
       - name: q
         in: query
         required: true
         schema:
           type: string
-        description: Termo de busca; mínimo 3 letras.
+        description: Search term; at least 3 letters. A space requires all the words; `|` accepts alternatives in the group.
       - name: uf
         in: query
         required: false
         schema:
           type: string
-        description: Filtra por sigla de UF.
+        description: Filters by state (UF) abbreviation.
       - name: abertas
         in: query
         required: false
@@ -32,108 +32,139 @@ paths:
           type: string
           enum:
           - '1'
-        description: '`1` devolve só compras com prazo de proposta ainda por vencer.'
+        description: '`1` returns only procurements with a bidding deadline not expired yet.'
       - name: limite
         in: query
         required: false
         schema:
           type: integer
-        description: 1 a 50 (padrão 20).
+        description: 1 to 50 (default 20).
+      - name: filtros
+        in: query
+        required: false
+        schema:
+          type: string
+        description: 'JSON object, up to 2048 characters: `excluir` and `municipios` (up to 10 expressions of 3 to 80 characters; municipalities by exact name or IBGE code), `orgao_cnpj` (exact CNPJ, 14 digits), `modalidades` (up to 10 PNCP codes from 1 to 19), `valor_min` and `valor_max` (reais, from 0 to 1e15; the minimum does not exceed the maximum). Combine municipality names with the state to avoid homonyms. Exclusions are literal in the object and in the additional information. A value not given on PNCP stays out of the value filter. E.g. {"excluir":["usado"],"modalidades":[6],"valor_min":1000}.'
       responses:
         '200':
-          description: '{ itens[{id,pncp,objeto,uf,modalidade,situacao,orgao,unidade,valor_estimado,publicado_em,informacao_complementar,processo,abertura_proposta,encerramento_proposta,amparo_legal,amparo_legal_codigo,modalidade_id,situacao_id,municipio,municipio_ibge,orgao_cnpj,ano_compra,sequencial_compra,atualizado_em,prazos,pncp_url,markdown_url,compra_url}], preco_markdown_usd, gratis_acima_de_dias, pago }'
+          description: '{ itens[{id,pncp,objeto,uf,modalidade,situacao,orgao,unidade,valor_estimado,publicado_em,informacao_complementar,processo,abertura_proposta,encerramento_proposta,amparo_legal,amparo_legal_codigo,modalidade_id,situacao_id,municipio,municipio_ibge,orgao_cnpj,ano_compra,sequencial_compra,atualizado_em,prazos,pncp_url,markdown_url,compra_url}], preco_markdown_usd, gratis_acima_de_dias, pago, filtros?{excluir?,modalidades?,municipios?,orgao_cnpj?,valor_min?,valor_max?} }'
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Busca'
         '400':
-          description: Termo com menos de 3 letras.
+          description: Term with fewer than 3 letters or `filtros_invalidos`.
         '502':
-          description: Origem indisponível.
+          description: Origin unavailable.
+        '503':
+          description: 'Slow search: `busca_demorada`, with `Retry-After`; refine the terms. `filtros_indisponiveis` when the origin does not confirm the requested filters.'
       tags:
       - Busca
 components:
   schemas:
-    Busca:
+    Prazos:
       type: object
       properties:
-        itens:
-          type: array
-          items:
-            $ref: '#/components/schemas/Compra'
-          description: Compras que casaram com o termo.
-        preco_markdown_usd:
+        proposta_inicio:
           type: string
-          description: Preço do documento recente.
-        gratis_acima_de_dias:
-          type: integer
-          description: Janela de amostra grátis, em dias.
-        pago:
+          description: Start of the bid reception.
+          nullable: true
+        proposta_ate:
+          type: string
+          description: End of the bid reception (session opening).
+          nullable: true
+        proposta_aberta:
           type: boolean
-          description: 'Sempre `false`: buscar não custa.'
+          description: Whether a bid can still be sent now.
+        impugnacao_ate:
+          type: string
+          description: 'Last day (AAAA-MM-DD) to challenge: 3 business days before the session, Law 14.133 art. 164.'
+          nullable: true
+        impugnacao_aberta:
+          type: boolean
+          description: Whether today, in Brasília, a challenge is still possible.
+        estimado:
+          type: boolean
+          description: 'Always `true`: municipal holidays are in no base.'
+        base_legal:
+          type: string
+          description: Rule used for the challenge deadline.
+          nullable: true
+        feriados:
+          type: string
+          description: 'Calendar used: `nacionais`.'
+        motivo:
+          type: string
+          description: 'Why there is no challenge deadline: `sem_data_de_encerramento` or `amparo_sem_regra`.'
+          nullable: true
       required:
-      - itens
-      - preco_markdown_usd
-      - gratis_acima_de_dias
-      - pago
-      description: Resultado da busca — sempre grátis.
+      - proposta_inicio
+      - proposta_ate
+      - proposta_aberta
+      - impugnacao_ate
+      - impugnacao_aberta
+      - estimado
+      - base_legal
+      - feriados
+      - motivo
+      description: 'The clocks of the procurement: the bidding deadline comes from PNCP; the challenge deadline is estimated by the law, with national holidays.'
     Compra:
       type: object
       properties:
         id:
           type: integer
-          description: Identificador interno da compra — é ele que abre a ficha.
+          description: 'Internal procurement identifier: it is the one that opens the record.'
         pncp:
           type: string
-          description: Número de controle PNCP da compra.
+          description: PNCP control number of the procurement.
           nullable: true
         objeto:
           type: string
-          description: Objeto da compra, como publicado.
+          description: Procurement object, as published.
           nullable: true
         uf:
           type: string
-          description: Sigla da unidade da federação do órgão.
+          description: Abbreviation of the federative unit of the agency.
           nullable: true
         modalidade:
           type: string
-          description: Modalidade (pregão eletrônico, dispensa…).
+          description: Modality (electronic reverse auction, direct award…).
           nullable: true
         situacao:
           type: string
-          description: Situação da compra no PNCP.
+          description: Procurement status on PNCP.
           nullable: true
         orgao:
           type: string
-          description: Razão social do órgão comprador.
+          description: Corporate name of the buying agency.
           nullable: true
         unidade:
           type: string
-          description: Unidade administrativa responsável.
+          description: Responsible administrative unit.
           nullable: true
         valor_estimado:
           type: number
-          description: Valor total estimado em reais.
+          description: Total estimated value in reais.
           nullable: true
         publicado_em:
           type: string
-          description: Data de publicação no PNCP — é ela que define o regime de cobrança.
+          description: Publication date on PNCP.
           nullable: true
         informacao_complementar:
           type: string
-          description: Informação complementar publicada.
+          description: Published additional information.
           nullable: true
         processo:
           type: string
-          description: Número do processo administrativo.
+          description: Administrative process number.
           nullable: true
         abertura_proposta:
           type: string
-          description: Início do recebimento de propostas, hora de Brasília.
+          description: Start of the bid reception, Brasília time.
           nullable: true
         encerramento_proposta:
           type: string
-          description: Fim do recebimento de propostas, que é a abertura da sessão — a base da impugnação.
+          description: 'End of the bid reception, which is the session opening: the basis of the challenge deadline.'
           nullable: true
         amparo_legal:
           type: string
@@ -141,54 +172,54 @@ components:
           nullable: true
         amparo_legal_codigo:
           type: integer
-          description: Código do amparo legal no PNCP.
+          description: Code of the legal basis on PNCP.
           nullable: true
         modalidade_id:
           type: integer
-          description: Código da modalidade no PNCP (6 = pregão eletrônico, 8 = dispensa…).
+          description: Modality code on PNCP (6 = electronic reverse auction, 8 = direct award…).
           nullable: true
         situacao_id:
           type: integer
-          description: 'Código da situação: 1 divulgada, 2 revogada, 3 anulada, 4 suspensa.'
+          description: 'Status code: 1 published, 2 revoked, 3 annulled, 4 suspended.'
           nullable: true
         municipio:
           type: string
-          description: Município da unidade compradora.
+          description: Municipality of the buying unit.
           nullable: true
         municipio_ibge:
           type: string
-          description: Código IBGE do município.
+          description: IBGE code of the municipality.
           nullable: true
         orgao_cnpj:
           type: string
-          description: CNPJ do órgão, só dígitos.
+          description: Agency CNPJ, digits only.
           nullable: true
         ano_compra:
           type: integer
-          description: Ano da compra na numeração do PNCP.
+          description: Procurement year in the PNCP numbering.
           nullable: true
         sequencial_compra:
           type: integer
-          description: Sequencial da compra no órgão e ano.
+          description: Sequence number of the procurement in the agency and year.
           nullable: true
         atualizado_em:
           type: string
-          description: Última atualização da compra vista pelo acervo.
+          description: Last update of the procurement seen by the collection.
           nullable: true
         prazos:
           allOf:
           - $ref: '#/components/schemas/Prazos'
-          description: Proposta e impugnação, calculados pelo Worker.
+          description: Bidding and challenge deadlines, calculated by the Worker.
         pncp_url:
           type: string
-          description: Página humana da compra no PNCP.
+          description: Human page of the procurement on PNCP.
           nullable: true
         markdown_url:
           type: string
-          description: Atalho para o markdown do documento.
+          description: Shortcut to the Markdown of the document.
         compra_url:
           type: string
-          description: Ficha completa da compra.
+          description: Full procurement record.
       required:
       - id
       - pncp
@@ -218,50 +249,84 @@ components:
       - pncp_url
       - markdown_url
       - compra_url
-      description: Uma compra pública do PNCP, como o acervo a conhece.
-    Prazos:
+      description: A public procurement available in the collection.
+    Busca:
       type: object
       properties:
-        proposta_inicio:
+        itens:
+          type: array
+          items:
+            $ref: '#/components/schemas/Compra'
+          description: Procurements that matched the term.
+        preco_markdown_usd:
           type: string
-          description: Início do recebimento de propostas.
-          nullable: true
-        proposta_ate:
-          type: string
-          description: Fim do recebimento de propostas (abertura da sessão).
-          nullable: true
-        proposta_aberta:
+          description: Rate per page per buyer, including ready text.
+        gratis_acima_de_dias:
+          type: integer
+          description: Legacy, always zero; no date range grants free access.
+        pago:
           type: boolean
-          description: Se ainda dá para enviar proposta agora.
-        impugnacao_ate:
-          type: string
-          description: 'Último dia (AAAA-MM-DD) para impugnar: 3 dias úteis antes da sessão, Lei 14.133 art. 164.'
-          nullable: true
-        impugnacao_aberta:
-          type: boolean
-          description: Se hoje, em Brasília, ainda cabe impugnação.
-        estimado:
-          type: boolean
-          description: 'Sempre `true`: feriado municipal não está em base nenhuma.'
-        base_legal:
-          type: string
-          description: Regra usada na impugnação.
-          nullable: true
-        feriados:
-          type: string
-          description: 'Calendário considerado: `nacionais`.'
-        motivo:
-          type: string
-          description: 'Por que não há impugnação: `sem_data_de_encerramento` ou `amparo_sem_regra`.'
-          nullable: true
+          description: 'Always `false`: searching costs nothing.'
+        filtros:
+          allOf:
+          - $ref: '#/components/schemas/FiltrosDaBusca'
+          description: Additional filters confirmed by the origin.
       required:
-      - proposta_inicio
-      - proposta_ate
-      - proposta_aberta
-      - impugnacao_ate
-      - impugnacao_aberta
-      - estimado
-      - base_legal
-      - feriados
-      - motivo
-      description: 'Os relógios da compra: proposta vem do PNCP; impugnação é estimada pela lei, com feriados nacionais.'
+      - itens
+      - preco_markdown_usd
+      - gratis_acima_de_dias
+      - pago
+      description: 'Search result: always free.'
+    FiltrosDaBusca:
+      type: object
+      properties:
+        excluir:
+          type: array
+          items:
+            type: string
+          description: Up to 10 literal expressions, of 3 to 80 characters each.
+        modalidades:
+          type: array
+          items:
+            type: integer
+          description: Up to 10 PNCP modality codes, from 1 to 19.
+        municipios:
+          type: array
+          items:
+            type: string
+          description: Up to 10 exact municipality names or IBGE codes, of 3 to 80 characters. Combine names with the state to avoid homonyms.
+        orgao_cnpj:
+          type: string
+          description: Exact agency CNPJ, with 14 digits.
+        valor_min:
+          type: number
+          description: Minimum estimated value in reais, from 0 to 1e15.
+        valor_max:
+          type: number
+          description: Maximum estimated value in reais, from 0 to 1e15, not lower than the minimum.
+      description: Additional filters applied before the result limit.
+  securitySchemes:
+    globalAccount:
+      type: apiKey
+      in: cookie
+      name: __Host-mm-auth
+      description: Global session in the product's HttpOnly cookie; writes require exact Origin and X-CSRF-Token.
+    contaChaveApi:
+      type: http
+      scheme: bearer
+      bearerFormat: mmk_…
+      description: 'Account API key: `Authorization: Bearer mmk_…` or `X-Api-Key: mmk_…`. Created on the account page (API keys), valid only in the product where it was created; it acts as the account (or the organization that owns it).'
+    carteiraAgente:
+      type: http
+      scheme: bearer
+      bearerFormat: mmw_…
+      description: 'Wallet credential of an agent without an account (`Authorization: Bearer mmw_…`, 30 days, this product only): POST /api/auth/wallet/agent/start, sign the message with the wallet, POST /api/auth/wallet/agent/token. The owner is `x402:<address>`.'
+x-service-info:
+  categories:
+  - public-procurement
+  - documents
+  - data
+  docs:
+    homepage: https://editalmd.com/
+    apiReference: https://editalmd.com/developers
+    llms: https://editalmd.com/llms.txt

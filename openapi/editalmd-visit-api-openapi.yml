@@ -1,7 +1,7 @@
 openapi: 3.2.0
 info:
-  version: 2d690e87
-  title: Editalmd Visit API
+  title: EditalMD Visit API
+  version: 1d751aaf
 servers:
 - url: https://editalmd.com
 tags:
@@ -10,10 +10,10 @@ paths:
   /api/visit:
     post:
       operationId: post_api_visit
-      summary: Ping da interface que incrementa a visita do dia no painel do operador.
-      description: 'Smoke não conta: `X-MM-Smoke`, User-Agent `mm-smoke` ou `smoke: true` no corpo entram como `counted: false`.
+      summary: The screen notice that adds a visit to the day. Agents do not need to call it
+      description: 'The screen sends the notice at the user''s first gesture (tap, key or click), once per page. Tests do not count: `X-MM-Smoke`, User-Agent `mm-smoke` or `smoke: true` in the body come back with `counted: false`. Only the page''s own notice counts: a call from outside a page of the same site (robot User-Agent, or without `Sec-Fetch-Site: same-origin`) comes back with `counted: false` and `reason: "robo"`.
 
-        Devolve: { ok, counted, reason? }'
+        Returns: { ok, counted, reason? }'
       requestBody:
         required: true
         content:
@@ -23,10 +23,10 @@ paths:
               properties:
                 p:
                   type: string
-                  description: Caminho da página visitada, só para agrupar.
+                  description: The path of the visited page.
                 smoke:
                   type: boolean
-                  description: '`true` marca a chamada como teste e ela fica fora da contagem.'
+                  description: '`true` marks the request as a test, and it is not counted.'
             example:
               p: /
       responses:
@@ -39,15 +39,41 @@ paths:
                 properties:
                   ok:
                     type: boolean
-                    description: Sempre `true`.
+                    description: Always `true`.
                   counted:
                     type: boolean
-                    description: Se a visita entrou na contagem do dia.
+                    description: Whether the visit entered the day's count.
                   reason:
                     type: string
-                    description: Por que não contou, quando `counted` é `false`.
+                    description: Why it did not count, when `counted` is `false`.
                 required:
                 - ok
                 - counted
       tags:
       - Visit
+components:
+  securitySchemes:
+    globalAccount:
+      type: apiKey
+      in: cookie
+      name: __Host-mm-auth
+      description: Global session in the product's HttpOnly cookie; writes require exact Origin and X-CSRF-Token.
+    contaChaveApi:
+      type: http
+      scheme: bearer
+      bearerFormat: mmk_…
+      description: 'Account API key: `Authorization: Bearer mmk_…` or `X-Api-Key: mmk_…`. Created on the account page (API keys), valid only in the product where it was created; it acts as the account (or the organization that owns it).'
+    carteiraAgente:
+      type: http
+      scheme: bearer
+      bearerFormat: mmw_…
+      description: 'Wallet credential of an agent without an account (`Authorization: Bearer mmw_…`, 30 days, this product only): POST /api/auth/wallet/agent/start, sign the message with the wallet, POST /api/auth/wallet/agent/token. The owner is `x402:<address>`.'
+x-service-info:
+  categories:
+  - public-procurement
+  - documents
+  - data
+  docs:
+    homepage: https://editalmd.com/
+    apiReference: https://editalmd.com/developers
+    llms: https://editalmd.com/llms.txt

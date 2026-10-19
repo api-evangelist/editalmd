@@ -1,0 +1,250 @@
+openapi: 3.2.0
+info:
+  title: EditalMD Billing API
+  version: 1d751aaf
+servers:
+- url: https://editalmd.com
+tags:
+- name: Billing
+paths:
+  /api/billing:
+    get:
+      operationId: get_api_billing
+      summary: Public discovery of payment and prepaid credit
+      description: 'Returns: { product, quota{free,paid,how_to_pay,live,free_now?,charged_now?,trial?}, pricing, billing, api_index, payment{provider,mode,network,chain_id,pay_to,homolog,dev,dev_gate,alternavel,gratis?,cobrados?,facilitator,asset,asset_address,faucet,wallets}, credit{url,header} }'
+      responses:
+        '200':
+          description: '{ product, quota{free,paid,how_to_pay,live,free_now?,charged_now?,trial?}, pricing, billing, api_index, payment{provider,mode,network,chain_id,pay_to,homolog,dev,dev_gate,alternavel,gratis?,cobrados?,facilitator,asset,asset_address,faucet,wallets}, credit{url,header} }'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  product:
+                    type: string
+                    description: Product name.
+                  quota:
+                    allOf:
+                    - $ref: '#/components/schemas/PaymentQuota'
+                    description: Public allowances and current list prices; not personal usage.
+                  pricing:
+                    type: string
+                    description: Absolute URL of the current price list.
+                  billing:
+                    type: string
+                    description: Absolute URL of payment discovery or the existing billing summary.
+                  api_index:
+                    type: string
+                    description: Absolute URL of the API catalog.
+                  payment:
+                    allOf:
+                    - $ref: '#/components/schemas/PaymentX402'
+                    description: Public x402 configuration; pay_to=null means not configured.
+                  credit:
+                    allOf:
+                    - $ref: '#/components/schemas/PaymentCredit'
+                    description: Prepaid credit entry point. Never contains a balance or token.
+                required:
+                - product
+                - quota
+                - pricing
+                - billing
+                - api_index
+                - payment
+                - credit
+        '405':
+          description: Use GET or HEAD.
+      tags:
+      - Billing
+components:
+  schemas:
+    PaymentPrice:
+      type: object
+      properties:
+        o_que:
+          type: string
+          description: Operation and billing unit.
+        price_usd:
+          type: number
+          description: Current list price in USD.
+      required:
+      - o_que
+      - price_usd
+    PaymentFree:
+      type: object
+      properties:
+        o_que:
+          type: string
+          description: Operation or allowance.
+        limite:
+          type: string
+          description: Allowance and eligibility.
+        janela:
+          type: string
+          description: Reset window, when applicable.
+          nullable: true
+      required:
+      - o_que
+      - limite
+      - janela
+    PaymentX402:
+      type: object
+      properties:
+        provider:
+          type: string
+          description: Always `x402` — the only billing protocol accepted.
+        mode:
+          type: string
+          description: 'Seller mode: `live` charges for real, `dev` lets calls through unpaid.'
+        network:
+          type: string
+          description: 'USDC network: `base` in production, `base-sepolia` in staging.'
+        chain_id:
+          type: integer
+          description: EVM chain ID of the network above, so the wallet signs on the right chain.
+        pay_to:
+          type: string
+          description: Address that receives the payment.
+          nullable: true
+        homolog:
+          type: boolean
+          description: 'Staging seam on: the loop can be closed without spending USDC.'
+        dev:
+          type: boolean
+          description: 'Development mode: the 402 is simulated.'
+        dev_gate:
+          type: boolean
+          description: A homologation credential is configured; this grants no access.
+        alternavel:
+          type: boolean
+          description: 'Dev only: a request with `X-MM-Pagamento: real` pays for real instead of in test mode.'
+        gratis:
+          type: array
+          items:
+            type: string
+          description: Temporarily free SKUs.
+        cobrados:
+          type: array
+          items:
+            type: string
+          description: SKUs charged even when `gratis` has `*`.
+        facilitator:
+          type: string
+          description: URL of the facilitator that verifies and settles the payment.
+        asset:
+          type: string
+          description: Accepted currency — always `USDC`.
+        asset_address:
+          type: string
+          description: USDC contract on the network above.
+        faucet:
+          type: string
+          description: Test-USDC faucet; only on base-sepolia.
+          nullable: true
+        wallets:
+          type: object
+          description: Links to wallets that speak x402 (metamask, coinbase, base_app).
+      required:
+      - provider
+      - mode
+      - network
+      - chain_id
+      - pay_to
+      - homolog
+      - dev
+      - dev_gate
+      - alternavel
+      - facilitator
+      - asset
+      - asset_address
+      - faucet
+      - wallets
+      description: x402 payment configuration in force. Comes from `planPublic` and is the same across the products.
+    PaymentQuota:
+      type: object
+      properties:
+        free:
+          type: array
+          items:
+            $ref: '#/components/schemas/PaymentFree'
+          description: Free allowances and their windows.
+        paid:
+          type: array
+          items:
+            $ref: '#/components/schemas/PaymentPrice'
+          description: List prices in USD. The operation's 402 is the payable quote.
+        how_to_pay:
+          type: string
+          description: Payment instructions and availability restrictions.
+        live:
+          type: string
+          description: Authoritative product quota endpoint.
+          nullable: true
+        free_now:
+          type: array
+          items:
+            type: string
+          description: SKUs temporarily free despite their list price.
+        charged_now:
+          type: array
+          items:
+            type: string
+          description: SKUs charged at their list price even when free_now has `*`.
+        trial:
+          allOf:
+          - $ref: '#/components/schemas/PaymentTrial'
+          description: Registration trial, when offered.
+      required:
+      - free
+      - paid
+      - how_to_pay
+      - live
+    PaymentCredit:
+      type: object
+      properties:
+        url:
+          type: string
+          description: POST to purchase credit; GET with X-Credito to inspect its balance.
+        header:
+          type: string
+          description: 'Header for a previously issued credit token: X-Credito.'
+      required:
+      - url
+      - header
+    PaymentTrial:
+      type: object
+      properties:
+        days:
+          type: integer
+          description: Trial duration in days.
+        how:
+          type: string
+          description: Eligibility and activation steps.
+      required:
+      - days
+      - how
+  securitySchemes:
+    globalAccount:
+      type: apiKey
+      in: cookie
+      name: __Host-mm-auth
+      description: Global session in the product's HttpOnly cookie; writes require exact Origin and X-CSRF-Token.
+    contaChaveApi:
+      type: http
+      scheme: bearer
+      bearerFormat: mmk_…
+      description: 'Account API key: `Authorization: Bearer mmk_…` or `X-Api-Key: mmk_…`. Created on the account page (API keys), valid only in the product where it was created; it acts as the account (or the organization that owns it).'
+    carteiraAgente:
+      type: http
+      scheme: bearer
+      bearerFormat: mmw_…
+      description: 'Wallet credential of an agent without an account (`Authorization: Bearer mmw_…`, 30 days, this product only): POST /api/auth/wallet/agent/start, sign the message with the wallet, POST /api/auth/wallet/agent/token. The owner is `x402:<address>`.'
+x-service-info:
+  categories:
+  - public-procurement
+  - documents
+  - data
+  docs:
+    homepage: https://editalmd.com/
+    apiReference: https://editalmd.com/developers
+    llms: https://editalmd.com/llms.txt

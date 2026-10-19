@@ -1,7 +1,7 @@
 openapi: 3.2.0
 info:
-  version: 2d690e87
-  title: Editalmd Compra API
+  title: EditalMD Compra API
+  version: 1d751aaf
 servers:
 - url: https://editalmd.com
 tags:
@@ -10,132 +10,309 @@ paths:
   /api/compra/{id}:
     get:
       operationId: get_api_compra_by_id
-      summary: Ficha da compra com prazos de proposta e impugnação, documentos e o regime de…
-      description: 'Devolve: { compra{id,pncp,objeto,uf,modalidade,situacao,orgao,unidade,valor_estimado,publicado_em,informacao_complementar,processo,abertura_proposta,encerramento_proposta,amparo_legal,amparo_legal_codigo,modalidade_id,situacao_id,municipio,municipio_ibge,orgao_cnpj,ano_compra,sequencial_compra,atualizado_em,prazos,pncp_url,markdown_url,compra_url}, documentos[{id,titulo,tipo,sequencial,publicado_em,caracteres,paginas,motor,formato,sha256,extraido_em,gratuito,preco_usd,markdown_url,disponivel}], regime{gratuito,motivo,idade_dias}, prazos{proposta_inicio,proposta_ate,proposta_aberta,impugnacao_ate,impugnacao_aberta,estimado,base_legal,feriados,motivo} }'
+      summary: Procurement record with the bidding and challenge deadlines, the documents and…
+      description: 'Served from the edge cache for up to 6 hours: the record rarely changes. The deadlines and the price of each document are calculated on each request. `Cache-Control: no-cache` in the request reads the origin now. The `x-origem-cache` header says `hit`, `miss` or `bypass`.
+
+        Returns: { compra{id,pncp,objeto,uf,modalidade,situacao,orgao,unidade,valor_estimado,publicado_em,informacao_complementar,processo,abertura_proposta,encerramento_proposta,amparo_legal,amparo_legal_codigo,modalidade_id,situacao_id,municipio,municipio_ibge,orgao_cnpj,ano_compra,sequencial_compra,atualizado_em,prazos,pncp_url,markdown_url,compra_url}, documentos[{id,titulo,tipo,sequencial,publicado_em,caracteres,paginas,motor,formato,sha256,extraido_em,original_pendente,gratuito,preco_usd,markdown_url,geracao_url,preco_pagina_usd,disponivel}], regime{gratuito,motivo,idade_dias}, prazos{proposta_inicio,proposta_ate,proposta_aberta,impugnacao_ate,impugnacao_aberta,estimado,base_legal,feriados,motivo}, atas?[{ata,compra,atas,compra_id?,numero,orgao,orgao_cnpj,unidade,objeto,vigencia_inicio,vigencia_fim,adesao,pncp_url}] }'
       parameters:
       - name: id
         in: path
         required: true
         schema:
           type: string
+        description: Procurement identifier, from the search.
+        example: '42'
       responses:
         '200':
-          description: '{ compra{id,pncp,objeto,uf,modalidade,situacao,orgao,unidade,valor_estimado,publicado_em,informacao_complementar,processo,abertura_proposta,encerramento_proposta,amparo_legal,amparo_legal_codigo,modalidade_id,situacao_id,municipio,municipio_ibge,orgao_cnpj,ano_compra,sequencial_compra,atualizado_em,prazos,pncp_url,markdown_url,compra_url}, documentos[{id,titulo,tipo,sequencial,publicado_em,caracteres,paginas,motor,formato,sha256,extraido_em,gratuito,preco_usd,markdown_url,disponivel}], regime{gratuito,motivo,idade_dias}, prazos{proposta_inicio,proposta_ate,proposta_aberta,impugnacao_ate,impugnacao_aberta,estimado,base_legal,feriados,motivo} }'
+          description: '{ compra{id,pncp,objeto,uf,modalidade,situacao,orgao,unidade,valor_estimado,publicado_em,informacao_complementar,processo,abertura_proposta,encerramento_proposta,amparo_legal,amparo_legal_codigo,modalidade_id,situacao_id,municipio,municipio_ibge,orgao_cnpj,ano_compra,sequencial_compra,atualizado_em,prazos,pncp_url,markdown_url,compra_url}, documentos[{id,titulo,tipo,sequencial,publicado_em,caracteres,paginas,motor,formato,sha256,extraido_em,original_pendente,gratuito,preco_usd,markdown_url,geracao_url,preco_pagina_usd,disponivel}], regime{gratuito,motivo,idade_dias}, prazos{proposta_inicio,proposta_ate,proposta_aberta,impugnacao_ate,impugnacao_aberta,estimado,base_legal,feriados,motivo}, atas?[{ata,compra,atas,compra_id?,numero,orgao,orgao_cnpj,unidade,objeto,vigencia_inicio,vigencia_fim,adesao,pncp_url}] }'
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/FichaCompra'
         '404':
-          description: Compra não encontrada.
+          description: Procurement not found.
         '502':
-          description: Origem indisponível.
+          description: Origin unavailable.
+      tags:
+      - Compra
+  /api/compra/{id}/cnaes:
+    get:
+      operationId: get_api_compra_by_id_cnaes
+      summary: 'Who supplies: the CNAEs that usually win procurements like this one. Free'
+      description: 'Each item of the procurement (up to 99, the highest value ones) points to the 3 most likely CNAEs, by a classifier trained with the activity of the winners of similar items in the PNCP awarded results; the procurement adds up the points (3, 2 and 1 by position). Without items in the collection, the procurement object applies, and the 5 most likely come out without `itens` or `valor_estimado`. In the measurement of 27/09/2026, in 87% of the items one of the first 3 was a CNAE of the winning company. To receive the new procurements of these CNAEs, create an alert (`POST /api/alertas`).
+
+        Returns: { compra_id, base, itens_considerados, cnaes, modelo }'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Procurement identifier, from the search.
+        example: '42'
+      responses:
+        '200':
+          description: '{ compra_id, base, itens_considerados, cnaes, modelo }'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  compra_id:
+                    type: integer
+                    description: The purchase.
+                  base:
+                    type: string
+                    description: '`itens` (by the text of the items) or `objeto` (the procurement has no items in the collection yet).'
+                  itens_considerados:
+                    type: integer
+                    description: How many items entered the calculation (up to 99).
+                  cnaes:
+                    type: array
+                    items:
+                      type: object
+                    description: 'Up to 8, from the most likely to the least: `codigo` (7 digits), `cnae` (`4644-3/01`), `descricao` (the official one), `itens` (how many items pointed to it) and `valor_estimado` (the sum of the estimated value of those items, in reais).'
+                  modelo:
+                    type: object
+                    description: '`treinado_em`, `dados_ate` and `exemplos` (awarded results of the training).'
+                required:
+                - compra_id
+                - base
+                - itens_considerados
+                - cnaes
+                - modelo
+        '400':
+          description: Invalid id.
+        '404':
+          description: Procurement not found.
+        '503':
+          description: Classifier unavailable (`modelo_ausente`).
+      tags:
+      - Compra
+  /api/compra/{id}/abertas:
+    get:
+      operationId: get_api_compra_by_id_abertas
+      summary: 'Open ones of the same line of business: tenders with open bidding for those who…'
+      description: 'The procurements published in the last 7 days, with bidding still open, in the state of the procurement and in the 3 CNAEs that most often win procurements like it (`GET /api/compra/:id/cnaes`); without a CNAE, by the terms of the object. It is the same reading as the alert preview (`POST /api/alertas/previa`), and `alerta` has the body that creates this alert at `POST /api/alertas` (add the `canal`). The result belongs to the line of business and the state, kept for 30 minutes; with the house busy or the origin down, `estado` says so and `itens` comes empty. It is what the record of a closed tender shows next to the free alert field.
+
+        Returns: { compra_id, periodo_dias, estado, base, uf, cnaes, termos, total, itens, alerta }'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Procurement identifier, from the search.
+        example: '42'
+      responses:
+        '200':
+          description: '{ compra_id, periodo_dias, estado, base, uf, cnaes, termos, total, itens, alerta }'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  compra_id:
+                    type: integer
+                    description: The purchase.
+                  periodo_dias:
+                    type: integer
+                    description: 'The publication window: 7 days.'
+                  estado:
+                    type: string
+                    description: '`pronto`, `sem_recorte` (the procurement has no CNAE or terms), `ocupado` (try in one minute) or `indisponivel`.'
+                  base:
+                    type: string
+                    description: '`cnaes` or `termos`: where the segment came from.'
+                    nullable: true
+                  uf:
+                    type: string
+                    description: The state (UF) of the segment.
+                    nullable: true
+                  cnaes:
+                    type: array
+                    items:
+                      type: string
+                    description: The CNAEs of the segment (7 digits), when the base is `cnaes`.
+                  termos:
+                    type: string
+                    description: The terms of the segment, when the base is `termos`.
+                    nullable: true
+                  total:
+                    type: integer
+                    description: 'How many open ones the sample found (up to 99 procurements of the week are checked): it is a minimum, not the total of the week.'
+                  itens:
+                    type: array
+                    items:
+                      type: object
+                    description: 'Up to 5, the highest estimated value first: `id`, `objeto`, `orgao`, `municipio`, `uf`, `modalidade`, `valor_estimado`, `encerramento_proposta` and `url` (the record).'
+                  alerta:
+                    type: object
+                    description: 'The `POST /api/alertas` body that delivers this segment: `termos` (when there are any), `uf` and `filtros`.'
+                    nullable: true
+                required:
+                - compra_id
+                - periodo_dias
+                - estado
+                - base
+                - uf
+                - cnaes
+                - termos
+                - total
+                - itens
+                - alerta
+        '404':
+          description: Procurement not found.
+        '502':
+          description: Origin unavailable.
       tags:
       - Compra
 components:
   schemas:
-    Prazos:
+    Documento:
       type: object
       properties:
-        proposta_inicio:
+        id:
+          type: integer
+          description: 'Document identifier: it is the one that you request in markdown.'
+        titulo:
           type: string
-          description: Início do recebimento de propostas.
+          description: Document title on PNCP.
           nullable: true
-        proposta_ate:
+        tipo:
           type: string
-          description: Fim do recebimento de propostas (abertura da sessão).
+          description: Tipo declarado (edital, anexo, ata…).
           nullable: true
-        proposta_aberta:
+        sequencial:
+          type: integer
+          description: Sequence number of the document inside the procurement on PNCP.
+          nullable: true
+        publicado_em:
+          type: string
+          description: Publication of the document on PNCP.
+          nullable: true
+        caracteres:
+          type: integer
+          description: Size of the extracted text, in characters.
+          nullable: true
+        paginas:
+          type: integer
+          description: Pages of the original document.
+          nullable: true
+        motor:
+          type: string
+          description: Identifier of the extraction used in this version.
+          nullable: true
+        formato:
+          type: string
+          description: '`markdown` when the extraction is structured; `plain` otherwise.'
+        sha256:
+          type: string
+          description: Hash of the text extracted at the origin.
+          nullable: true
+        extraido_em:
+          type: string
+          description: When the extraction ran.
+          nullable: true
+        original_pendente:
           type: boolean
-          description: Se ainda dá para enviar proposta agora.
-        impugnacao_ate:
-          type: string
-          description: 'Último dia (AAAA-MM-DD) para impugnar: 3 dias úteis antes da sessão, Lei 14.133 art. 164.'
-          nullable: true
-        impugnacao_aberta:
+          description: 'Original still at PNCP: POST /preparo downloads it at once.'
+        gratuito:
           type: boolean
-          description: Se hoje, em Brasília, ainda cabe impugnação.
-        estimado:
+          description: True only for the five free examples; other documents need an individual purchase.
+        preco_usd:
+          type: string
+          description: Null until you check the quote at /geracao.
+          nullable: true
+        markdown_url:
+          type: string
+          description: Where to ask for the Markdown of this document.
+        geracao_url:
+          type: string
+          description: GET follows up and gives the quote; POST buys individual access, also to the ready text.
+        preco_pagina_usd:
+          type: string
+          description: US$ 0.02 per page on the site and the API; check /geracao to confirm the pages and the total.
+        disponivel:
           type: boolean
-          description: 'Sempre `true`: feriado municipal não está em base nenhuma.'
-        base_legal:
-          type: string
-          description: Regra usada na impugnação.
-          nullable: true
-        feriados:
-          type: string
-          description: 'Calendário considerado: `nacionais`.'
-        motivo:
-          type: string
-          description: 'Por que não há impugnação: `sem_data_de_encerramento` ou `amparo_sem_regra`.'
-          nullable: true
+          description: There is ready text or a file available for an authorized generation.
       required:
-      - proposta_inicio
-      - proposta_ate
-      - proposta_aberta
-      - impugnacao_ate
-      - impugnacao_aberta
-      - estimado
-      - base_legal
-      - feriados
-      - motivo
-      description: 'Os relógios da compra: proposta vem do PNCP; impugnação é estimada pela lei, com feriados nacionais.'
+      - id
+      - titulo
+      - tipo
+      - sequencial
+      - publicado_em
+      - caracteres
+      - paginas
+      - motor
+      - formato
+      - sha256
+      - extraido_em
+      - original_pendente
+      - gratuito
+      - preco_usd
+      - markdown_url
+      - geracao_url
+      - preco_pagina_usd
+      - disponivel
+      description: A document of the procurement and the paths for reading or explicit generation.
     Compra:
       type: object
       properties:
         id:
           type: integer
-          description: Identificador interno da compra — é ele que abre a ficha.
+          description: 'Internal procurement identifier: it is the one that opens the record.'
         pncp:
           type: string
-          description: Número de controle PNCP da compra.
+          description: PNCP control number of the procurement.
           nullable: true
         objeto:
           type: string
-          description: Objeto da compra, como publicado.
+          description: Procurement object, as published.
           nullable: true
         uf:
           type: string
-          description: Sigla da unidade da federação do órgão.
+          description: Abbreviation of the federative unit of the agency.
           nullable: true
         modalidade:
           type: string
-          description: Modalidade (pregão eletrônico, dispensa…).
+          description: Modality (electronic reverse auction, direct award…).
           nullable: true
         situacao:
           type: string
-          description: Situação da compra no PNCP.
+          description: Procurement status on PNCP.
           nullable: true
         orgao:
           type: string
-          description: Razão social do órgão comprador.
+          description: Corporate name of the buying agency.
           nullable: true
         unidade:
           type: string
-          description: Unidade administrativa responsável.
+          description: Responsible administrative unit.
           nullable: true
         valor_estimado:
           type: number
-          description: Valor total estimado em reais.
+          description: Total estimated value in reais.
           nullable: true
         publicado_em:
           type: string
-          description: Data de publicação no PNCP — é ela que define o regime de cobrança.
+          description: Publication date on PNCP.
           nullable: true
         informacao_complementar:
           type: string
-          description: Informação complementar publicada.
+          description: Published additional information.
           nullable: true
         processo:
           type: string
-          description: Número do processo administrativo.
+          description: Administrative process number.
           nullable: true
         abertura_proposta:
           type: string
-          description: Início do recebimento de propostas, hora de Brasília.
+          description: Start of the bid reception, Brasília time.
           nullable: true
         encerramento_proposta:
           type: string
-          description: Fim do recebimento de propostas, que é a abertura da sessão — a base da impugnação.
+          description: 'End of the bid reception, which is the session opening: the basis of the challenge deadline.'
           nullable: true
         amparo_legal:
           type: string
@@ -143,54 +320,54 @@ components:
           nullable: true
         amparo_legal_codigo:
           type: integer
-          description: Código do amparo legal no PNCP.
+          description: Code of the legal basis on PNCP.
           nullable: true
         modalidade_id:
           type: integer
-          description: Código da modalidade no PNCP (6 = pregão eletrônico, 8 = dispensa…).
+          description: Modality code on PNCP (6 = electronic reverse auction, 8 = direct award…).
           nullable: true
         situacao_id:
           type: integer
-          description: 'Código da situação: 1 divulgada, 2 revogada, 3 anulada, 4 suspensa.'
+          description: 'Status code: 1 published, 2 revoked, 3 annulled, 4 suspended.'
           nullable: true
         municipio:
           type: string
-          description: Município da unidade compradora.
+          description: Municipality of the buying unit.
           nullable: true
         municipio_ibge:
           type: string
-          description: Código IBGE do município.
+          description: IBGE code of the municipality.
           nullable: true
         orgao_cnpj:
           type: string
-          description: CNPJ do órgão, só dígitos.
+          description: Agency CNPJ, digits only.
           nullable: true
         ano_compra:
           type: integer
-          description: Ano da compra na numeração do PNCP.
+          description: Procurement year in the PNCP numbering.
           nullable: true
         sequencial_compra:
           type: integer
-          description: Sequencial da compra no órgão e ano.
+          description: Sequence number of the procurement in the agency and year.
           nullable: true
         atualizado_em:
           type: string
-          description: Última atualização da compra vista pelo acervo.
+          description: Last update of the procurement seen by the collection.
           nullable: true
         prazos:
           allOf:
           - $ref: '#/components/schemas/Prazos'
-          description: Proposta e impugnação, calculados pelo Worker.
+          description: Bidding and challenge deadlines, calculated by the Worker.
         pncp_url:
           type: string
-          description: Página humana da compra no PNCP.
+          description: Human page of the procurement on PNCP.
           nullable: true
         markdown_url:
           type: string
-          description: Atalho para o markdown do documento.
+          description: Shortcut to the Markdown of the document.
         compra_url:
           type: string
-          description: Ficha completa da compra.
+          description: Full procurement record.
       required:
       - id
       - pncp
@@ -220,123 +397,191 @@ components:
       - pncp_url
       - markdown_url
       - compra_url
-      description: Uma compra pública do PNCP, como o acervo a conhece.
+      description: A public procurement available in the collection.
+    Ata:
+      type: object
+      properties:
+        ata:
+          type: string
+          description: Control number of the agreement on PNCP (`CNPJ-1-SEQ/ANO-SEQATA`); null when the line joins several.
+          nullable: true
+        compra:
+          type: string
+          description: Control number of the procurement that generated the agreement.
+          nullable: true
+        atas:
+          type: integer
+          description: How many agreements the line joins (the ones of the same procurement); in the record, 1.
+        compra_id:
+          type: integer
+          description: Procurement id in the collection (`/api/compra/:id`, with the documents); missing when it is not in the collection.
+        numero:
+          type: string
+          description: Agreement number at the agency; null when the line joins several.
+          nullable: true
+        orgao:
+          type: string
+          description: Managing agency.
+          nullable: true
+        orgao_cnpj:
+          type: string
+          description: CNPJ of the managing agency.
+          nullable: true
+        unidade:
+          type: string
+          description: Agency unit.
+          nullable: true
+        objeto:
+          type: string
+          description: Object of the contract.
+          nullable: true
+        vigencia_inicio:
+          type: string
+          description: Start of the validity, `AAAA-MM-DD`.
+          nullable: true
+        vigencia_fim:
+          type: string
+          description: End of the validity, `AAAA-MM-DD`.
+          nullable: true
+        adesao:
+          type: boolean
+          description: It accepts joining by another agency (carona); null when the source does not say.
+          nullable: true
+        pncp_url:
+          type: string
+          description: The framework agreement on PNCP, or the procurement (with its agreements) when the line joins several.
+          nullable: true
+      required:
+      - ata
+      - compra
+      - atas
+      - numero
+      - orgao
+      - orgao_cnpj
+      - unidade
+      - objeto
+      - vigencia_inicio
+      - vigencia_fim
+      - adesao
+      - pncp_url
+      description: A framework agreement published on PNCP; in the search, the agreements of the same procurement in one line (`atas`), with the longest validity and the link of the procurement.
+    Regime:
+      type: object
+      properties:
+        gratuito:
+          type: boolean
+          description: 'False: the purchase does not release documents to everyone; examples are marked individually.'
+        motivo:
+          type: string
+          description: '`acesso_individual`.'
+        idade_dias:
+          type: integer
+          description: Days since the publication on PNCP.
+          nullable: true
+      required:
+      - gratuito
+      - motivo
+      - idade_dias
+      description: Paid individual access, regardless of the date or of whether the text is already ready.
     FichaCompra:
       type: object
       properties:
         compra:
           allOf:
           - $ref: '#/components/schemas/Compra'
-          description: A compra.
+          description: The purchase.
         documentos:
           type: array
           items:
             $ref: '#/components/schemas/Documento'
-          description: Documentos com texto extraído.
+          description: Documents with ready text or an available binary.
         regime:
           allOf:
           - $ref: '#/components/schemas/Regime'
-          description: Grátis ou pago, e por quê.
+          description: Paid individual access; only explicit examples are free.
         prazos:
           allOf:
           - $ref: '#/components/schemas/Prazos'
-          description: Proposta e impugnação da compra — o mesmo objeto de `compra.prazos`.
+          description: 'Bidding and challenge deadlines of the procurement: the same object as `compra.prazos`.'
+        atas:
+          type: array
+          items:
+            $ref: '#/components/schemas/Ata'
+          description: The framework agreements that the procurement generated, the longest validity first; missing when there are none.
       required:
       - compra
       - documentos
       - regime
       - prazos
-      description: Compra + documentos disponíveis + o regime que se aplica a eles.
-    Regime:
+      description: Procurement + available documents + the regime that applies to them.
+    Prazos:
       type: object
       properties:
-        gratuito:
+        proposta_inicio:
+          type: string
+          description: Start of the bid reception.
+          nullable: true
+        proposta_ate:
+          type: string
+          description: End of the bid reception (session opening).
+          nullable: true
+        proposta_aberta:
           type: boolean
-          description: '`true` = amostra sem cobrança.'
+          description: Whether a bid can still be sent now.
+        impugnacao_ate:
+          type: string
+          description: 'Last day (AAAA-MM-DD) to challenge: 3 business days before the session, Law 14.133 art. 164.'
+          nullable: true
+        impugnacao_aberta:
+          type: boolean
+          description: Whether today, in Brasília, a challenge is still possible.
+        estimado:
+          type: boolean
+          description: 'Always `true`: municipal holidays are in no base.'
+        base_legal:
+          type: string
+          description: Rule used for the challenge deadline.
+          nullable: true
+        feriados:
+          type: string
+          description: 'Calendar used: `nacionais`.'
         motivo:
           type: string
-          description: '`amostra_historica`, `publicacao_recente` ou `sem_data_de_publicacao`.'
-        idade_dias:
-          type: integer
-          description: Dias desde a publicação no PNCP.
+          description: 'Why there is no challenge deadline: `sem_data_de_encerramento` or `amparo_sem_regra`.'
           nullable: true
       required:
-      - gratuito
+      - proposta_inicio
+      - proposta_ate
+      - proposta_aberta
+      - impugnacao_ate
+      - impugnacao_aberta
+      - estimado
+      - base_legal
+      - feriados
       - motivo
-      - idade_dias
-      description: Por que este documento é grátis ou pago — a regra de recência, explicada.
-    Documento:
-      type: object
-      properties:
-        id:
-          type: integer
-          description: Identificador do documento — é ele que se pede em markdown.
-        titulo:
-          type: string
-          description: Título do documento no PNCP.
-          nullable: true
-        tipo:
-          type: string
-          description: Tipo declarado (edital, anexo, ata…).
-          nullable: true
-        sequencial:
-          type: integer
-          description: Sequencial do documento dentro da compra no PNCP.
-          nullable: true
-        publicado_em:
-          type: string
-          description: Publicação do documento no PNCP.
-          nullable: true
-        caracteres:
-          type: integer
-          description: Tamanho do texto extraído, em caracteres.
-          nullable: true
-        paginas:
-          type: integer
-          description: Páginas do documento original.
-          nullable: true
-        motor:
-          type: string
-          description: Motor que extraiu (`ocr-api`, `tika`, …).
-          nullable: true
-        formato:
-          type: string
-          description: '`markdown` quando a extração é estruturada; `plain` no resto.'
-        sha256:
-          type: string
-          description: Hash do texto extraído na origem.
-          nullable: true
-        extraido_em:
-          type: string
-          description: Quando a extração rodou.
-          nullable: true
-        gratuito:
-          type: boolean
-          description: Se este documento sai sem pagamento (histórico) ou é cobrado.
-        preco_usd:
-          type: string
-          description: Preço da requisição quando é pago; nulo quando é amostra.
-          nullable: true
-        markdown_url:
-          type: string
-          description: Onde pedir o markdown deste documento.
-        disponivel:
-          type: boolean
-          description: Se o texto está neste acervo agora. `false` nunca é cobrado.
-      required:
-      - id
-      - titulo
-      - tipo
-      - sequencial
-      - publicado_em
-      - caracteres
-      - paginas
-      - motor
-      - formato
-      - sha256
-      - extraido_em
-      - gratuito
-      - preco_usd
-      - markdown_url
-      - disponivel
-      description: Um documento da compra que já teve o texto extraído.
+      description: 'The clocks of the procurement: the bidding deadline comes from PNCP; the challenge deadline is estimated by the law, with national holidays.'
+  securitySchemes:
+    globalAccount:
+      type: apiKey
+      in: cookie
+      name: __Host-mm-auth
+      description: Global session in the product's HttpOnly cookie; writes require exact Origin and X-CSRF-Token.
+    contaChaveApi:
+      type: http
+      scheme: bearer
+      bearerFormat: mmk_…
+      description: 'Account API key: `Authorization: Bearer mmk_…` or `X-Api-Key: mmk_…`. Created on the account page (API keys), valid only in the product where it was created; it acts as the account (or the organization that owns it).'
+    carteiraAgente:
+      type: http
+      scheme: bearer
+      bearerFormat: mmw_…
+      description: 'Wallet credential of an agent without an account (`Authorization: Bearer mmw_…`, 30 days, this product only): POST /api/auth/wallet/agent/start, sign the message with the wallet, POST /api/auth/wallet/agent/token. The owner is `x402:<address>`.'
+x-service-info:
+  categories:
+  - public-procurement
+  - documents
+  - data
+  docs:
+    homepage: https://editalmd.com/
+    apiReference: https://editalmd.com/developers
+    llms: https://editalmd.com/llms.txt

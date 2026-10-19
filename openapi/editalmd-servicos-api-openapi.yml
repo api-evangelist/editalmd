@@ -1,0 +1,140 @@
+openapi: 3.2.0
+info:
+  title: EditalMD Servicos API
+  version: 1d751aaf
+servers:
+- url: https://editalmd.com
+tags:
+- name: Servicos
+paths:
+  /api/servicos:
+    get:
+      operationId: get_api_servicos
+      summary: The product services with a fixed price in reais, and how to pay
+      description: 'Each service shows what it delivers (`inclui`), its limit (`aviso`), the price in cents of reais, the Pix copy-and-paste code for the price and the order address. `pagamento` tells how to pay: `liberacao: automatica` (Pix, card or boleto through the gateway; once paid, the order continues by itself) or `manual` (Pix to the key, with the receipt checked by hand). The answer comes by e-mail. `lingua=pt|en` selects the language of the text (default: the language of the request).
+
+        Returns: { servicos, creditos, pagamento, como }'
+      parameters:
+      - name: lingua
+        in: query
+        required: false
+        schema:
+          type: string
+        description: '`pt` or `en`; without it, the language of the request.'
+      responses:
+        '200':
+          description: '{ servicos, creditos, pagamento, como }'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  servicos:
+                    type: array
+                    items:
+                      type: object
+                    description: '`id`, `nome`, `resumo`, `inclui[]`, `aviso`, `preco` (`moeda`, `centavos`, `texto`), `copia_e_cola` (the Pix copy-and-paste code of the price, the same text as the QR) and `pedido`.'
+                  creditos:
+                    type: array
+                    items:
+                      type: object
+                    description: 'The house credit packages in reais, paid through the same Pix (`POST /api/credito/pix`): `usd`, `preco` (`moeda`, `centavos`, `texto`) and `copia_e_cola`.'
+                  pagamento:
+                    type: object
+                    description: 'Automatic: `metodo: asaas`, `liberacao: automatica`, `formas` (`pix`, `cartao_boleto`) and `precisa_documento` (the payer''s CPF or CNPJ, only on the first purchase of the account). Manual: `metodo: pix`, the `chave`, `liberacao: manual` and the accepted `comprovante`.'
+                  como:
+                    type: string
+                    description: How to order, in one sentence.
+                required:
+                - servicos
+                - creditos
+                - pagamento
+                - como
+      tags:
+      - Servicos
+  /api/servicos/{id}/pedido:
+    post:
+      operationId: post_api_servicos_by_id_pedido
+      summary: 'Orders a service: in JSON, the charge that releases by itself (`liberacao…'
+      description: 'Automatic (JSON): `email` and, when `precisa_documento`, `documento` and `nome` of the payer; `forma` `pix` (the default) or `cartao_boleto`. The answer (201) is the charge: `id`, `estado: pendente`, `servico`, `centavos`, the `pix` (`copia_e_cola`, `imagem`) or `pagamento_em` (the card and boleto page) and `estado_em` (`GET /api/credito/asaas/:id`, which becomes `pago`). Once paid, the order goes by itself to the person who serves it. Manual (multipart): make the Pix of the price to the key of `GET /api/servicos` and send the receipt. In both, `nome`, `telefone`, `empresa` (company or CNPJ), `mensagem` (what you need, up to 2,000 characters), `contexto` (where the order came from, up to 300), `pagina` (the open page, up to 2,000) and `navegador_id` (browser UUID) go together. The order is recorded with everything that arrived, the receipt included, with the signed-in account, the network and the browser of the requester, and goes to the e-mail of the person who serves it, who checks the Pix and answers at the given e-mail.
+
+        Returns: { id, estado, servico, valor, aviso }'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: The `id` of the service in the catalog.
+        example: analise-assistida
+      responses:
+        '200':
+          description: '{ id, estado, servico, valor, aviso }'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: The order number (32 hex), to quote when you contact us.
+                  estado:
+                    type: string
+                    description: '`recebido` (manual) or `pendente` (automatic, until the payment arrives).'
+                  servico:
+                    type: object
+                    description: '`id` and `nome` of the requested service.'
+                  valor:
+                    type: string
+                    description: The service price, in reais.
+                  aviso:
+                    type: string
+                    description: What happens now.
+                required:
+                - id
+                - estado
+                - servico
+                - valor
+                - aviso
+        '400':
+          description: No receipt or no valid e-mail; in the automatic mode, an invalid document, or JSON where the app only accepts the receipt (`pedido_manual`).
+        '404':
+          description: Unknown service.
+        '413':
+          description: Receipt above 2 MB.
+        '415':
+          description: Receipt that is not a photo (JPEG, PNG, WebP) or a PDF.
+        '429':
+          description: The network already sent today's requests.
+        '502':
+          description: 'The gateway did not create the charge (automatic), or the e-mail was not sent (manual: the order is recorded as `falhou`); send it again.'
+        '503':
+          description: Service without a price in this app, e-mail or database unavailable, or too many requests in the day.
+      tags:
+      - Servicos
+components:
+  securitySchemes:
+    globalAccount:
+      type: apiKey
+      in: cookie
+      name: __Host-mm-auth
+      description: Global session in the product's HttpOnly cookie; writes require exact Origin and X-CSRF-Token.
+    contaChaveApi:
+      type: http
+      scheme: bearer
+      bearerFormat: mmk_…
+      description: 'Account API key: `Authorization: Bearer mmk_…` or `X-Api-Key: mmk_…`. Created on the account page (API keys), valid only in the product where it was created; it acts as the account (or the organization that owns it).'
+    carteiraAgente:
+      type: http
+      scheme: bearer
+      bearerFormat: mmw_…
+      description: 'Wallet credential of an agent without an account (`Authorization: Bearer mmw_…`, 30 days, this product only): POST /api/auth/wallet/agent/start, sign the message with the wallet, POST /api/auth/wallet/agent/token. The owner is `x402:<address>`.'
+x-service-info:
+  categories:
+  - public-procurement
+  - documents
+  - data
+  docs:
+    homepage: https://editalmd.com/
+    apiReference: https://editalmd.com/developers
+    llms: https://editalmd.com/llms.txt

@@ -1,7 +1,7 @@
 openapi: 3.2.0
 info:
-  version: 2d690e87
-  title: Editalmd Recibo API
+  title: EditalMD Recibo API
+  version: 1d751aaf
 servers:
 - url: https://editalmd.com
 tags:
@@ -10,14 +10,16 @@ paths:
   /api/recibo/{id}:
     get:
       operationId: get_api_recibo_by_id
-      summary: Recibo de uma entrega — a prova de o que saiu, quanto custou e com qual hash
-      description: 'Devolve: { recibo{id,recurso,documento_id,preco_usd,modo,sha256_entregue,bytes,criado_em} }'
+      summary: 'Receipt of a delivery: the proof of what was delivered, how much it cost and…'
+      description: 'Returns: { recibo{id,recurso,documento_id,preco_usd,modo,sha256_entregue,bytes,criado_em} }'
       parameters:
       - name: id
         in: path
         required: true
         schema:
           type: string
+        description: Receipt identifier (32 hex), from the `x-editalmd-recibo` header.
+        example: 0c8f2b…
       responses:
         '200':
           description: '{ recibo{id,recurso,documento_id,preco_usd,modo,sha256_entregue,bytes,criado_em} }'
@@ -33,7 +35,7 @@ paths:
                 required:
                 - recibo
         '404':
-          description: Recibo não encontrado.
+          description: Receipt not found.
       tags:
       - Recibo
 components:
@@ -43,7 +45,7 @@ components:
       properties:
         id:
           type: string
-          description: Identificador do recibo (32 hex).
+          description: Receipt identifier (32 hex).
         recurso:
           type: string
           description: 'Recurso entregue, ex.: `documento/123/markdown`.'
@@ -53,19 +55,19 @@ components:
           nullable: true
         preco_usd:
           type: string
-          description: Preço cobrado — `$0.00` em amostra.
+          description: 'Charged price: `$0.00` for a sample.'
         modo:
           type: string
-          description: '`gratuito`, `homolog` ou `onchain`.'
+          description: '`gratuito`, `homolog` or `onchain`.'
         sha256_entregue:
           type: string
-          description: SHA-256 do markdown entregue, ou `nao_entregue`.
+          description: SHA-256 of the delivered markdown, or `nao_entregue`.
         bytes:
           type: integer
-          description: Tamanho do que foi entregue.
+          description: Size of what was delivered.
         criado_em:
           type: string
-          description: Instante da entrega em ISO 8601.
+          description: Delivery instant in ISO 8601.
       required:
       - id
       - recurso
@@ -75,4 +77,29 @@ components:
       - sha256_entregue
       - bytes
       - criado_em
-      description: 'Prova da entrega: o que foi pago, quanto, como e o hash do que saiu.'
+      description: 'Proof of delivery: what was paid, how much, how and the hash of what was delivered.'
+  securitySchemes:
+    globalAccount:
+      type: apiKey
+      in: cookie
+      name: __Host-mm-auth
+      description: Global session in the product's HttpOnly cookie; writes require exact Origin and X-CSRF-Token.
+    contaChaveApi:
+      type: http
+      scheme: bearer
+      bearerFormat: mmk_…
+      description: 'Account API key: `Authorization: Bearer mmk_…` or `X-Api-Key: mmk_…`. Created on the account page (API keys), valid only in the product where it was created; it acts as the account (or the organization that owns it).'
+    carteiraAgente:
+      type: http
+      scheme: bearer
+      bearerFormat: mmw_…
+      description: 'Wallet credential of an agent without an account (`Authorization: Bearer mmw_…`, 30 days, this product only): POST /api/auth/wallet/agent/start, sign the message with the wallet, POST /api/auth/wallet/agent/token. The owner is `x402:<address>`.'
+x-service-info:
+  categories:
+  - public-procurement
+  - documents
+  - data
+  docs:
+    homepage: https://editalmd.com/
+    apiReference: https://editalmd.com/developers
+    llms: https://editalmd.com/llms.txt

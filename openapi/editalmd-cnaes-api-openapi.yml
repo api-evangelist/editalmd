@@ -1,7 +1,7 @@
 openapi: 3.2.0
 info:
-  version: 2d690e87
-  title: Editalmd Cnaes API
+  title: EditalMD Cnaes API
+  version: 1d751aaf
 servers:
 - url: https://editalmd.com
 tags:
@@ -10,23 +10,23 @@ paths:
   /api/cnaes:
     get:
       operationId: get_api_cnaes
-      summary: 'A lista de CNAE como o alerta por CNPJ a lê: descrição oficial (IBGE), família…'
-      description: 'Sem `q`, o ranking dos CNAEs com mais fornecedores ativos no SICAF (dados abertos do compras.gov.br) — é a lista de quem vende para o governo, gravada e re-medida pelo cron diário. Com `q`, busca por prefixo do código (`1412`, `1412-6/01`) ou por palavra da descrição. `familia`/`termos` nulos dizem que o CNAE ainda não está no dicionário: um alerta por CNPJ não o usa.
+      summary: Economic activities (CNAE), descriptions and term suggestions for alerts. Free
+      description: 'Without `q`, it lists the activities with the most registered suppliers. With `q`, it searches by code prefix (`1412`, `1412-6/01`) or by a word of the description. Null `familia`/`termos` say that the CNAE is not in the dictionary yet: an alert by CNPJ does not use it.
 
-        Devolve: { itens[{codigo,cnae,descricao,familia,familia_nome,termos,fornecedores_sicaf,sicaf_medido_em,ibge_atualizado_em}], limite, q, dicionario, fontes }'
+        Returns: { itens[{codigo,cnae,descricao,familia,familia_nome,termos,fornecedores_sicaf,sicaf_medido_em,ibge_atualizado_em}], limite, q, dicionario, fontes }'
       parameters:
       - name: q
         in: query
         required: false
         schema:
           type: string
-        description: Prefixo do código (2 a 7 dígitos) ou palavra da descrição (2+ letras).
+        description: Code prefix (2 to 7 digits) or a word of the description (2+ letters).
       - name: limite
         in: query
         required: false
         schema:
           type: integer
-        description: 1 a 100 (padrão 20), por fornecedores no SICAF, decrescente.
+        description: 1 to 100 (default 20), by suppliers in SICAF, descending.
       responses:
         '200':
           description: '{ itens[{codigo,cnae,descricao,familia,familia_nome,termos,fornecedores_sicaf,sicaf_medido_em,ibge_atualizado_em}], limite, q, dicionario, fontes }'
@@ -39,7 +39,7 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/Cnae'
-                    description: Os CNAEs que casam, os com mais fornecedores primeiro.
+                    description: The CNAEs that match, the ones with the most suppliers first.
                   limite:
                     type: integer
                     description: Teto aplicado.
@@ -49,10 +49,10 @@ paths:
                     nullable: true
                   dicionario:
                     type: object
-                    description: '`familias`, `cnaes_mapeados` e `medido_em` (quando a cobertura no acervo foi medida).'
+                    description: '`familias`, `cnaes_mapeados` and `medido_em` (when the coverage in the collection was measured).'
                   fontes:
                     type: object
-                    description: De onde vêm `descricao` (IBGE) e `fornecedores_sicaf` (compras.gov.br).
+                    description: Source attribution of the data shown.
                 required:
                 - itens
                 - limite
@@ -60,9 +60,9 @@ paths:
                 - dicionario
                 - fontes
         '400':
-          description: '`q` com menos de 2 caracteres.'
+          description: '`q` with fewer than 2 characters.'
         '503':
-          description: Banco indisponível.
+          description: Database unavailable.
       tags:
       - Cnaes
 components:
@@ -72,37 +72,37 @@ components:
       properties:
         codigo:
           type: string
-          description: 7 dígitos.
+          description: 7 digits.
         cnae:
           type: string
           description: Formatado, ex. `1412-6/01`.
         descricao:
           type: string
-          description: Descrição oficial (IBGE/Concla).
+          description: Official description (IBGE/Concla).
           nullable: true
         familia:
           type: string
-          description: Família de termos no dicionário; nulo se ainda não mapeado.
+          description: Family of terms in the dictionary; null if not mapped yet.
           nullable: true
         familia_nome:
           type: string
-          description: Nome da família.
+          description: Family name.
           nullable: true
         termos:
           type: string
-          description: Termos que um alerta por CNPJ usaria para este CNAE.
+          description: Terms that an alert by CNPJ would use for this CNAE.
           nullable: true
         fornecedores_sicaf:
           type: integer
-          description: Fornecedores ativos com este CNAE no SICAF (dados abertos do compras.gov.br).
+          description: Active suppliers with this CNAE in SICAF (open data of compras.gov.br).
           nullable: true
         sicaf_medido_em:
           type: string
-          description: Quando essa contagem foi medida.
+          description: When this count was measured.
           nullable: true
         ibge_atualizado_em:
           type: string
-          description: Quando a descrição foi atualizada do IBGE.
+          description: When the description was updated from IBGE.
           nullable: true
       required:
       - codigo
@@ -114,4 +114,29 @@ components:
       - fornecedores_sicaf
       - sicaf_medido_em
       - ibge_atualizado_em
-      description: 'Um CNAE (subclasse) como o produto o vê: descrição oficial, dicionário e fornecedores no SICAF.'
+      description: 'A CNAE (subclass) as the product sees it: official description, dictionary and suppliers in SICAF.'
+  securitySchemes:
+    globalAccount:
+      type: apiKey
+      in: cookie
+      name: __Host-mm-auth
+      description: Global session in the product's HttpOnly cookie; writes require exact Origin and X-CSRF-Token.
+    contaChaveApi:
+      type: http
+      scheme: bearer
+      bearerFormat: mmk_…
+      description: 'Account API key: `Authorization: Bearer mmk_…` or `X-Api-Key: mmk_…`. Created on the account page (API keys), valid only in the product where it was created; it acts as the account (or the organization that owns it).'
+    carteiraAgente:
+      type: http
+      scheme: bearer
+      bearerFormat: mmw_…
+      description: 'Wallet credential of an agent without an account (`Authorization: Bearer mmw_…`, 30 days, this product only): POST /api/auth/wallet/agent/start, sign the message with the wallet, POST /api/auth/wallet/agent/token. The owner is `x402:<address>`.'
+x-service-info:
+  categories:
+  - public-procurement
+  - documents
+  - data
+  docs:
+    homepage: https://editalmd.com/
+    apiReference: https://editalmd.com/developers
+    llms: https://editalmd.com/llms.txt

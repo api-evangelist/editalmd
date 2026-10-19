@@ -1,7 +1,7 @@
 openapi: 3.2.0
 info:
-  version: 2d690e87
-  title: Editalmd Metrics API
+  title: EditalMD Metrics API
+  version: 1d751aaf
 servers:
 - url: https://editalmd.com
 tags:
@@ -10,17 +10,17 @@ paths:
   /api/metrics:
     get:
       operationId: get_api_metrics
-      summary: Métricas dos últimos 7 dias para o painel do operador; com o token, inclui os…
-      description: 'Sem credencial devolve visitas, uso (entregas de markdown, alertas, vigias) e donos. Com `METRICS_TOKEN` em Bearer acrescenta `payments` — só x402 liquidado em Base mainnet.
+      summary: Metrics of the last 7 days for the operator dashboard; with the token, they…
+      description: 'Without a credential, it returns visits and usage (markdown deliveries, alerts, watches). With `METRICS_TOKEN` as Bearer, it adds `payments`: only x402 settled on Base mainnet.
 
-        Devolve: { app, today, today_visits, today_contacts?, days, usage, accounts, financeiro?, payments? }'
+        Returns: { app, today, today_visits, today_contacts?, days, usage, accounts, financeiro?, payments? }'
       parameters:
       - name: Authorization
         in: header
         required: false
         schema:
           type: string
-        description: '`Bearer <METRICS_TOKEN>` para incluir o bloco financeiro; token errado é 401.'
+        description: '`Bearer <METRICS_TOKEN>` to include the financial block; a wrong token is 401.'
       responses:
         '200':
           description: '{ app, today, today_visits, today_contacts?, days, usage, accounts, financeiro?, payments? }'
@@ -29,9 +29,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/Metricas'
         '401':
-          description: Token de operador errado.
+          description: Wrong operator token.
         '503':
-          description: Worker sem METRICS_TOKEN configurado.
+          description: Worker without METRICS_TOKEN configured.
       tags:
       - Metrics
 components:
@@ -41,33 +41,33 @@ components:
       properties:
         app:
           type: string
-          description: Nome do produto.
+          description: Product name.
         today:
           type: string
-          description: Dia de referência (UTC, AAAA-MM-DD).
+          description: Reference day (UTC, YYYY-MM-DD).
         today_visits:
           type: integer
-          description: Visitas contadas hoje pela interface.
+          description: Visits counted today by the interface.
         today_contacts:
           type: integer
-          description: 'Mensagens de contato hoje — este produto não tem formulário, fica em zero. Só com `METRICS_TOKEN`: contato não sai sem token.'
+          description: 'Contact messages today: this product has no form, so it stays at zero. Only with `METRICS_TOKEN`: contact does not come out without the token.'
         days:
           type: array
           items:
             type: object
-          description: Um registro por dia da janela, com as contagens de cada métrica.
+          description: One record per day of the window, with the counts of each metric.
         usage:
           type: object
           description: 'Uso por recurso: `markdown` (entregas), `alertas` e `vigias` criados, por dia.'
         accounts:
           type: object
-          description: 'Totais: `donos` com token emitido.'
+          description: 'Empty: people and guests live in the global account, not in the product.'
         financeiro:
           type: object
-          description: 'Agregado do dia: `hoje_usd`, `hoje_count`, `rede`. Só com `METRICS_TOKEN`: dinheiro não sai sem token; a série completa é `payments`.'
+          description: 'Daily aggregate: `hoje_usd`, `hoje_count`, `rede`. Only with `METRICS_TOKEN`: money data never leaves without a token; the full series is `payments`.'
         payments:
           type: object
-          description: Resumo financeiro do x402; só com METRICS_TOKEN.
+          description: x402 financial summary; only with METRICS_TOKEN.
       required:
       - app
       - today
@@ -75,4 +75,29 @@ components:
       - days
       - usage
       - accounts
-      description: Painel de 7 dias do operador. `payments` só aparece com o token e só em Base mainnet.
+      description: 7-day operator dashboard. `payments` appears only with the token and only on Base mainnet.
+  securitySchemes:
+    globalAccount:
+      type: apiKey
+      in: cookie
+      name: __Host-mm-auth
+      description: Global session in the product's HttpOnly cookie; writes require exact Origin and X-CSRF-Token.
+    contaChaveApi:
+      type: http
+      scheme: bearer
+      bearerFormat: mmk_…
+      description: 'Account API key: `Authorization: Bearer mmk_…` or `X-Api-Key: mmk_…`. Created on the account page (API keys), valid only in the product where it was created; it acts as the account (or the organization that owns it).'
+    carteiraAgente:
+      type: http
+      scheme: bearer
+      bearerFormat: mmw_…
+      description: 'Wallet credential of an agent without an account (`Authorization: Bearer mmw_…`, 30 days, this product only): POST /api/auth/wallet/agent/start, sign the message with the wallet, POST /api/auth/wallet/agent/token. The owner is `x402:<address>`.'
+x-service-info:
+  categories:
+  - public-procurement
+  - documents
+  - data
+  docs:
+    homepage: https://editalmd.com/
+    apiReference: https://editalmd.com/developers
+    llms: https://editalmd.com/llms.txt

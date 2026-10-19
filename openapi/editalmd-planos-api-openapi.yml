@@ -1,0 +1,172 @@
+openapi: 3.2.0
+info:
+  title: EditalMD Planos API
+  version: 1d751aaf
+servers:
+- url: https://editalmd.com
+tags:
+- name: Planos
+paths:
+  /api/planos:
+    get:
+      operationId: get_api_planos
+      summary: 'What the agencies plan to buy: items of the annual procurement plans, before…'
+      description: 'Searches the items of the annual procurement plans (PCA) that the agencies publish on PNCP: what each one intends to buy, how much, for how much and for when, the demand before the tender opens. Only the version in force of each plan; without `ano`, from the current year on. To know when the tender opens, create an alert with the same terms (`/api/alertas`). `Accept: text/html` opens the Planned purchases tab with the terms.
+
+        Returns: { itens[{plano,item,ano,descricao,categoria,classe,unidade_fornecimento,quantidade,valor_unitario,valor_total,data_desejada,orgao,orgao_cnpj,unidade}], pagina, mais, fonte }'
+      parameters:
+      - name: q
+        in: query
+        required: true
+        schema:
+          type: string
+        description: Terms of the object or of the item, at least 3 letters.
+      - name: pagina
+        in: query
+        required: false
+        schema:
+          type: integer
+        description: Page, 0 to 49 (default 0).
+      - name: ano
+        in: query
+        required: false
+        schema:
+          type: integer
+        description: Plan year (optional).
+      responses:
+        '200':
+          description: '{ itens[{plano,item,ano,descricao,categoria,classe,unidade_fornecimento,quantidade,valor_unitario,valor_total,data_desejada,orgao,orgao_cnpj,unidade}], pagina, mais, fonte }'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanosDeCompras'
+        '400':
+          description: 'Short term: `termo_curto`, with `minimo_caracteres`.'
+        '502':
+          description: Origin unavailable.
+        '503':
+          description: Base loading (`base_indisponivel`) or a slow search, with `Retry-After`.
+      tags:
+      - Planos
+components:
+  schemas:
+    PlanosDeCompras:
+      type: object
+      properties:
+        itens:
+          type: array
+          items:
+            $ref: '#/components/schemas/ItemPlano'
+          description: Items of the requested year or, without a year, from the current one on.
+        pagina:
+          type: integer
+          description: Returned page (0 to 49).
+        mais:
+          type: boolean
+          description: There is another page.
+        fonte:
+          type: string
+          description: The data source.
+      required:
+      - itens
+      - pagina
+      - mais
+      - fonte
+      description: The items of the procurement plans that matched the term, the most relevant first, 20 per page.
+    ItemPlano:
+      type: object
+      properties:
+        plano:
+          type: string
+          description: Control number of the plan on PNCP.
+        item:
+          type: integer
+          description: Item number in the plan.
+        ano:
+          type: integer
+          description: Plan year.
+        descricao:
+          type: string
+          description: What the agency intends to buy.
+          nullable: true
+        categoria:
+          type: string
+          description: Item category (material, service, construction work…).
+          nullable: true
+        classe:
+          type: string
+          description: Catalog class or group.
+          nullable: true
+        unidade_fornecimento:
+          type: string
+          description: Supply unit.
+          nullable: true
+        quantidade:
+          type: number
+          description: Quantidade estimada.
+          nullable: true
+        valor_unitario:
+          type: number
+          description: Estimated unit value, in reais.
+          nullable: true
+        valor_total:
+          type: number
+          description: Total estimated value, in reais.
+          nullable: true
+        data_desejada:
+          type: string
+          description: Desired date for the contract, `AAAA-MM-DD`.
+          nullable: true
+        orgao:
+          type: string
+          description: Agency that owns the plan.
+          nullable: true
+        orgao_cnpj:
+          type: string
+          description: Agency CNPJ.
+          nullable: true
+        unidade:
+          type: string
+          description: Agency unit.
+          nullable: true
+      required:
+      - plano
+      - item
+      - ano
+      - descricao
+      - categoria
+      - classe
+      - unidade_fornecimento
+      - quantidade
+      - valor_unitario
+      - valor_total
+      - data_desejada
+      - orgao
+      - orgao_cnpj
+      - unidade
+      description: An item of the annual procurement plan (PCA) of an agency, in the version of the plan in force.
+  securitySchemes:
+    globalAccount:
+      type: apiKey
+      in: cookie
+      name: __Host-mm-auth
+      description: Global session in the product's HttpOnly cookie; writes require exact Origin and X-CSRF-Token.
+    contaChaveApi:
+      type: http
+      scheme: bearer
+      bearerFormat: mmk_…
+      description: 'Account API key: `Authorization: Bearer mmk_…` or `X-Api-Key: mmk_…`. Created on the account page (API keys), valid only in the product where it was created; it acts as the account (or the organization that owns it).'
+    carteiraAgente:
+      type: http
+      scheme: bearer
+      bearerFormat: mmw_…
+      description: 'Wallet credential of an agent without an account (`Authorization: Bearer mmw_…`, 30 days, this product only): POST /api/auth/wallet/agent/start, sign the message with the wallet, POST /api/auth/wallet/agent/token. The owner is `x402:<address>`.'
+x-service-info:
+  categories:
+  - public-procurement
+  - documents
+  - data
+  docs:
+    homepage: https://editalmd.com/
+    apiReference: https://editalmd.com/developers
+    llms: https://editalmd.com/llms.txt

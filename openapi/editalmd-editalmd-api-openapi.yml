@@ -1,20 +1,20 @@
 openapi: 3.2.0
 info:
-  version: 2d690e87
-  title: Editalmd API
+  title: Edital MD API
+  version: 1d751aaf
 servers:
 - url: https://editalmd.com
 tags:
-- name: Editalmd
+- name: EditalMD
 paths:
   /api/:
     get:
       operationId: get_api
-      summary: 'Índice auto-descrito: rotas, regime de cobrança, preço e MCP'
-      description: 'Devolve: { name, description, build, base_url, docs, regime, gratis_acima_de_dias, pago, endpoints, mcp_tools, cota }'
+      summary: 'Self-describing index: routes, billing regime, price and MCP'
+      description: 'Returns: { name, description, build, base_url, docs, endpoints, mcp_tools, regime, gratis_acima_de_dias, pago, cota }'
       responses:
         '200':
-          description: '{ name, description, build, base_url, docs, regime, gratis_acima_de_dias, pago, endpoints, mcp_tools, cota }'
+          description: '{ name, description, build, base_url, docs, endpoints, mcp_tools, regime, gratis_acima_de_dias, pago, cota }'
           content:
             application/json:
               schema:
@@ -22,52 +22,78 @@ paths:
                 properties:
                   name:
                     type: string
-                    description: Nome do produto.
+                    description: Product name.
                   description:
                     type: string
-                    description: O que o produto faz.
+                    description: What the product does.
                   build:
                     type: string
                     description: Commit publicado.
                   base_url:
                     type: string
-                    description: Origem em que esta API está servindo.
+                    description: Origin where this API is serving.
                   docs:
                     type: object
-                    description: Links para llms.txt, OpenAPI, MCP e a UI.
-                  regime:
-                    type: string
-                    description: A regra de cobrança por recência, em uma frase.
-                  gratis_acima_de_dias:
-                    type: integer
-                    description: Idade de publicação a partir da qual o documento é amostra grátis.
-                  pago:
-                    type: object
-                    description: Rota paga e o preço por requisição.
+                    description: Links to llms.txt, OpenAPI, MCP and the UI.
                   endpoints:
                     type: array
                     items:
                       type: object
-                    description: Catálogo de endpoints.
+                    description: Endpoint catalog.
                   mcp_tools:
                     type: array
                     items:
                       type: string
-                    description: Tools do MCP.
+                    description: MCP tools.
+                  regime:
+                    type: string
+                    description: The billing rule by recency, in one sentence.
+                  gratis_acima_de_dias:
+                    type: integer
+                    description: Publication age from which the document is a free sample.
+                  pago:
+                    type: object
+                    description: Paid route and the price per request.
                   cota:
                     type: object
-                    description: O que é grátis, o que é pago e como pagar.
+                    description: What is free, what is paid and how to pay.
                 required:
                 - name
                 - description
                 - build
                 - base_url
                 - docs
+                - endpoints
+                - mcp_tools
                 - regime
                 - gratis_acima_de_dias
                 - pago
-                - endpoints
-                - mcp_tools
                 - cota
       tags:
-      - Editalmd
+      - EditalMD
+components:
+  securitySchemes:
+    globalAccount:
+      type: apiKey
+      in: cookie
+      name: __Host-mm-auth
+      description: Global session in the product's HttpOnly cookie; writes require exact Origin and X-CSRF-Token.
+    contaChaveApi:
+      type: http
+      scheme: bearer
+      bearerFormat: mmk_…
+      description: 'Account API key: `Authorization: Bearer mmk_…` or `X-Api-Key: mmk_…`. Created on the account page (API keys), valid only in the product where it was created; it acts as the account (or the organization that owns it).'
+    carteiraAgente:
+      type: http
+      scheme: bearer
+      bearerFormat: mmw_…
+      description: 'Wallet credential of an agent without an account (`Authorization: Bearer mmw_…`, 30 days, this product only): POST /api/auth/wallet/agent/start, sign the message with the wallet, POST /api/auth/wallet/agent/token. The owner is `x402:<address>`.'
+x-service-info:
+  categories:
+  - public-procurement
+  - documents
+  - data
+  docs:
+    homepage: https://editalmd.com/
+    apiReference: https://editalmd.com/developers
+    llms: https://editalmd.com/llms.txt

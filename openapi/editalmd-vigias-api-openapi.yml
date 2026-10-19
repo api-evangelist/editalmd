@@ -1,7 +1,7 @@
 openapi: 3.2.0
 info:
-  version: 2d690e87
-  title: Editalmd Vigias API
+  title: EditalMD Vigias API
+  version: 1d751aaf
 servers:
 - url: https://editalmd.com
 tags:
@@ -10,10 +10,11 @@ paths:
   /api/vigias:
     post:
       operationId: post_api_vigias
-      summary: 'Vigia uma compra: fotografa agora e avisa quando mudar — documento novo…'
-      description: 'A primeira vigia ativa é grátis (`FRANQUIA_VIGIAS`); as seguintes custam `PRECO_VIGIA` até 30 dias após o encerramento. O cron reconfere a cada hora; compra que o acervo não revisita há mais de 3 dias é conferida direto no PNCP. Avisos `prazo_impugnacao` (no dia) e `prazo_proposta` (24 h antes) saem uma vez cada.
+      summary: 'Watches a procurement: it takes a snapshot now and notifies when it changes…'
+      description: 'The first active watch is free (`FRANQUIA_VIGIAS`); the next ones cost `PRECO_VIGIA` until 30 days after the closing. Repeating the same procurement, channel and destination of this owner returns the active watch with 200, without a new charge; a creation returns 201. The checks are periodic; check the date of the last check in the watch. The notices `prazo_impugnacao` (on the day) and `prazo_proposta` (24 h before) go out once each.
 
-        Devolve: { vigia{id,compra_id,canal,destino,ativo,pago_ate,ultimo_check,criado_em,vigia_url,eventos_url,compra_url}, snapshot{situacao_id,situacao,encerramento_proposta,valor_estimado,atualizado_em,documentos}, pagamento }'
+        Returns: { vigia{id,compra_id,canal,destino,ativo,pago_ate,ultimo_check,criado_em,vigia_url,eventos_url,compra_url}, snapshot{situacao_id,situacao,encerramento_proposta,valor_estimado,atualizado_em,documentos}, pagamento }'
+      x-price-usd: 0.05
       requestBody:
         required: true
         content:
@@ -23,13 +24,17 @@ paths:
               properties:
                 compra_id:
                   type: integer
-                  description: Identificador da compra no acervo, vindo da busca.
+                  description: Procurement identifier in the collection, from the search.
                 canal:
                   type: string
-                  description: '`pull` (ler em `/eventos`), `webhook` ou `email`.'
+                  description: '`pull` (read at `/eventos`), `webhook` or `email` (verified e-mail of the account; requires a session).'
+                  enum:
+                  - pull
+                  - webhook
+                  - email
                 destino:
                   type: string
-                  description: URL https pública (webhook) ou e-mail confirmado (email).
+                  description: Public https URL on port 443, without a credential (webhook). Ignored for pull and e-mail.
               required:
               - compra_id
             example:
@@ -46,34 +51,38 @@ paths:
                   vigia:
                     allOf:
                     - $ref: '#/components/schemas/Vigia'
-                    description: A vigia criada.
+                    description: The created watch, or the active one that this owner already has.
                   snapshot:
                     allOf:
                     - $ref: '#/components/schemas/Snapshot'
-                    description: A fotografia inicial da compra.
+                    description: The initial procurement snapshot.
                   pagamento:
                     type: object
-                    description: '`via` (franquia, credito ou x402), `preco_usd` e `pago_ate`.'
+                    description: '`via` (franquia, credito, x402 or existente), `preco_usd` and `pago_ate`. Repetition: `via: existente`, `preco_usd: $0.00`, `repetido: true`.'
                 required:
                 - vigia
                 - snapshot
                 - pagamento
         '400':
-          description: '`compra_id`, canal ou destino inválidos.'
+          description: Invalid `compra_id`, channel or destination.
         '401':
-          description: Sem token de dono, ou token desconhecido.
+          description: 'Without a guest token or an account session, an unknown token, a refused wallet credential (`invalid_wallet_token`), or `session_ended` (expired session cookie: sign in again).'
         '402':
-          description: Acima da franquia sem pagamento — `accepts[]` do x402 e o caminho do crédito.
+          description: 'Above the allowance without payment: the x402 `accepts[]` and the credit path.'
+        '403':
+          description: '`email_exige_conta`: e-mail channel without the account session; or `invalid_origin`/`invalid_csrf` on a write with the account cookie.'
         '404':
-          description: Compra não encontrada no acervo.
+          description: Procurement not found in the collection.
+        '502':
+          description: '`pago_nao_registrado`: the payment came in and the recording of the purchase failed; keep the `recibo`; the watch was not created.'
         '503':
-          description: Canal e-mail desligado, ou origem indisponível.
+          description: E-mail channel off, or origin unavailable.
       tags:
       - Vigias
     get:
       operationId: get_api_vigias
-      summary: Lista as vigias deste dono, as mais novas primeiro
-      description: 'Devolve: { itens[{id,compra_id,canal,destino,ativo,pago_ate,ultimo_check,criado_em,vigia_url,eventos_url,compra_url}], franquia_vigias }'
+      summary: Lists the watches of this owner, newest first
+      description: 'Returns: { itens[{id,compra_id,canal,destino,ativo,pago_ate,ultimo_check,criado_em,vigia_url,eventos_url,compra_url}], franquia_vigias }'
       responses:
         '200':
           description: '{ itens[{id,compra_id,canal,destino,ativo,pago_ate,ultimo_check,criado_em,vigia_url,eventos_url,compra_url}], franquia_vigias }'
@@ -86,28 +95,34 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/Vigia'
-                    description: Até 50 vigias do dono.
+                    description: Up to 50 watches of the owner.
                   franquia_vigias:
                     type: integer
-                    description: Quantas vigias ativas são grátis.
+                    description: How many active watches are free.
                 required:
                 - itens
                 - franquia_vigias
         '401':
-          description: Sem token de dono, ou token desconhecido.
+          description: 'Without a guest token or an account session, an unknown token, a refused wallet credential (`invalid_wallet_token`), or `session_ended` (expired session cookie: sign in again).'
+        '403':
+          description: '`invalid_origin` / `invalid_csrf`: a write with the account cookie outside the same origin or without X-CSRF-Token.'
+        '503':
+          description: '`conta_indisponivel`: account down now; nothing changes.'
       tags:
       - Vigias
   /api/vigias/{id}:
     get:
       operationId: get_api_vigias_by_id
-      summary: Uma vigia do dono com a fotografia mais recente da compra
-      description: 'Devolve: { vigia{id,compra_id,canal,destino,ativo,pago_ate,ultimo_check,criado_em,vigia_url,eventos_url,compra_url}, snapshot{situacao_id,situacao,encerramento_proposta,valor_estimado,atualizado_em,documentos} }'
+      summary: A watch of the owner with the most recent snapshot of the procurement
+      description: 'Returns: { vigia{id,compra_id,canal,destino,ativo,pago_ate,ultimo_check,criado_em,vigia_url,eventos_url,compra_url}, snapshot{situacao_id,situacao,encerramento_proposta,valor_estimado,atualizado_em,documentos} }'
       parameters:
       - name: id
         in: path
         required: true
         schema:
           type: string
+        description: Watch identifier, returned at creation.
+        example: 2b7e…
       responses:
         '200':
           description: '{ vigia{id,compra_id,canal,destino,ativo,pago_ate,ultimo_check,criado_em,vigia_url,eventos_url,compra_url}, snapshot{situacao_id,situacao,encerramento_proposta,valor_estimado,atualizado_em,documentos} }'
@@ -123,52 +138,64 @@ paths:
                   snapshot:
                     allOf:
                     - $ref: '#/components/schemas/Snapshot'
-                    description: O que o cron viu por último.
+                    description: What the cron saw last.
                 required:
                 - vigia
                 - snapshot
         '401':
-          description: Sem token de dono, ou token desconhecido.
+          description: 'Without a guest token or an account session, an unknown token, a refused wallet credential (`invalid_wallet_token`), or `session_ended` (expired session cookie: sign in again).'
+        '403':
+          description: '`invalid_origin` / `invalid_csrf`: a write with the account cookie outside the same origin or without X-CSRF-Token.'
         '404':
-          description: Vigia inexistente ou de outro dono.
+          description: Watch that does not exist or that belongs to another owner.
+        '503':
+          description: '`conta_indisponivel`: account down now; nothing changes.'
       tags:
       - Vigias
     delete:
       operationId: delete_api_vigias_by_id
-      summary: Apaga a vigia e seus eventos. Sem volta
-      description: 'Devolve: 204 sem corpo.'
+      summary: Deletes the watch and its events. There is no undo
+      description: 'Returns: 204 with no body.'
       parameters:
       - name: id
         in: path
         required: true
         schema:
           type: string
+        description: Watch identifier.
+        example: 2b7e…
       responses:
         '200':
-          description: 204 sem corpo.
+          description: 204 with no body.
         '401':
-          description: Sem token de dono, ou token desconhecido.
+          description: 'Without a guest token or an account session, an unknown token, a refused wallet credential (`invalid_wallet_token`), or `session_ended` (expired session cookie: sign in again).'
+        '403':
+          description: '`invalid_origin` / `invalid_csrf`: a write with the account cookie outside the same origin or without X-CSRF-Token.'
         '404':
-          description: Vigia inexistente ou de outro dono.
+          description: Watch that does not exist or that belongs to another owner.
+        '503':
+          description: '`conta_indisponivel`: account down now; nothing changes.'
       tags:
       - Vigias
   /api/vigias/{id}/eventos:
     get:
       operationId: get_api_vigias_by_id_eventos
-      summary: O que mudou na compra vigiada, evento a evento — é a série temporal e o canal…
-      description: 'Devolve: { vigia{id,compra_id,canal,destino,ativo,pago_ate,ultimo_check,criado_em,vigia_url,eventos_url,compra_url}, snapshot{situacao_id,situacao,encerramento_proposta,valor_estimado,atualizado_em,documentos}, itens[{id,tipo,antes,depois,visto_em,entregue_em}], limite }'
+      summary: 'What changed in the watched procurement, event by event: it is the time series…'
+      description: 'Returns: { vigia{id,compra_id,canal,destino,ativo,pago_ate,ultimo_check,criado_em,vigia_url,eventos_url,compra_url}, snapshot{situacao_id,situacao,encerramento_proposta,valor_estimado,atualizado_em,documentos}, itens[{id,tipo,antes,depois,visto_em,entregue_em}], limite }'
       parameters:
       - name: id
         in: path
         required: true
         schema:
           type: string
+        description: Watch identifier.
+        example: 2b7e…
       - name: limite
         in: query
         required: false
         schema:
           type: integer
-        description: 1 a 100 (padrão 50), mais recentes primeiro.
+        description: 1 to 100 (default 50), most recent first.
       responses:
         '200':
           description: '{ vigia{id,compra_id,canal,destino,ativo,pago_ate,ultimo_check,criado_em,vigia_url,eventos_url,compra_url}, snapshot{situacao_id,situacao,encerramento_proposta,valor_estimado,atualizado_em,documentos}, itens[{id,tipo,antes,depois,visto_em,entregue_em}], limite }'
@@ -199,120 +226,56 @@ paths:
                 - itens
                 - limite
         '401':
-          description: Sem token de dono, ou token desconhecido.
+          description: 'Without a guest token or an account session, an unknown token, a refused wallet credential (`invalid_wallet_token`), or `session_ended` (expired session cookie: sign in again).'
+        '403':
+          description: '`invalid_origin` / `invalid_csrf`: a write with the account cookie outside the same origin or without X-CSRF-Token.'
         '404':
-          description: Vigia inexistente ou de outro dono.
+          description: Watch that does not exist or that belongs to another owner.
+        '503':
+          description: '`conta_indisponivel`: account down now; nothing changes.'
       tags:
       - Vigias
 components:
   schemas:
-    Snapshot:
-      type: object
-      properties:
-        situacao_id:
-          type: integer
-          description: 'Situação: 1 divulgada, 2 revogada, 3 anulada, 4 suspensa.'
-          nullable: true
-        situacao:
-          type: string
-          description: Situação por extenso.
-          nullable: true
-        encerramento_proposta:
-          type: string
-          description: Fim das propostas visto na fotografia.
-          nullable: true
-        valor_estimado:
-          type: number
-          description: Valor estimado visto na fotografia.
-          nullable: true
-        atualizado_em:
-          type: string
-          description: Última atualização conhecida da compra.
-          nullable: true
-        documentos:
-          type: array
-          items:
-            type: object
-          description: 'Documentos por sequencial do PNCP: `sequencial`, `id`, `titulo`, `tipo`.'
-      required:
-      - situacao_id
-      - situacao
-      - encerramento_proposta
-      - valor_estimado
-      - atualizado_em
-      - documentos
-      description: A fotografia da compra que a vigia compara.
-    Evento:
-      type: object
-      properties:
-        id:
-          type: string
-          description: Identificador do evento.
-        tipo:
-          type: string
-          description: '`situacao`, `prazo_adiado`, `valor`, `documento_novo`, `documento_removido`, `prazo_impugnacao` ou `prazo_proposta`.'
-        antes:
-          type: string
-          description: Valor anterior; nulo em documento novo e nos avisos de prazo.
-          nullable: true
-        depois:
-          type: string
-          description: Valor novo; nulo em documento removido.
-          nullable: true
-        visto_em:
-          type: string
-          description: Quando o cron viu.
-        entregue_em:
-          type: string
-          description: Quando o aviso saiu por webhook ou e-mail; nulo no pull ou em falha.
-          nullable: true
-      required:
-      - id
-      - tipo
-      - antes
-      - depois
-      - visto_em
-      - entregue_em
-      description: Uma mudança vista na compra vigiada, ou um aviso de prazo.
     Vigia:
       type: object
       properties:
         id:
           type: string
-          description: Identificador da vigia.
+          description: Watch identifier.
         compra_id:
           type: integer
-          description: Compra vigiada no acervo.
+          description: Watched purchase in the collection.
         canal:
           type: string
-          description: '`pull`, `webhook` ou `email`.'
+          description: '`pull`, `webhook` or `email`.'
         destino:
           type: string
-          description: URL do webhook; nulo no pull e no e-mail.
+          description: Webhook URL; null for pull and e-mail.
           nullable: true
         ativo:
           type: boolean
-          description: Se o cron ainda reconfere; encerra 30 dias após o fim das propostas.
+          description: Whether the cron still checks again; it ends 30 days after the end of bidding.
         pago_ate:
           type: string
-          description: Fim da validade paga; nulo na franquia.
+          description: End of the paid validity; null in the allowance.
           nullable: true
         ultimo_check:
           type: string
-          description: Última reconferência.
+          description: Last recheck.
           nullable: true
         criado_em:
           type: string
-          description: Criação em ISO 8601.
+          description: Creation in ISO 8601.
         vigia_url:
           type: string
           description: URL desta vigia.
         eventos_url:
           type: string
-          description: Onde ler os eventos (pull).
+          description: Where to read the events (pull).
         compra_url:
           type: string
-          description: Ficha da compra.
+          description: Procurement record.
       required:
       - id
       - compra_id
@@ -325,4 +288,97 @@ components:
       - vigia_url
       - eventos_url
       - compra_url
-      description: 'Uma compra vigiada: canal de aviso, validade e o cursor do cron.'
+      description: 'A watched procurement: notice channel, validity and the cron cursor.'
+    Snapshot:
+      type: object
+      properties:
+        situacao_id:
+          type: integer
+          description: 'Status: 1 published, 2 revoked, 3 annulled, 4 suspended.'
+          nullable: true
+        situacao:
+          type: string
+          description: Status in full.
+          nullable: true
+        encerramento_proposta:
+          type: string
+          description: End of bidding seen in the snapshot.
+          nullable: true
+        valor_estimado:
+          type: number
+          description: Estimated value seen in the snapshot.
+          nullable: true
+        atualizado_em:
+          type: string
+          description: Last known update of the procurement.
+          nullable: true
+        documentos:
+          type: array
+          items:
+            type: object
+          description: 'Documents by PNCP sequence number: `sequencial`, `id`, `titulo`, `tipo`.'
+      required:
+      - situacao_id
+      - situacao
+      - encerramento_proposta
+      - valor_estimado
+      - atualizado_em
+      - documentos
+      description: The procurement snapshot that the watch compares.
+    Evento:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Event identifier.
+        tipo:
+          type: string
+          description: '`situacao`, `prazo_adiado`, `valor`, `documento_novo`, `documento_removido`, `prazo_impugnacao` or `prazo_proposta`.'
+        antes:
+          type: string
+          description: Previous value; null for a new document and in deadline notices.
+          nullable: true
+        depois:
+          type: string
+          description: New value; null for a removed document.
+          nullable: true
+        visto_em:
+          type: string
+          description: When the cron saw it.
+        entregue_em:
+          type: string
+          description: When the notice went out by webhook or e-mail; null for pull or on failure.
+          nullable: true
+      required:
+      - id
+      - tipo
+      - antes
+      - depois
+      - visto_em
+      - entregue_em
+      description: A change seen in the watched procurement, or a deadline notice.
+  securitySchemes:
+    globalAccount:
+      type: apiKey
+      in: cookie
+      name: __Host-mm-auth
+      description: Global session in the product's HttpOnly cookie; writes require exact Origin and X-CSRF-Token.
+    contaChaveApi:
+      type: http
+      scheme: bearer
+      bearerFormat: mmk_…
+      description: 'Account API key: `Authorization: Bearer mmk_…` or `X-Api-Key: mmk_…`. Created on the account page (API keys), valid only in the product where it was created; it acts as the account (or the organization that owns it).'
+    carteiraAgente:
+      type: http
+      scheme: bearer
+      bearerFormat: mmw_…
+      description: 'Wallet credential of an agent without an account (`Authorization: Bearer mmw_…`, 30 days, this product only): POST /api/auth/wallet/agent/start, sign the message with the wallet, POST /api/auth/wallet/agent/token. The owner is `x402:<address>`.'
+x-service-info:
+  categories:
+  - public-procurement
+  - documents
+  - data
+  docs:
+    homepage: https://editalmd.com/
+    apiReference: https://editalmd.com/developers
+    llms: https://editalmd.com/llms.txt

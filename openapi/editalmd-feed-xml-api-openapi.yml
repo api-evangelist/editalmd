@@ -1,7 +1,7 @@
 openapi: 3.2.0
 info:
-  version: 2d690e87
-  title: Editalmd Feed.xml API
+  title: EditalMD Feed.xml API
+  version: 1d751aaf
 servers:
 - url: https://editalmd.com
 tags:
@@ -10,10 +10,36 @@ paths:
   /feed.xml:
     get:
       operationId: get_feed_xml
-      summary: RSS 2.0 das compras publicadas mais recentemente no acervo
-      description: 'Devolve: `application/rss+xml`.'
+      summary: RSS 2.0 of the most recently published procurements in the collection
+      description: 'Returns: `application/rss+xml`.'
       responses:
         '200':
           description: '`application/rss+xml`.'
       tags:
       - Feed.xml
+components:
+  securitySchemes:
+    globalAccount:
+      type: apiKey
+      in: cookie
+      name: __Host-mm-auth
+      description: Global session in the product's HttpOnly cookie; writes require exact Origin and X-CSRF-Token.
+    contaChaveApi:
+      type: http
+      scheme: bearer
+      bearerFormat: mmk_…
+      description: 'Account API key: `Authorization: Bearer mmk_…` or `X-Api-Key: mmk_…`. Created on the account page (API keys), valid only in the product where it was created; it acts as the account (or the organization that owns it).'
+    carteiraAgente:
+      type: http
+      scheme: bearer
+      bearerFormat: mmw_…
+      description: 'Wallet credential of an agent without an account (`Authorization: Bearer mmw_…`, 30 days, this product only): POST /api/auth/wallet/agent/start, sign the message with the wallet, POST /api/auth/wallet/agent/token. The owner is `x402:<address>`.'
+x-service-info:
+  categories:
+  - public-procurement
+  - documents
+  - data
+  docs:
+    homepage: https://editalmd.com/
+    apiReference: https://editalmd.com/developers
+    llms: https://editalmd.com/llms.txt

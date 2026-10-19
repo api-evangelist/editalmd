@@ -1,0 +1,79 @@
+openapi: 3.2.0
+info:
+  title: EditalMD Cobranca API
+  version: 1d751aaf
+servers:
+- url: https://editalmd.com
+tags:
+- name: Cobranca
+paths:
+  /api/cobranca/{id}/registrar:
+    post:
+      operationId: post_api_cobranca_by_id_registrar
+      summary: Internal operation to record a confirmed transfer in the financial ledger
+      description: 'Exclusive use of the authenticated origin. The proof is verified by the service, never accepted from the body. A repetition records each event only once.
+
+        Returns: { registrado }'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Charge UUID.
+        example: aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee
+      - name: X-Editalmd-Secret
+        in: header
+        required: true
+        schema:
+          type: string
+        description: Shared secret of the origin; operator only.
+      responses:
+        '200':
+          description: '{ registrado }'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  registrado:
+                    type: object
+                    description: All the recorded or already existing events.
+                required:
+                - registrado
+        '401':
+          description: Without origin authority.
+        '404':
+          description: Charge not found at the origin.
+        '409':
+          description: Payment not confirmed.
+        '503':
+          description: Record unavailable; try again according to the service guidance.
+      tags:
+      - Cobranca
+components:
+  securitySchemes:
+    globalAccount:
+      type: apiKey
+      in: cookie
+      name: __Host-mm-auth
+      description: Global session in the product's HttpOnly cookie; writes require exact Origin and X-CSRF-Token.
+    contaChaveApi:
+      type: http
+      scheme: bearer
+      bearerFormat: mmk_…
+      description: 'Account API key: `Authorization: Bearer mmk_…` or `X-Api-Key: mmk_…`. Created on the account page (API keys), valid only in the product where it was created; it acts as the account (or the organization that owns it).'
+    carteiraAgente:
+      type: http
+      scheme: bearer
+      bearerFormat: mmw_…
+      description: 'Wallet credential of an agent without an account (`Authorization: Bearer mmw_…`, 30 days, this product only): POST /api/auth/wallet/agent/start, sign the message with the wallet, POST /api/auth/wallet/agent/token. The owner is `x402:<address>`.'
+x-service-info:
+  categories:
+  - public-procurement
+  - documents
+  - data
+  docs:
+    homepage: https://editalmd.com/
+    apiReference: https://editalmd.com/developers
+    llms: https://editalmd.com/llms.txt

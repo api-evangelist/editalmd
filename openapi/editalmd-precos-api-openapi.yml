@@ -1,0 +1,1179 @@
+openapi: 3.2.0
+info:
+  title: EditalMD Precos API
+  version: 1d751aaf
+servers:
+- url: https://editalmd.com
+tags:
+- name: Precos
+paths:
+  /api/precos:
+    get:
+      operationId: get_api_precos
+      summary: 'The winning price for a similar item, in summary: how many prices, the median…'
+      description: 'Look up awarded results by item description. The free summary has `n`, the median and the range (p25/p75) of the comparable ones (the same catalog product, in the same unit, without the extremes, `comparacao`), the other groups that the search found (`grupos`: ask for the `produto` and `unidade` of one of them to switch), the volume bought, the price for your `quantidade` (or that of the item of the open `compra`) and how much more the small purchase pays, `amostra` (the criterion: up to 2,000 items most similar by text) and `detalhe`: the address (of the same group), the price and the size of the full winning-price report (`GET /api/precos/detalhe`, paid per lookup): who wins, who buys, by state, by month, the other numbers of the summary and the items. It also accepts POST, PUT or PATCH with the same parameters in JSON or a form; `query`, `termo`, `busca` and `search` count as `q`, `estado` as `uf`, `limit` as `limite`. Every 400 has `exemplo` and `doc`. `Accept: text/html` opens the Prices paid tab with the query.
+
+        Returns: { consulta{q,expressao,uf,catmat,produto,unidade,quantidade,compra,meses,desde,limite}, resumo{n,mediana,p25,p75,ultima_homologacao,volume}, amostra{candidatos,limitada,criterio,desde,ate}, comparacao{produto,unidade,comparaveis,no_grupo,validos,sem_produto,criterio}, grupos[{produto,unidade,n}], faixa_da_quantidade{quantidade,origem,faixa,de,ate,n,mediana,p25,p75}, variacao_por_quantidade, detalhe{url,preco_usd,preco_brl,unidades_plano,inclui,previa}, base_legal, pago }'
+      parameters:
+      - name: q
+        in: query
+        required: true
+        schema:
+          type: string
+        description: Item description; at least 3 letters, up to 200.
+      - name: uf
+        in: query
+        required: false
+        schema:
+          type: string
+        description: State (UF) abbreviation of the buying agency.
+      - name: meses
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 12
+        description: Award window in months, 1 to 36.
+      - name: catmat
+        in: query
+        required: false
+        schema:
+          type: string
+        description: Item code in the government catalog, up to 64 characters.
+      - name: limite
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 50
+        description: 1 a 100 itens.
+      - name: produto
+        in: query
+        required: false
+        schema:
+          type: string
+        description: Catalog product, as in `grupos` (up to 80 letters); without it, the largest group.
+      - name: unidade
+        in: query
+        required: false
+        schema:
+          type: string
+        description: Unit, as in `grupos` (`500 FL`, `1 UN`).
+      - name: quantidade
+        in: query
+        required: false
+        schema:
+          type: number
+        description: 'How much you will sell, in the group unit: the price of the range of that quantity.'
+      - name: compra
+        in: query
+        required: false
+        schema:
+          type: integer
+        description: 'Procurement id in the collection: the quantity comes from its item, in the compared group. An item in a package without the count (`Embalagem FL`) does not count: the unit does not say how many sheets.'
+      responses:
+        '200':
+          description: '{ consulta{q,expressao,uf,catmat,produto,unidade,quantidade,compra,meses,desde,limite}, resumo{n,mediana,p25,p75,ultima_homologacao,volume}, amostra{candidatos,limitada,criterio,desde,ate}, comparacao{produto,unidade,comparaveis,no_grupo,validos,sem_produto,criterio}, grupos[{produto,unidade,n}], faixa_da_quantidade{quantidade,origem,faixa,de,ate,n,mediana,p25,p75}, variacao_por_quantidade, detalhe{url,preco_usd,preco_brl,unidades_plano,inclui,previa}, base_legal, pago }'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrecosGratis'
+        '400':
+          description: Short term, or state, months, limit, catmat, product, unit, quantity or procurement outside the contract, with `exemplo` and `doc`.
+        '502':
+          description: Origin unavailable.
+        '503':
+          description: 'Slow search: `busca_demorada`, with `Retry-After`; refine the term or filter by state.'
+      tags:
+      - Precos
+  /api/precos/detalhe:
+    get:
+      operationId: get_api_precos_detalhe
+      summary: 'Full report: who wins, who buys, by state, by month and the items.'
+      description: 'The same parameters as `/api/precos`. Without payment, a 402 with the two doors (x402 and credit); paid, the whole `resumo` (lowest, highest, average, median discount on the value estimated by the agency, share of ME/EPP small businesses, distinct suppliers and buyers), `por_uf`, `por_mes`, `vencedores` (top 10 by items and value, with company size), `compradores` (top 10 agencies), `por_quantidade` (the median and the range by procurement size) and the sample of `itens`, each one with its procurement: everything from the same comparable group (`comparacao`: same product, same unit, without the extremes). An individual winner comes without the CPF. On credit, the same lookup with the same token does not charge again. Private answer, no cache.
+
+        Returns: { consulta{q,expressao,uf,catmat,produto,unidade,quantidade,compra,meses,desde,limite}, estatisticas{total,media,mediana,menor,maior,desvio_padrao}, resumo{n,mediana,p25,p75,menor,maior,media,desconto_mediano,com_referencia,me_epp,valor_total,fornecedores,volume,compradores,ultima_homologacao}, por_uf[{uf,n,mediana,menor,maior,fornecedores,compradores,ultima_homologacao}], por_mes[{mes,n,mediana,menor,maior}], vencedores[{fornecedor_cnpj,pessoa_fisica,fornecedor,porte,itens,valor_total,menor,maior,compradores,ultima_homologacao}], compradores[{orgao_cnpj,orgao,uf,itens,compras,valor_total,fornecedores,ultima_homologacao}], amostra{candidatos,limitada,criterio,desde,ate}, comparacao{produto,unidade,comparaveis,no_grupo,validos,sem_produto,criterio}, grupos[{produto,unidade,n}], faixa_da_quantidade{quantidade,origem,faixa,de,ate,n,mediana,p25,p75}, variacao_por_quantidade, por_quantidade[{faixa,de,ate,n,mediana,p25,p75,menor,maior,volume,fornecedores,compradores,ultima_homologacao}], itens[{compra_id,item,resultado,pncp,referencia,descricao,unidade,catmat,material_ou_servico,valor_unitario,valor_unitario_estimado,quantidade_homologada,fornecedor,fornecedor_cnpj,pessoa_fisica,fornecedor_porte,orgao,orgao_cnpj,municipio,uf,modalidade,homologado_em,publicado_em,compra_url}], base_legal, pago, pagamento? }'
+      x-price-usd: 0.5
+      parameters:
+      - name: q
+        in: query
+        required: true
+        schema:
+          type: string
+        description: Item description; at least 3 letters, up to 200.
+      - name: uf
+        in: query
+        required: false
+        schema:
+          type: string
+        description: State (UF) abbreviation of the buying agency.
+      - name: meses
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 12
+        description: Award window in months, 1 to 36.
+      - name: catmat
+        in: query
+        required: false
+        schema:
+          type: string
+        description: Item code in the government catalog, up to 64 characters.
+      - name: limite
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 50
+        description: 1 a 100 itens.
+      - name: produto
+        in: query
+        required: false
+        schema:
+          type: string
+        description: Catalog product, as in `grupos` (up to 80 letters); without it, the largest group.
+      - name: unidade
+        in: query
+        required: false
+        schema:
+          type: string
+        description: Unit, as in `grupos` (`500 FL`, `1 UN`).
+      - name: quantidade
+        in: query
+        required: false
+        schema:
+          type: number
+        description: 'How much you will sell, in the group unit: the price of the range of that quantity.'
+      - name: compra
+        in: query
+        required: false
+        schema:
+          type: integer
+        description: 'Procurement id in the collection: the quantity comes from its item, in the compared group. An item in a package without the count (`Embalagem FL`) does not count: the unit does not say how many sheets.'
+      - name: X-PAYMENT
+        in: header
+        required: false
+        schema:
+          type: string
+        description: x402 authorization of the 402 challenge.
+      - name: X-Credito
+        in: header
+        required: false
+        schema:
+          type: string
+        description: cred_… token to deduct from the balance, as an alternative to x402.
+      responses:
+        '200':
+          description: '{ consulta{q,expressao,uf,catmat,produto,unidade,quantidade,compra,meses,desde,limite}, estatisticas{total,media,mediana,menor,maior,desvio_padrao}, resumo{n,mediana,p25,p75,menor,maior,media,desconto_mediano,com_referencia,me_epp,valor_total,fornecedores,volume,compradores,ultima_homologacao}, por_uf[{uf,n,mediana,menor,maior,fornecedores,compradores,ultima_homologacao}], por_mes[{mes,n,mediana,menor,maior}], vencedores[{fornecedor_cnpj,pessoa_fisica,fornecedor,porte,itens,valor_total,menor,maior,compradores,ultima_homologacao}], compradores[{orgao_cnpj,orgao,uf,itens,compras,valor_total,fornecedores,ultima_homologacao}], amostra{candidatos,limitada,criterio,desde,ate}, comparacao{produto,unidade,comparaveis,no_grupo,validos,sem_produto,criterio}, grupos[{produto,unidade,n}], faixa_da_quantidade{quantidade,origem,faixa,de,ate,n,mediana,p25,p75}, variacao_por_quantidade, por_quantidade[{faixa,de,ate,n,mediana,p25,p75,menor,maior,volume,fornecedores,compradores,ultima_homologacao}], itens[{compra_id,item,resultado,pncp,referencia,descricao,unidade,catmat,material_ou_servico,valor_unitario,valor_unitario_estimado,quantidade_homologada,fornecedor,fornecedor_cnpj,pessoa_fisica,fornecedor_porte,orgao,orgao_cnpj,municipio,uf,modalidade,homologado_em,publicado_em,compra_url}], base_legal, pago, pagamento? }'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Precos'
+        '400':
+          description: Short term, or state, months, limit, catmat, product, unit, quantity or procurement outside the contract, with `exemplo` and `doc`.
+        '402':
+          description: Payment required or refused; it announces x402 and credit.
+        '502':
+          description: '`pago_sem_entrega`: paid and the origin did not answer; repeat the same lookup with the same credit.'
+        '503':
+          description: Detail without a configured price, or a slow search.
+      tags:
+      - Precos
+    post:
+      operationId: post_api_precos_detalhe
+      summary: Open the full report with the plan allowance, single credit or payment
+      description: 'An authenticated account uses 25 plan units before the credit. A cookie requires CSRF. Repeating the same valid lookup does not deduct again. Without enough allowance, the single charge follows. The same parameters as `/api/precos`. Without payment, a 402 with the two doors (x402 and credit); paid, the whole `resumo` (lowest, highest, average, median discount on the value estimated by the agency, share of ME/EPP small businesses, distinct suppliers and buyers), `por_uf`, `por_mes`, `vencedores` (top 10 by items and value, with company size), `compradores` (top 10 agencies), `por_quantidade` (the median and the range by procurement size) and the sample of `itens`, each one with its procurement: everything from the same comparable group (`comparacao`: same product, same unit, without the extremes). An individual winner comes without the CPF. On credit, the same lookup with the same token does not charge again. Private answer, no cache.
+
+        Returns: { consulta{q,expressao,uf,catmat,produto,unidade,quantidade,compra,meses,desde,limite}, estatisticas{total,media,mediana,menor,maior,desvio_padrao}, resumo{n,mediana,p25,p75,menor,maior,media,desconto_mediano,com_referencia,me_epp,valor_total,fornecedores,volume,compradores,ultima_homologacao}, por_uf[{uf,n,mediana,menor,maior,fornecedores,compradores,ultima_homologacao}], por_mes[{mes,n,mediana,menor,maior}], vencedores[{fornecedor_cnpj,pessoa_fisica,fornecedor,porte,itens,valor_total,menor,maior,compradores,ultima_homologacao}], compradores[{orgao_cnpj,orgao,uf,itens,compras,valor_total,fornecedores,ultima_homologacao}], amostra{candidatos,limitada,criterio,desde,ate}, comparacao{produto,unidade,comparaveis,no_grupo,validos,sem_produto,criterio}, grupos[{produto,unidade,n}], faixa_da_quantidade{quantidade,origem,faixa,de,ate,n,mediana,p25,p75}, variacao_por_quantidade, por_quantidade[{faixa,de,ate,n,mediana,p25,p75,menor,maior,volume,fornecedores,compradores,ultima_homologacao}], itens[{compra_id,item,resultado,pncp,referencia,descricao,unidade,catmat,material_ou_servico,valor_unitario,valor_unitario_estimado,quantidade_homologada,fornecedor,fornecedor_cnpj,pessoa_fisica,fornecedor_porte,orgao,orgao_cnpj,municipio,uf,modalidade,homologado_em,publicado_em,compra_url}], base_legal, pago, pagamento? }'
+      x-price-usd: 0.5
+      parameters:
+      - name: q
+        in: query
+        required: true
+        schema:
+          type: string
+        description: Item description; at least 3 letters, up to 200.
+      - name: uf
+        in: query
+        required: false
+        schema:
+          type: string
+        description: State (UF) abbreviation of the buying agency.
+      - name: meses
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 12
+        description: Award window in months, 1 to 36.
+      - name: catmat
+        in: query
+        required: false
+        schema:
+          type: string
+        description: Item code in the government catalog, up to 64 characters.
+      - name: limite
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 50
+        description: 1 a 100 itens.
+      - name: produto
+        in: query
+        required: false
+        schema:
+          type: string
+        description: Catalog product, as in `grupos` (up to 80 letters); without it, the largest group.
+      - name: unidade
+        in: query
+        required: false
+        schema:
+          type: string
+        description: Unit, as in `grupos` (`500 FL`, `1 UN`).
+      - name: quantidade
+        in: query
+        required: false
+        schema:
+          type: number
+        description: 'How much you will sell, in the group unit: the price of the range of that quantity.'
+      - name: compra
+        in: query
+        required: false
+        schema:
+          type: integer
+        description: 'Procurement id in the collection: the quantity comes from its item, in the compared group. An item in a package without the count (`Embalagem FL`) does not count: the unit does not say how many sheets.'
+      - name: X-PAYMENT
+        in: header
+        required: false
+        schema:
+          type: string
+        description: x402 authorization of the 402 challenge.
+      - name: X-Credito
+        in: header
+        required: false
+        schema:
+          type: string
+        description: cred_… token to deduct from the balance, as an alternative to x402.
+      - name: X-CSRF-Token
+        in: header
+        required: false
+        schema:
+          type: string
+        description: Account transport token for writes by cookie.
+      responses:
+        '200':
+          description: '{ consulta{q,expressao,uf,catmat,produto,unidade,quantidade,compra,meses,desde,limite}, estatisticas{total,media,mediana,menor,maior,desvio_padrao}, resumo{n,mediana,p25,p75,menor,maior,media,desconto_mediano,com_referencia,me_epp,valor_total,fornecedores,volume,compradores,ultima_homologacao}, por_uf[{uf,n,mediana,menor,maior,fornecedores,compradores,ultima_homologacao}], por_mes[{mes,n,mediana,menor,maior}], vencedores[{fornecedor_cnpj,pessoa_fisica,fornecedor,porte,itens,valor_total,menor,maior,compradores,ultima_homologacao}], compradores[{orgao_cnpj,orgao,uf,itens,compras,valor_total,fornecedores,ultima_homologacao}], amostra{candidatos,limitada,criterio,desde,ate}, comparacao{produto,unidade,comparaveis,no_grupo,validos,sem_produto,criterio}, grupos[{produto,unidade,n}], faixa_da_quantidade{quantidade,origem,faixa,de,ate,n,mediana,p25,p75}, variacao_por_quantidade, por_quantidade[{faixa,de,ate,n,mediana,p25,p75,menor,maior,volume,fornecedores,compradores,ultima_homologacao}], itens[{compra_id,item,resultado,pncp,referencia,descricao,unidade,catmat,material_ou_servico,valor_unitario,valor_unitario_estimado,quantidade_homologada,fornecedor,fornecedor_cnpj,pessoa_fisica,fornecedor_porte,orgao,orgao_cnpj,municipio,uf,modalidade,homologado_em,publicado_em,compra_url}], base_legal, pago, pagamento? }'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Precos'
+        '400':
+          description: Short term, or state, months, limit, catmat, product, unit, quantity or procurement outside the contract, with `exemplo` and `doc`.
+        '402':
+          description: Payment required or refused; it announces x402 and credit.
+        '502':
+          description: '`pago_sem_entrega`: paid and the origin did not answer; repeat the same lookup with the same credit.'
+        '503':
+          description: Detail without a configured price, or a slow search.
+      tags:
+      - Precos
+components:
+  schemas:
+    PrecosResumoGratis:
+      type: object
+      properties:
+        n:
+          type: integer
+          description: Valid awarded results in the period.
+        mediana:
+          type: number
+          description: Median of the unit values, in reais.
+          nullable: true
+        p25:
+          type: number
+          description: First quartile (25 % of the results below).
+          nullable: true
+        p75:
+          type: number
+          description: Third quartile (75 % of the results below).
+          nullable: true
+        ultima_homologacao:
+          type: string
+          description: Date of the most recent result, `AAAA-MM-DD`.
+          nullable: true
+        volume:
+          type: number
+          description: 'Sum of the awarded quantities in the group, in its unit: the size of the market in the period.'
+          nullable: true
+      required:
+      - n
+      - mediana
+      - p25
+      - p75
+      - ultima_homologacao
+      - volume
+    PrecosComparacao:
+      type: object
+      properties:
+        produto:
+          type: string
+          description: Catalog product (the PDM of CATMAT/CATSER, from the start of the description); null when it is free text.
+          nullable: true
+        unidade:
+          type: string
+          description: 'Quantity and base of the supply unit: `500 FL`, `1 UN`, `5000 ML` (liter becomes ml).'
+          nullable: true
+        comparaveis:
+          type: integer
+          description: Results that entered the calculation (the `n` of the summary).
+        no_grupo:
+          type: integer
+          description: Results of the group before removing the extremes.
+        validos:
+          type: integer
+          description: Valid awarded results in the period, from all the groups.
+        sem_produto:
+          type: integer
+          description: Results in free text, without a catalog product.
+        criterio:
+          type: string
+          description: The criterion, in full.
+      required:
+      - produto
+      - unidade
+      - comparaveis
+      - no_grupo
+      - validos
+      - sem_produto
+      - criterio
+      description: 'The group that entered the calculation: the same catalog product and the same supply unit, without the prices below 50 % or above 150 % of the median (unfeasible, a lot entered with quantity 1, a swapped unit).'
+    PrecoVencedor:
+      type: object
+      properties:
+        fornecedor_cnpj:
+          type: string
+          description: CNPJ, digits only; null for an individual (the CPF is not published).
+          nullable: true
+        pessoa_fisica:
+          type: boolean
+          description: '`true` when the winner is an individual.'
+        fornecedor:
+          type: string
+          description: Corporate name or name, as published.
+          nullable: true
+        porte:
+          type: string
+          description: Porte declarado (ME, EPP, Demais).
+          nullable: true
+        itens:
+          type: integer
+          description: Items awarded to this supplier.
+        valor_total:
+          type: number
+          description: Sum of the awarded total values, in reais.
+          nullable: true
+        menor:
+          type: number
+          description: Lowest unit value that this supplier won.
+          nullable: true
+        maior:
+          type: number
+          description: Highest unit value that this supplier won.
+          nullable: true
+        compradores:
+          type: integer
+          description: Distinct agencies that bought from it.
+        ultima_homologacao:
+          type: string
+          description: Last win, `AAAA-MM-DD`.
+          nullable: true
+      required:
+      - fornecedor_cnpj
+      - pessoa_fisica
+      - fornecedor
+      - porte
+      - itens
+      - valor_total
+      - menor
+      - maior
+      - compradores
+      - ultima_homologacao
+      description: 'Who wins this item: a supplier, with what it won in the period.'
+    PrecoComprador:
+      type: object
+      properties:
+        orgao_cnpj:
+          type: string
+          description: Agency CNPJ, digits only.
+          nullable: true
+        orgao:
+          type: string
+          description: Buying agency.
+          nullable: true
+        uf:
+          type: string
+          description: State (UF) of the agency.
+          nullable: true
+        itens:
+          type: integer
+          description: Items awarded by this agency.
+        compras:
+          type: integer
+          description: Distinct purchases (procurement processes) where the item was awarded.
+        valor_total:
+          type: number
+          description: Sum of the awarded total values, in reais.
+          nullable: true
+        fornecedores:
+          type: integer
+          description: Distinct suppliers that sold to it.
+        ultima_homologacao:
+          type: string
+          description: Last awarded procurement, `AAAA-MM-DD`.
+          nullable: true
+      required:
+      - orgao_cnpj
+      - orgao
+      - uf
+      - itens
+      - compras
+      - valor_total
+      - fornecedores
+      - ultima_homologacao
+      description: 'Who buys this item: an agency, with how many times and when it bought.'
+    PrecosDetalheOferta:
+      type: object
+      properties:
+        url:
+          type: string
+          description: '`POST` of the detail of the same lookup; it uses the account allowance first (`/api/precos/detalhe`).'
+        preco_usd:
+          type: string
+          description: Price per lookup (`$0.50`), through the two doors (x402 or credit).
+          nullable: true
+        preco_brl:
+          type: number
+          description: Single price in reais, by the payment quote of the server.
+          nullable: true
+        unidades_plano:
+          type: number
+          description: 'Plan units per report: 25. Reopening the same valid lookup does not deduct again.'
+          nullable: true
+        inclui:
+          type: array
+          items:
+            type: string
+          description: What the detail has beyond the summary.
+        previa:
+          allOf:
+          - $ref: '#/components/schemas/PrecosPrevia'
+          description: The size of the detail of this lookup.
+      required:
+      - url
+      - preco_usd
+      - preco_brl
+      - unidades_plano
+      - inclui
+      - previa
+    PrecosEstatisticas:
+      type: object
+      properties:
+        total:
+          type: integer
+          description: How many unit values entered the calculation.
+        media:
+          type: number
+          description: Average of the unit values, in reais.
+          nullable: true
+        mediana:
+          type: number
+          description: Median of the unit values.
+          nullable: true
+        menor:
+          type: number
+          description: Lowest unit value.
+          nullable: true
+        maior:
+          type: number
+          description: Highest unit value.
+          nullable: true
+        desvio_padrao:
+          type: number
+          description: Population standard deviation.
+          nullable: true
+      required:
+      - total
+      - media
+      - mediana
+      - menor
+      - maior
+      - desvio_padrao
+    PrecosPorMes:
+      type: object
+      properties:
+        mes:
+          type: string
+          description: '`YYYY-MM` of the approval.'
+        n:
+          type: integer
+          description: Results in the month; `0` when there were none.
+        mediana:
+          type: number
+          description: Median of the unit values in the month.
+          nullable: true
+        menor:
+          type: number
+          description: Lowest unit value in the month.
+          nullable: true
+        maior:
+          type: number
+          description: Highest unit value in the month.
+          nullable: true
+      required:
+      - mes
+      - n
+      - mediana
+      - menor
+      - maior
+    Precos:
+      type: object
+      properties:
+        consulta:
+          allOf:
+          - $ref: '#/components/schemas/PrecosConsulta'
+          description: The request as the origin understood it.
+        estatisticas:
+          allOf:
+          - $ref: '#/components/schemas/PrecosEstatisticas'
+          description: Over the unit values of the sample returned in `itens`.
+        resumo:
+          allOf:
+          - $ref: '#/components/schemas/PrecosResumo'
+          description: Over all the candidates of the period (not only the sample). Null when nothing matched.
+          nullable: true
+        por_uf:
+          type: array
+          items:
+            $ref: '#/components/schemas/PrecosPorUf'
+          description: One per state of the buying agency, most results first.
+        por_mes:
+          type: array
+          items:
+            $ref: '#/components/schemas/PrecosPorMes'
+          description: 'One per month of the period, from the oldest to the most recent; a month without an award comes with `n: 0`.'
+        vencedores:
+          type: array
+          items:
+            $ref: '#/components/schemas/PrecoVencedor'
+          description: Up to 10 suppliers, by items won and then by value.
+        compradores:
+          type: array
+          items:
+            $ref: '#/components/schemas/PrecoComprador'
+          description: Up to 10 agencies, by items bought and then by value.
+        amostra:
+          allOf:
+          - $ref: '#/components/schemas/PrecosAmostra'
+          description: How the candidates were chosen and whether they hit the limit.
+          nullable: true
+        comparacao:
+          allOf:
+          - $ref: '#/components/schemas/PrecosComparacao'
+          description: The comparable group that the summary used. Null when nothing matched.
+          nullable: true
+        grupos:
+          type: array
+          items:
+            $ref: '#/components/schemas/PrecosGrupo'
+          description: The largest groups with a catalog product, most results first.
+        faixa_da_quantidade:
+          allOf:
+          - $ref: '#/components/schemas/PrecosDaQuantidade'
+          description: The price for the requested quantity or that of the open procurement; null without a quantity or without a result in the range.
+          nullable: true
+        variacao_por_quantidade:
+          type: number
+          description: 'How much more the smallest procurement pays than the largest (median of the smallest range with 10 or more results over that of the largest, minus 1): `0.23` is 23 % more. Null with fewer than two such ranges.'
+          nullable: true
+        por_quantidade:
+          type: array
+          items:
+            $ref: '#/components/schemas/PrecosFaixaQuantidade'
+          description: One per size range with a result, from the smallest to the largest.
+        itens:
+          type: array
+          items:
+            $ref: '#/components/schemas/PrecoHomologado'
+          description: Results by relevance and most recent award.
+        base_legal:
+          type: string
+          description: The legal basis of the price survey that this data serves.
+        pago:
+          type: boolean
+          description: '`true`: the lookup was paid.'
+        pagamento:
+          type: object
+          description: '`modo` (plan, x402 or credit), `unidades` when it uses the plan and `pagador` when there is one.'
+      required:
+      - consulta
+      - estatisticas
+      - resumo
+      - por_uf
+      - por_mes
+      - vencedores
+      - compradores
+      - amostra
+      - comparacao
+      - grupos
+      - faixa_da_quantidade
+      - variacao_por_quantidade
+      - por_quantidade
+      - itens
+      - base_legal
+      - pago
+      description: 'The full winning price (the paid detail): the sample (`itens`) and, over all the candidates, the summary, the distribution by state and by month, who wins and who buys.'
+    PrecosResumo:
+      type: object
+      properties:
+        n:
+          type: integer
+          description: Valid awarded results in the period.
+        mediana:
+          type: number
+          description: Median of the unit values, in reais.
+          nullable: true
+        p25:
+          type: number
+          description: First quartile (25 % of the results below).
+          nullable: true
+        p75:
+          type: number
+          description: Third quartile (75 % of the results below).
+          nullable: true
+        menor:
+          type: number
+          description: Lowest unit value.
+          nullable: true
+        maior:
+          type: number
+          description: Highest unit value.
+          nullable: true
+        media:
+          type: number
+          description: Average of the unit values.
+          nullable: true
+        desconto_mediano:
+          type: number
+          description: 'Median of `1 − homologado/estimado` in the items with an agency reference: `0.10` is 10 % below the estimate.'
+          nullable: true
+        com_referencia:
+          type: integer
+          description: How many results had a unit value estimated by the agency.
+        me_epp:
+          type: number
+          description: Fraction of the results won by ME or EPP (small businesses), from 0 to 1.
+          nullable: true
+        valor_total:
+          type: number
+          description: Sum of the awarded total values, in reais.
+          nullable: true
+        fornecedores:
+          type: integer
+          description: 'Distinct suppliers: a high n with 1 supplier is a single procurement.'
+        volume:
+          type: number
+          description: 'Sum of the awarded quantities in the group, in its unit: the size of the market in the period.'
+          nullable: true
+        compradores:
+          type: integer
+          description: Distinct agencies.
+        ultima_homologacao:
+          type: string
+          description: Date of the most recent result, `AAAA-MM-DD`.
+          nullable: true
+      required:
+      - n
+      - mediana
+      - p25
+      - p75
+      - menor
+      - maior
+      - media
+      - desconto_mediano
+      - com_referencia
+      - me_epp
+      - valor_total
+      - fornecedores
+      - volume
+      - compradores
+      - ultima_homologacao
+      description: 'The winning price: distribution of the awarded unit values of all the candidates.'
+    PrecosGratis:
+      type: object
+      properties:
+        consulta:
+          allOf:
+          - $ref: '#/components/schemas/PrecosConsulta'
+          description: The request as the origin understood it.
+        resumo:
+          allOf:
+          - $ref: '#/components/schemas/PrecosResumoGratis'
+          description: Over all the candidates of the period. Null when nothing matched.
+          nullable: true
+        amostra:
+          allOf:
+          - $ref: '#/components/schemas/PrecosAmostra'
+          description: How the candidates were chosen.
+          nullable: true
+        comparacao:
+          allOf:
+          - $ref: '#/components/schemas/PrecosComparacao'
+          description: The comparable group that the summary used. Null when nothing matched.
+          nullable: true
+        grupos:
+          type: array
+          items:
+            $ref: '#/components/schemas/PrecosGrupo'
+          description: The largest groups with a catalog product, most results first.
+        faixa_da_quantidade:
+          allOf:
+          - $ref: '#/components/schemas/PrecosDaQuantidade'
+          description: The price for the requested quantity or that of the open procurement; null without a quantity or without a result in the range.
+          nullable: true
+        variacao_por_quantidade:
+          type: number
+          description: 'How much more the smallest procurement pays than the largest (median of the smallest range with 10 or more results over that of the largest, minus 1): `0.23` is 23 % more. Null with fewer than two such ranges.'
+          nullable: true
+        detalhe:
+          allOf:
+          - $ref: '#/components/schemas/PrecosDetalheOferta'
+          description: 'The full winning price of this lookup: where, how much and what.'
+        base_legal:
+          type: string
+          description: The legal basis of the price survey that this data serves.
+        pago:
+          type: boolean
+          description: '`false`: the summary costs nothing.'
+      required:
+      - consulta
+      - resumo
+      - amostra
+      - comparacao
+      - grupos
+      - faixa_da_quantidade
+      - variacao_por_quantidade
+      - detalhe
+      - base_legal
+      - pago
+      description: 'The free summary of the winning price: how many prices, the median and the range (p25–p75), the period and the criterion, and what the paid detail has (`detalhe`), with its size, without the names.'
+    PrecosDaQuantidade:
+      type: object
+      properties:
+        quantidade:
+          type: number
+          description: The quantity, in the unit of the group.
+        origem:
+          type: string
+          description: '`pedido` or `compra`.'
+        faixa:
+          type: integer
+          description: Its band, from 0 to 4.
+        de:
+          type: integer
+          description: Lowest quantity of the range.
+        ate:
+          type: integer
+          description: Highest quantity of the range; null in the last one.
+          nullable: true
+        n:
+          type: integer
+          description: Results in the range.
+        mediana:
+          type: number
+          description: Median of the unit values in the range.
+          nullable: true
+        p25:
+          type: number
+          description: First quartile in the range.
+          nullable: true
+        p75:
+          type: number
+          description: Third quartile in the range.
+          nullable: true
+      required:
+      - quantidade
+      - origem
+      - faixa
+      - de
+      - ate
+      - n
+      - mediana
+      - p25
+      - p75
+      description: 'The price for a quantity: the requested one (`quantidade`) or that of the item of the open procurement (`compra`).'
+    PrecosAmostra:
+      type: object
+      properties:
+        candidatos:
+          type: integer
+          description: Items that the FULLTEXT search found for the term (before the period, state and catalog).
+        limitada:
+          type: boolean
+          description: '`true` when the candidates hit the cap of 2,000: there are more similar items than the summary saw.'
+        criterio:
+          type: string
+          description: How the candidates were chosen.
+        desde:
+          type: string
+          description: First award considered, `AAAA-MM-DD`.
+        ate:
+          type: string
+          description: Last award found, `AAAA-MM-DD`.
+          nullable: true
+      required:
+      - candidatos
+      - limitada
+      - criterio
+      - desde
+      - ate
+    PrecosFaixaQuantidade:
+      type: object
+      properties:
+        faixa:
+          type: integer
+          description: From 0 to 4, from the lowest to the highest.
+        de:
+          type: integer
+          description: Lowest quantity of the range.
+        ate:
+          type: integer
+          description: Highest quantity of the range; null in the last one.
+          nullable: true
+        n:
+          type: integer
+          description: Results in the range.
+        mediana:
+          type: number
+          description: Median of the unit values in the range.
+          nullable: true
+        p25:
+          type: number
+          description: First quartile in the range.
+          nullable: true
+        p75:
+          type: number
+          description: Third quartile in the range.
+          nullable: true
+        menor:
+          type: number
+          description: Lowest unit value in the range.
+          nullable: true
+        maior:
+          type: number
+          description: Highest unit value in the range.
+          nullable: true
+        volume:
+          type: number
+          description: Sum of the awarded quantities in the range.
+          nullable: true
+        fornecedores:
+          type: integer
+          description: Distinct suppliers in the range.
+        compradores:
+          type: integer
+          description: Distinct agencies in the range.
+        ultima_homologacao:
+          type: string
+          description: Most recent result in the range, `AAAA-MM-DD`.
+          nullable: true
+      required:
+      - faixa
+      - de
+      - ate
+      - n
+      - mediana
+      - p25
+      - p75
+      - menor
+      - maior
+      - volume
+      - fornecedores
+      - compradores
+      - ultima_homologacao
+      description: 'A procurement size range, in steps of ten times in the group unit (1–9, 10–99, 100–999, 1,000–9,999, 10,000 or more): how many results, the median, the quartiles and the volume.'
+    PrecoHomologado:
+      type: object
+      properties:
+        compra_id:
+          type: integer
+          description: 'Purchase in the collection: it opens the record at `compra_url`.'
+        item:
+          type: integer
+          description: Item number inside the procurement.
+        resultado:
+          type: integer
+          description: Sequence number of the result (more than one winner in price registration).
+        pncp:
+          type: string
+          description: PNCP control number of the procurement.
+          nullable: true
+        referencia:
+          type: string
+          description: '`PNCP <controle> · item <n>`, ready to quote in the calculation report.'
+        descricao:
+          type: string
+          description: Item description, as published.
+          nullable: true
+        unidade:
+          type: string
+          description: Item unit of measure.
+          nullable: true
+        catmat:
+          type: string
+          description: Item code in the government catalog (CATMAT/CATSER).
+          nullable: true
+        material_ou_servico:
+          type: string
+          description: '`M` material or `S` service.'
+          nullable: true
+        valor_unitario:
+          type: number
+          description: Awarded unit value, in reais.
+        valor_unitario_estimado:
+          type: number
+          description: Unit value estimated by the agency before the bidding.
+          nullable: true
+        quantidade_homologada:
+          type: number
+          description: Quantity awarded to the winning supplier, in the item unit.
+          nullable: true
+        fornecedor:
+          type: string
+          description: Corporate name of the winning supplier.
+          nullable: true
+        fornecedor_cnpj:
+          type: string
+          description: Supplier CNPJ, digits only; null for an individual (the CPF is not published).
+          nullable: true
+        pessoa_fisica:
+          type: boolean
+          description: '`true` when the winner is an individual.'
+        fornecedor_porte:
+          type: string
+          description: Supplier size (ME, EPP, others).
+          nullable: true
+        orgao:
+          type: string
+          description: Buying agency.
+          nullable: true
+        orgao_cnpj:
+          type: string
+          description: Agency CNPJ, digits only.
+          nullable: true
+        municipio:
+          type: string
+          description: Municipality of the buying unit.
+          nullable: true
+        uf:
+          type: string
+          description: State (UF) of the agency.
+          nullable: true
+        modalidade:
+          type: string
+          description: Procurement modality.
+          nullable: true
+        homologado_em:
+          type: string
+          description: Result date, `AAAA-MM-DD`.
+          nullable: true
+        publicado_em:
+          type: string
+          description: Publication date of the procurement on PNCP, `AAAA-MM-DD`.
+          nullable: true
+        compra_url:
+          type: string
+          description: Public procurement record.
+      required:
+      - compra_id
+      - item
+      - resultado
+      - pncp
+      - referencia
+      - descricao
+      - unidade
+      - catmat
+      - material_ou_servico
+      - valor_unitario
+      - valor_unitario_estimado
+      - quantidade_homologada
+      - fornecedor
+      - fornecedor_cnpj
+      - pessoa_fisica
+      - fornecedor_porte
+      - orgao
+      - orgao_cnpj
+      - municipio
+      - uf
+      - modalidade
+      - homologado_em
+      - publicado_em
+      - compra_url
+      description: 'An awarded item of a public procurement: value, supplier and buying agency.'
+    PrecosPorUf:
+      type: object
+      properties:
+        uf:
+          type: string
+          description: State (UF) abbreviation of the buying agency.
+        n:
+          type: integer
+          description: Results in the state.
+        mediana:
+          type: number
+          description: Median of the unit values in the state.
+          nullable: true
+        menor:
+          type: number
+          description: Lowest unit value in the state.
+          nullable: true
+        maior:
+          type: number
+          description: Highest unit value in the state.
+          nullable: true
+        fornecedores:
+          type: integer
+          description: Distinct suppliers in the state.
+        compradores:
+          type: integer
+          description: Distinct agencies in the state.
+        ultima_homologacao:
+          type: string
+          description: Most recent result in the state, `AAAA-MM-DD`.
+          nullable: true
+      required:
+      - uf
+      - n
+      - mediana
+      - menor
+      - maior
+      - fornecedores
+      - compradores
+      - ultima_homologacao
+    PrecosConsulta:
+      type: object
+      properties:
+        q:
+          type: string
+          description: Termo pesquisado.
+        expressao:
+          type: string
+          description: FULLTEXT expression run, with the required prefixes.
+        uf:
+          type: string
+          description: UF filtrada.
+          nullable: true
+        catmat:
+          type: string
+          description: Filtered catalog code.
+          nullable: true
+        produto:
+          type: string
+          description: Produto pedido.
+          nullable: true
+        unidade:
+          type: string
+          description: Unidade pedida.
+          nullable: true
+        quantidade:
+          type: number
+          description: Quantidade pedida.
+          nullable: true
+        compra:
+          type: integer
+          description: Open purchase whose item gave the quantity.
+          nullable: true
+        meses:
+          type: integer
+          description: Award window, in months.
+        desde:
+          type: string
+          description: First award date considered, `AAAA-MM-DD`.
+        limite:
+          type: integer
+          description: Requested item cap.
+      required:
+      - q
+      - expressao
+      - uf
+      - catmat
+      - produto
+      - unidade
+      - quantidade
+      - compra
+      - meses
+      - desde
+      - limite
+    PrecosGrupo:
+      type: object
+      properties:
+        produto:
+          type: string
+          description: Catalog product.
+        unidade:
+          type: string
+          description: Quantity and base of the unit.
+        n:
+          type: integer
+          description: Results of the group.
+      required:
+      - produto
+      - unidade
+      - n
+      description: 'Another group that the search found: asking for its `produto` and `unidade` changes the calculation.'
+    PrecosPrevia:
+      type: object
+      properties:
+        fornecedores:
+          type: integer
+          description: Distinct suppliers that won.
+        compradores:
+          type: integer
+          description: Distinct agencies that bought.
+        estados:
+          type: integer
+          description: States with a result.
+        itens:
+          type: integer
+          description: Results in the sample.
+      required:
+      - fornecedores
+      - compradores
+      - estados
+      - itens
+  securitySchemes:
+    globalAccount:
+      type: apiKey
+      in: cookie
+      name: __Host-mm-auth
+      description: Global session in the product's HttpOnly cookie; writes require exact Origin and X-CSRF-Token.
+    contaChaveApi:
+      type: http
+      scheme: bearer
+      bearerFormat: mmk_…
+      description: 'Account API key: `Authorization: Bearer mmk_…` or `X-Api-Key: mmk_…`. Created on the account page (API keys), valid only in the product where it was created; it acts as the account (or the organization that owns it).'
+    carteiraAgente:
+      type: http
+      scheme: bearer
+      bearerFormat: mmw_…
+      description: 'Wallet credential of an agent without an account (`Authorization: Bearer mmw_…`, 30 days, this product only): POST /api/auth/wallet/agent/start, sign the message with the wallet, POST /api/auth/wallet/agent/token. The owner is `x402:<address>`.'
+x-service-info:
+  categories:
+  - public-procurement
+  - documents
+  - data
+  docs:
+    homepage: https://editalmd.com/
+    apiReference: https://editalmd.com/developers
+    llms: https://editalmd.com/llms.txt

@@ -1,0 +1,107 @@
+openapi: 3.2.0
+info:
+  title: EditalMD Licitacoes API
+  version: 1d751aaf
+servers:
+- url: https://editalmd.com
+tags:
+- name: Licitacoes
+paths:
+  /licitacoes/:
+    get:
+      operationId: get_licitacoes
+      summary: Public navigation of the collection by modality, state, date and municipality
+      description: 'Returns: HTML with the EditalMD navigation. Each segment offers links to the JSON, Markdown and OKF of the metadata.'
+      responses:
+        '200':
+          description: HTML with the EditalMD navigation. Each segment offers links to the JSON, Markdown and OKF of the metadata.
+      tags:
+      - Licitacoes
+  /licitacoes/compra/{id}/:
+    get:
+      operationId: get_licitacoes_compra_by_id
+      summary: Public record in the app, with data and filters already rendered in the HTML
+      description: 'Returns: public HTML with the app on the requested procurement, without private account data. The navigation keeps the URL, filters and tabs. The account and additional resources load after the opening. For structured data, use /api/compra/:id and the /api/documento/:id family.'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Procurement identifier.
+        example: '1996190'
+      - name: aba
+        in: query
+        required: false
+        schema:
+          type: string
+        description: licitacao (default), precos, requisitos, documentos or fornece. It keeps the given tab when the app opens.
+      - name: financeiro_q
+        in: query
+        required: false
+        schema:
+          type: string
+        description: Term kept for the price lookup of the procurement.
+      - name: meses
+        in: query
+        required: false
+        schema:
+          type: string
+        description: Period in months used by the price lookup.
+      - name: doc
+        in: query
+        required: false
+        schema:
+          type: string
+        description: Documento a abrir.
+      - name: pagina
+        in: query
+        required: false
+        schema:
+          type: string
+        description: Start page, from 1.
+      - name: vista
+        in: query
+        required: false
+        schema:
+          type: string
+        description: leitura, markdown, dados, exigencias, original, arquivos or procedencia.
+      - name: tipo
+        in: query
+        required: false
+        schema:
+          type: string
+        description: 'Sub-tab: dados uses identity, item or deadline; exigencias uses requirement, attestation or obligation.'
+      responses:
+        '200':
+          description: Public HTML with the app on the requested procurement, without private account data. The navigation keeps the URL, filters and tabs. The account and additional resources load after the opening. For structured data, use /api/compra/:id and the /api/documento/:id family.
+        '404':
+          description: Procurement not found.
+      tags:
+      - Licitacoes
+components:
+  securitySchemes:
+    globalAccount:
+      type: apiKey
+      in: cookie
+      name: __Host-mm-auth
+      description: Global session in the product's HttpOnly cookie; writes require exact Origin and X-CSRF-Token.
+    contaChaveApi:
+      type: http
+      scheme: bearer
+      bearerFormat: mmk_…
+      description: 'Account API key: `Authorization: Bearer mmk_…` or `X-Api-Key: mmk_…`. Created on the account page (API keys), valid only in the product where it was created; it acts as the account (or the organization that owns it).'
+    carteiraAgente:
+      type: http
+      scheme: bearer
+      bearerFormat: mmw_…
+      description: 'Wallet credential of an agent without an account (`Authorization: Bearer mmw_…`, 30 days, this product only): POST /api/auth/wallet/agent/start, sign the message with the wallet, POST /api/auth/wallet/agent/token. The owner is `x402:<address>`.'
+x-service-info:
+  categories:
+  - public-procurement
+  - documents
+  - data
+  docs:
+    homepage: https://editalmd.com/
+    apiReference: https://editalmd.com/developers
+    llms: https://editalmd.com/llms.txt

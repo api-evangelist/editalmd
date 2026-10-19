@@ -1,7 +1,7 @@
 openapi: 3.2.0
 info:
-  version: 2d690e87
-  title: Editalmd Health API
+  title: EditalMD Health API
+  version: 1d751aaf
 servers:
 - url: https://editalmd.com
 tags:
@@ -10,53 +10,82 @@ paths:
   /api/health:
     get:
       operationId: get_api_health
-      summary: Saúde da origem e tamanho do acervo
-      description: 'Devolve: { ok, acervo{compras,documentos_lidos}, preco_markdown_usd, gratis_acima_de_dias }'
+      summary: Health of the origin and size of the collection
+      description: 'Returns: { ok, build, acervo{compras,documentos_lidos}, preco_markdown_usd, gratis_acima_de_dias }'
       responses:
         '200':
-          description: '{ ok, acervo{compras,documentos_lidos}, preco_markdown_usd, gratis_acima_de_dias }'
+          description: '{ ok, build, acervo{compras,documentos_lidos}, preco_markdown_usd, gratis_acima_de_dias }'
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Saude'
         '503':
-          description: Origem indisponível.
+          description: Origin unavailable.
       tags:
       - Health
 components:
   schemas:
-    Acervo:
-      type: object
-      properties:
-        compras:
-          type: integer
-          description: Compras públicas indexadas.
-        documentos_lidos:
-          type: integer
-          description: Documentos com texto extraído e disponível.
-      required:
-      - compras
-      - documentos_lidos
-      description: Tamanho do acervo lido na origem.
     Saude:
       type: object
       properties:
         ok:
           type: boolean
-          description: '`true` quando a origem respondeu.'
+          description: '`true` when the origin answered.'
+        build:
+          type: string
+          description: Published commit (`env.BUILD`), the same as in `/api/`.
         acervo:
           allOf:
           - $ref: '#/components/schemas/Acervo'
-          description: Números do acervo.
+          description: Collection numbers.
         preco_markdown_usd:
           type: string
-          description: Preço vigente do documento recente.
+          description: Rate per page per buyer, with the generation included.
         gratis_acima_de_dias:
           type: integer
-          description: Idade a partir da qual o documento é amostra grátis.
+          description: Legacy, always zero; no date range grants free access.
       required:
       - ok
+      - build
       - acervo
       - preco_markdown_usd
       - gratis_acima_de_dias
-      description: Saúde do Worker e da origem.
+      description: Health of the Worker and of the origin.
+    Acervo:
+      type: object
+      properties:
+        compras:
+          type: integer
+          description: Indexed public procurements.
+        documentos_lidos:
+          type: integer
+          description: Documents with extracted and available text.
+      required:
+      - compras
+      - documentos_lidos
+      description: Size of the collection read at the origin.
+  securitySchemes:
+    globalAccount:
+      type: apiKey
+      in: cookie
+      name: __Host-mm-auth
+      description: Global session in the product's HttpOnly cookie; writes require exact Origin and X-CSRF-Token.
+    contaChaveApi:
+      type: http
+      scheme: bearer
+      bearerFormat: mmk_…
+      description: 'Account API key: `Authorization: Bearer mmk_…` or `X-Api-Key: mmk_…`. Created on the account page (API keys), valid only in the product where it was created; it acts as the account (or the organization that owns it).'
+    carteiraAgente:
+      type: http
+      scheme: bearer
+      bearerFormat: mmw_…
+      description: 'Wallet credential of an agent without an account (`Authorization: Bearer mmw_…`, 30 days, this product only): POST /api/auth/wallet/agent/start, sign the message with the wallet, POST /api/auth/wallet/agent/token. The owner is `x402:<address>`.'
+x-service-info:
+  categories:
+  - public-procurement
+  - documents
+  - data
+  docs:
+    homepage: https://editalmd.com/
+    apiReference: https://editalmd.com/developers
+    llms: https://editalmd.com/llms.txt

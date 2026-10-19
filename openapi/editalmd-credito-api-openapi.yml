@@ -1,7 +1,7 @@
 openapi: 3.2.0
 info:
-  version: 2d690e87
-  title: Editalmd Credito API
+  title: EditalMD Credito API
+  version: 1d751aaf
 servers:
 - url: https://editalmd.com
 tags:
@@ -10,15 +10,15 @@ paths:
   /api/credito:
     post:
       operationId: post_api_credito
-      summary: 'Recarrega crédito pré-pago: paga uma vez com x402 e recebe o token que desconta…'
-      description: 'Devolve: { token, saldo_usd, guarde, usar, saldo_em }'
+      summary: 'Tops up prepaid credit: pay once with x402 and get the token that is charged in…'
+      description: 'Returns: { token, saldo_usd, guarde, usar, saldo_em }'
       parameters:
       - name: usd
         in: query
         required: true
         schema:
-          type: integer
-        description: 'Pacote: 1, 5, 10 ou 25 dólares.'
+          type: number
+        description: 'Package: 0.1, 1, 5, 10 or 25 dollars.'
       responses:
         '200':
           description: '{ token, saldo_usd, guarde, usar, saldo_em }'
@@ -29,19 +29,19 @@ paths:
                 properties:
                   token:
                     type: string
-                    description: Token portador do saldo (`cred_…`). Mostrado UMA vez — não há como recuperá-lo.
+                    description: 'Bearer token of the balance (`cred_…`). Shown ONCE: there is no way to recover it.'
                   saldo_usd:
                     type: string
                     description: Saldo creditado.
                   guarde:
                     type: string
-                    description: Aviso de que o token é o portador do crédito.
+                    description: Notice that the token is the bearer of the credit.
                   usar:
                     type: string
-                    description: Como apresentar o token nas rotas pagas.
+                    description: How to present the token on paid routes.
                   saldo_em:
                     type: string
-                    description: Onde consultar saldo e extrato.
+                    description: Where to check the balance and the statement.
                 required:
                 - token
                 - saldo_usd
@@ -49,18 +49,49 @@ paths:
                 - usar
                 - saldo_em
         '400':
-          description: Pacote fora da lista (1, 5, 10 ou 25).
+          description: Package not in the list (0.1, 1, 5, 10 or 25).
         '402':
-          description: Sem pagamento — o corpo traz `accepts[]` do x402.
+          description: 'No payment: the body has the x402 `accepts[]`.'
       tags:
       - Credito
     get:
       operationId: get_api_credito
-      summary: Saldo e extrato do crédito — as últimas movimentações, sem devolver o token
-      description: 'Devolve: { saldo_micros, saldo_usd, criado_em, movimentos }'
+      summary: 'Credit balance and statement: the latest movements, without returning the token'
+      description: 'Returns: { saldo_micros, saldo_usd, criado_em, movimentos, proximo }'
+      parameters:
+      - name: movimentos
+        in: query
+        required: false
+        schema:
+          type: string
+        description: '`1`: gets only the paginated history, without the balance.'
+      - name: de
+        in: query
+        required: false
+        schema:
+          type: string
+        description: 'Inclusive start in UTC ISO 8601 with milliseconds. Default: 1970-01-01T00:00:00.000Z.'
+      - name: ate
+        in: query
+        required: false
+        schema:
+          type: string
+        description: 'Exclusive end in UTC ISO 8601 with milliseconds. Default: now. Keep the value between pages.'
+      - name: antes
+        in: query
+        required: false
+        schema:
+          type: string
+        description: '`proximo` cursor of the previous page. Only with movimentos=1.'
+      - name: limite
+        in: query
+        required: false
+        schema:
+          type: integer
+        description: 1 to 50 movements per page; default 20. Only with movimentos=1.
       responses:
         '200':
-          description: '{ saldo_micros, saldo_usd, criado_em, movimentos }'
+          description: '{ saldo_micros, saldo_usd, criado_em, movimentos, proximo }'
           content:
             application/json:
               schema:
@@ -68,24 +99,1033 @@ paths:
                 properties:
                   saldo_micros:
                     type: integer
-                    description: Saldo em micro-dólares (1e-6 USD).
+                    description: Balance in micro-dollars (1e-6 USD).
                   saldo_usd:
                     type: string
                     description: Saldo formatado.
                   criado_em:
                     type: string
-                    description: Quando o crédito foi aberto.
+                    description: When the credit was opened.
                   movimentos:
                     type: array
                     items:
                       type: object
-                    description: Entradas e saídas recentes, com produto e recurso.
+                    description: Recent credits and debits, with product and resource.
+                  proximo:
+                    type: object
+                    description: 'Only with movimentos=1: cursor of the next page or null; movimentos includes id, em, valor_usd, saldo_usd, motivo, produto and recurso.'
                 required:
                 - saldo_micros
                 - saldo_usd
                 - criado_em
                 - movimentos
+                - proximo
+        '400':
+          description: Invalid period, limit or cursor.
         '401':
-          description: Sem token ou token desconhecido.
+          description: No token or unknown token.
       tags:
       - Credito
+  /api/credito/pix:
+    get:
+      operationId: get_api_credito_pix
+      summary: 'Credit by Pix: the key, the fixed exchange rate, the packages in reais and what…'
+      description: 'Returns: { chave, brl_por_usd, pacotes, comprovante, liberacao }'
+      responses:
+        '200':
+          description: '{ chave, brl_por_usd, pacotes, comprovante, liberacao }'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  chave:
+                    type: string
+                    description: The Pix key that receives the payment.
+                  brl_por_usd:
+                    type: number
+                    description: Fixed exchange rate used in the packages.
+                  pacotes:
+                    type: array
+                    items:
+                      type: object
+                    description: 'The packages (3, 5, 10 or 25 dollars), each one with `brl_centavos` and `copia_e_cola` (the Pix copy-and-paste code of the amount, the same text as the QR: the bank app already shows the amount).'
+                  comprovante:
+                    type: object
+                    description: Accepted types (photo or PDF) and the maximum size, in bytes.
+                  liberacao:
+                    type: string
+                    description: '`manual`: o dono confere o Pix e libera.'
+                required:
+                - chave
+                - brl_por_usd
+                - pacotes
+                - comprovante
+                - liberacao
+      tags:
+      - Credito
+    post:
+      operationId: post_api_credito_pix
+      summary: 'Orders credit paid by Pix: multipart with `usd`, `comprovante` (photo or PDF up…'
+      description: 'The credit code comes in the answer and becomes valid when the owner checks the Pix and releases it (by hand, usually on the same day). The `email` is required: the owner contacts the person through it. Optional: `nome`, `pagina` (the page the order came from, up to 2,000 characters) and what the person was buying when they got the 402: `recurso` (up to 2,000), `descricao` (up to 300) and `preco_usd` (decimal, e.g. `0.50`); and `navegador_id` (a UUID that links the orders of the same browser). Everything that arrives is recorded in the order, the receipt included, with the signed-in account (checked through the session cookie), the network and the browser of the requester.
+
+        Returns: { id, estado, credito, estado_em }'
+      responses:
+        '200':
+          description: '{ id, estado, credito, estado_em }'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: Order ID, to follow it.
+                  estado:
+                    type: string
+                    description: '`pendente` until the decision.'
+                  credito:
+                    type: string
+                    description: The `cred_…` token, shown ONCE; it is valid after the release.
+                  estado_em:
+                    type: string
+                    description: Where to follow the order.
+                required:
+                - id
+                - estado
+                - credito
+                - estado_em
+        '400':
+          description: Package not in the list (3, 5, 10 or 25), no receipt, or no valid e-mail.
+        '413':
+          description: Receipt above 2 MB.
+        '415':
+          description: Receipt that is not a photo (JPEG, PNG, WebP) or a PDF.
+        '429':
+          description: The network already sent today's requests.
+        '502':
+          description: 'The e-mail to the owner was not sent: the order is recorded as `falhou`; send it again.'
+        '503':
+          description: The check queue is full, or Pix is unavailable in this app.
+      tags:
+      - Credito
+  /api/credito/pix/{id}:
+    get:
+      operationId: get_api_credito_pix_by_id
+      summary: 'State of a Pix credit order: `pendente`, `liberado`, `recusado` or `falhou`'
+      description: 'Returns: { estado, usd, decidido_em }'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Order ID (32 hex).
+        example: 0123456789abcdef0123456789abcdef
+      responses:
+        '200':
+          description: '{ estado, usd, decidido_em }'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  estado:
+                    type: string
+                    description: '`pendente`, `liberado`, `recusado` or `falhou` (the e-mail to the owner was not sent; send it again).'
+                  usd:
+                    type: integer
+                    description: O pacote pedido.
+                  decidido_em:
+                    type: string
+                    description: When the owner decided, or `null`.
+                required:
+                - estado
+                - usd
+                - decidido_em
+        '404':
+          description: Pedido desconhecido.
+      tags:
+      - Credito
+  /api/credito/asaas/{id}/cancelar:
+    post:
+      operationId: post_api_credito_asaas_by_id_cancelar
+      summary: Cancels a pending charge when the payment is closed
+      description: 'Requires the `cancelamento` ticket returned at creation. An old credit charge accepts its token in `credito`. It acts only in the product and environment of origin. It does not refund payments or remove the history. 202 shows a cancellation in progress; the watcher retries external failures.
+
+        Returns: { id, estado }'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Charge ID (32 hex).
+        example: 0123456789abcdef0123456789abcdef
+      responses:
+        '200':
+          description: '{ id, estado }'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: Charge ID.
+                  estado:
+                    type: string
+                    description: '`cancelando`, `vencido` or the final state already confirmed.'
+                required:
+                - id
+                - estado
+        '404':
+          description: Invalid charge or ticket, or a different product or environment.
+      tags:
+      - Credito
+  /api/credito/asaas:
+    get:
+      operationId: get_api_credito_asaas
+      summary: 'Automatic Pix: whether it is available in this app, the packages in reais and…'
+      description: 'Returns: { disponivel, pacotes, exatos, saldo, precisa_documento }'
+      responses:
+        '200':
+          description: '{ disponivel, pacotes, exatos, saldo, precisa_documento }'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  disponivel:
+                    type: object
+                    description: '`false` when the app does not have Asaas configured (use the Pix with a receipt).'
+                  pacotes:
+                    type: array
+                    items:
+                      type: object
+                    description: The credit packages (3, 5, 10 or 25 dollars), with `brl_centavos`.
+                  exatos:
+                    type: array
+                    items:
+                      type: object
+                    description: Prices that the app declares, with `usd` and `brl_centavos`. They appear only from R$ 5.00 up to R$ 10,000.
+                  saldo:
+                    type: object
+                    description: 'When the product sells balance in reais: the range and whether the signed-in account can buy.'
+                  precisa_documento:
+                    type: object
+                    description: Whether the payer's CPF or CNPJ is still requested.
+                required:
+                - disponivel
+                - pacotes
+                - exatos
+                - saldo
+                - precisa_documento
+      tags:
+      - Credito
+    post:
+      operationId: post_api_credito_asaas
+      summary: 'Creates a dynamic Pix: JSON with `oferta` (`pacote` with `usd`, or `saldo` with…'
+      description: 'The payment releases by itself what was bought: the package becomes the `cred_…` token that already comes in the answer; the balance goes to the organization of the signed-in account. The first purchase sends `documento` (CPF or CNPJ, which goes to the gateway and is not kept here) and `nome`; `email`, `pagina` and `navegador_id` are optional and are recorded. With `forma: "cartao_boleto"`, the charge is open: the answer has `pagamento_em`, the gateway page where you pay by card, boleto or Pix (due in three days). With `forma: "cartao"` and the `cartao` (`titular`, `numero`, `mes`, `ano`, `cvv`, `documento`, `email`, `cep`, `numero_endereco`, `telefone`), the charge is paid by card in the same request: 200 with `estado: "pago"`, 202 with `conferir` while the issuer reviews, 422 when the card is declined; the card is not kept. The `usd` must be a value from `pacotes` or `exatos` of the GET. The server sets the cents and refuses values that are not declared.
+
+        Returns: { id, credito, forma, pix, pagamento_em, estado, estado_em, cancelamento }'
+      responses:
+        '200':
+          description: '{ id, credito, forma, pix, pagamento_em, estado, estado_em, cancelamento }'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: Charge ID, to follow it.
+                  credito:
+                    type: string
+                    description: 'With a package: the `cred_…` token, shown ONCE; it is valid when the payment clears.'
+                  forma:
+                    type: string
+                    description: '`pix` (the default), `cartao` or `cartao_boleto`.'
+                  pix:
+                    type: object
+                    description: '`copia_e_cola`, `imagem` (QR in PNG, data URI) and `expira_em`; only in the `pix` form.'
+                  pagamento_em:
+                    type: string
+                    description: 'In the `cartao_boleto` form: the payment page of the gateway.'
+                  estado:
+                    type: string
+                    description: 'In the `cartao` form: `pago`, or `pendente` with `conferir`.'
+                  estado_em:
+                    type: string
+                    description: Where to follow the payment.
+                  cancelamento:
+                    type: string
+                    description: Ticket to cancel the pending Pix or boleto charge.
+                required:
+                - id
+                - credito
+                - forma
+                - pix
+                - pagamento_em
+                - estado
+                - estado_em
+                - cancelamento
+        '400':
+          description: Credit outside `pacotes` and `exatos`, value out of range, invalid CPF/CNPJ, name or e-mail, invalid card data (`cartao_dados`, with the `campo`), or the gateway refused the payer (`pagador_recusado`, with the reason in `detalhe`).
+        '422':
+          description: Card declined (`cartao_recusado`, with the `campo` when the gateway tells which); change it at `POST /api/credito/asaas/:id/cartao`.
+        '429':
+          description: Limit of 3 attempts per minute or 10 per day, per account or network, or the card limit.
+        '502':
+          description: The gateway did not create the Pix; try again.
+        '503':
+          description: Automatic Pix unavailable in this app, the gateway is busy (`asaas_ocupado`, wait `retry_after_s`), or too many charges awaiting payment from a person who is not signed in.
+      tags:
+      - Credito
+  /api/credito/asaas/{id}:
+    get:
+      operationId: get_api_credito_asaas_by_id
+      summary: 'State of an automatic Pix charge: `pendente`, `pago`, `vencido`, `estornado` or…'
+      description: 'Returns: { estado, pago_em }'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Charge ID (32 hex).
+        example: 0123456789abcdef0123456789abcdef
+      responses:
+        '200':
+          description: '{ estado, pago_em }'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  estado:
+                    type: string
+                    description: '`pago` releases the package token or the balance; a Pix paid after the due date is valid.'
+                  pago_em:
+                    type: string
+                    description: When the payment was confirmed, or `null`.
+                required:
+                - estado
+                - pago_em
+        '404':
+          description: Unknown charge.
+      tags:
+      - Credito
+  /api/credito/asaas/{id}/cartao:
+    post:
+      operationId: post_api_credito_asaas_by_id_cartao
+      summary: 'Pays, with another card, a card charge whose card was declined: the same…'
+      description: 'JSON with the `cartao` (the same fields as `POST /api/credito/asaas`) and, without an account, the `navegador_id` that created the charge. Only a card charge that waits for payment, by the person who created it, and up to five attempts per charge.
+
+        Returns: { estado, estado_em }'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Charge ID (32 hex).
+        example: 0123456789abcdef0123456789abcdef
+      responses:
+        '200':
+          description: '{ estado, estado_em }'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  estado:
+                    type: string
+                    description: '`pago`, or `pendente` with `conferir` while the issuer reviews.'
+                  estado_em:
+                    type: string
+                    description: Where to follow the payment.
+                required:
+                - estado
+                - estado_em
+        '400':
+          description: Invalid card data (`cartao_dados`, with the `campo`).
+        '404':
+          description: Unknown charge, a charge of another person, or a charge that is not by card.
+        '409':
+          description: The charge has expired or was closed; start the payment again.
+        '422':
+          description: Card declined (`cartao_recusado`).
+        '429':
+          description: Card attempts for this charge or for the day exceeded.
+      tags:
+      - Credito
+  /api/credito/asaas/saude:
+    get:
+      operationId: get_api_credito_asaas_saude
+      summary: 'The health of Pix and of the active subscriptions of this app: failures with…'
+      description: 'Returns: { ativo, tarefas }'
+      responses:
+        '200':
+          description: '{ ativo, tarefas }'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ativo:
+                    type: object
+                    description: '`false` when Asaas and the subscriptions are off.'
+                  tarefas:
+                    type: array
+                    items:
+                      type: object
+                    description: 'Each problem: `id`, `falhando` and `motivo`. It includes Pix and, when active, the recovery, queue and budget of the subscriptions. It does not query the provider.'
+                required:
+                - ativo
+                - tarefas
+      tags:
+      - Credito
+  /api/credito/assinaturas:
+    get:
+      operationId: get_api_credito_assinaturas
+      summary: Lists up to 20 subscriptions of your own account in this product
+      description: 'Requires active monthly sales, or staging enabled and a test payment that the server authorizes. Without this authorization, it answers 404. It filters by account, product, payee and environment. It does not query Asaas or count the table. The accepted offer stays available when the catalog stops selling that offer. Sandbox requires a valid ticket. The full query accepts up to 640 characters, including the cursor.
+
+        Returns: { itens[{recurso,id,oferta_id,oferta,estado,simulado,pagamento_em,criado_em,atualizado_em,cancelamento_em,cancelado_em}], proximo, simulado }'
+      parameters:
+      - name: dev
+        in: query
+        required: false
+        schema:
+          type: string
+        description: Signed, valid staging ticket. It does not authorize another account.
+      - name: x402_dev
+        in: query
+        required: false
+        schema:
+          type: string
+        description: Same ticket as `dev`. Use only one of these parameters per request.
+      - name: cursor
+        in: query
+        required: false
+        schema:
+          type: string
+        description: 'proximo received on the previous page: UTC date in ISO with milliseconds, ~ and a 32-character hexadecimal ID.'
+      - name: recurso
+        in: query
+        required: false
+        schema:
+          type: string
+        description: 'Product resource: up to 256 characters, without control characters. It filters the subscription of your own account; empty means a purchase per account.'
+      - name: X-X402-Dev
+        in: header
+        required: false
+        schema:
+          type: string
+        description: Signed, valid staging ticket. Without it, the body flag does not authorize sandbox.
+      responses:
+        '200':
+          description: '{ itens[{recurso,id,oferta_id,oferta,estado,simulado,pagamento_em,criado_em,atualizado_em,cancelamento_em,cancelado_em}], proximo, simulado }'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  itens:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/RegistroDeAssinatura'
+                    description: Up to 20 records of your own account.
+                  proximo:
+                    type: string
+                    description: Cursor of the next page, or null.
+                    nullable: true
+                  simulado:
+                    type: boolean
+                    description: Environment that the server authorized for this request.
+                required:
+                - itens
+                - proximo
+                - simulado
+        '400':
+          description: Invalid body, query, offer, acceptance, card or environment; card declined.
+        '401':
+          description: Missing or invalid session; an API key does not authorize these requests.
+        '403':
+          description: Invalid origin or cookie; for writes, invalid CSRF protection.
+        '404':
+          description: Sales and staging not authorized; the subscription does not exist or belongs to another account, product, payee or environment.
+        '431':
+          description: Cookie header above 8 KiB.
+        '503':
+          description: Account, database, configuration or provider unavailable; the limit of four simultaneous operations was reached.
+      tags:
+      - Credito
+    post:
+      operationId: post_api_credito_assinaturas
+      summary: Subscribes to and pays for the monthly offer by card through the API, when…
+      description: 'Requires active monthly sales, or staging enabled and a test payment that the server authorizes. Without this authorization, it answers 404. Requires a session authenticated in the last five minutes. It does not accept Authorization or X-Api-Key. Send only the declared fields, as JSON up to 4 KiB, over HTTPS. recurso is accepted only when the product requires it and the server confirms its ownership. simulado must match the catalog and the authorized environment of this request. If the ticket expires, the server refuses the switch to production before it creates the charge. The price and the benefits come from the server. The card goes to Asaas only in this request; it is not saved or returned. The buyer IP comes from the server, never from the body. Wait up to 120 seconds. Repeating the offer returns the existing reservation. An inconclusive result requires a lookup by the reference before another creation. The creation does not grant a benefit. The payment confirmed at Asaas grants the paid period.
+
+        Returns: { recurso, id, oferta_id, oferta{id,produto,versao,preco_centavos,moeda,ciclo,renovacao_automatica,compromisso_meses,cancelamento,acesso_pago,teste_dias,conversao_teste,beneficios,hash}, estado, simulado, pagamento_em, criado_em, atualizado_em, cancelamento_em, cancelado_em }'
+      parameters:
+      - name: dev
+        in: query
+        required: false
+        schema:
+          type: string
+        description: Signed, valid staging ticket. Optional; up to 512 characters in the query.
+      - name: x402_dev
+        in: query
+        required: false
+        schema:
+          type: string
+        description: Same ticket as `dev`. Use only one of these parameters per request.
+      - name: X-X402-Dev
+        in: header
+        required: false
+        schema:
+          type: string
+        description: Signed, valid staging ticket. Without it, the body flag does not authorize sandbox.
+      - name: Origin
+        in: header
+        required: true
+        schema:
+          type: string
+        description: Origem HTTPS exata deste produto.
+      - name: X-CSRF-Token
+        in: header
+        required: true
+        schema:
+          type: string
+        description: 64-character token from the session bootstrap of this product. It protects against requests from another site.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                recurso:
+                  type: string
+                  description: Required only in the product that sells per resource. The server confirms that the account owns it.
+                simulado:
+                  type: boolean
+                  description: Catalog value. It declares the intent; it does not grant a test authorization.
+                aceite:
+                  allOf:
+                  - $ref: '#/components/schemas/AceiteDeAssinatura'
+                  description: Only oferta_id, versao, hash and renovacao; equal to the current catalog.
+                cartao:
+                  allOf:
+                  - $ref: '#/components/schemas/CartaoDeAssinatura'
+                  description: Card and billing data of the holder. Do not send a price, IP, environment or identifier of another account.
+              required:
+              - simulado
+              - aceite
+              - cartao
+      responses:
+        '200':
+          description: '{ recurso, id, oferta_id, oferta{id,produto,versao,preco_centavos,moeda,ciclo,renovacao_automatica,compromisso_meses,cancelamento,acesso_pago,teste_dias,conversao_teste,beneficios,hash}, estado, simulado, pagamento_em, criado_em, atualizado_em, cancelamento_em, cancelado_em }'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegistroDeAssinatura'
+        '400':
+          description: Invalid body, query, offer, acceptance, card or environment; card declined.
+        '401':
+          description: Missing or invalid session; an API key does not authorize these requests.
+        '403':
+          description: Invalid origin or cookie; for writes, invalid CSRF protection.
+        '404':
+          description: Sales and staging not authorized; the subscription does not exist or belongs to another account, product, payee or environment.
+        '409':
+          description: Incompatible state, or another offer is already reserved for this account and product.
+        '413':
+          description: JSON body above 4 KiB.
+        '415':
+          description: Body type other than application/json, or a compressed body.
+        '429':
+          description: The account reached the daily limit for creating charges.
+        '431':
+          description: Cookie header above 8 KiB.
+        '503':
+          description: Account, database, configuration or provider unavailable; the limit of four simultaneous operations was reached.
+      tags:
+      - Credito
+  /api/credito/assinaturas/ofertas:
+    get:
+      operationId: get_api_credito_assinaturas_ofertas
+      summary: Gets the monthly offer and the environment of this request, when the product…
+      description: 'Requires active monthly sales, or staging enabled and a test payment that the server authorizes. Without this authorization, it answers 404. It does not create a charge, reservation or benefit. It does not convert the trial into a subscription.
+
+        Returns: { ofertas[{id,produto,versao,preco_centavos,moeda,ciclo,renovacao_automatica,compromisso_meses,cancelamento,acesso_pago,teste_dias,conversao_teste,beneficios,hash}], simulado }'
+      parameters:
+      - name: dev
+        in: query
+        required: false
+        schema:
+          type: string
+        description: Signed, valid staging ticket. Optional; up to 512 characters in the query.
+      - name: x402_dev
+        in: query
+        required: false
+        schema:
+          type: string
+        description: Same ticket as `dev`. Use only one of these parameters per request.
+      - name: X-X402-Dev
+        in: header
+        required: false
+        schema:
+          type: string
+        description: Signed, valid staging ticket. Without it, the body flag does not authorize sandbox.
+      responses:
+        '200':
+          description: '{ ofertas[{id,produto,versao,preco_centavos,moeda,ciclo,renovacao_automatica,compromisso_meses,cancelamento,acesso_pago,teste_dias,conversao_teste,beneficios,hash}], simulado }'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ofertas:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/OfertaDeAssinatura'
+                    description: From 1 to 8 versioned offers of this product.
+                  simulado:
+                    type: boolean
+                    description: Environment that the server authorized for this request.
+                required:
+                - ofertas
+                - simulado
+        '400':
+          description: Invalid body, query, offer, acceptance, card or environment; card declined.
+        '404':
+          description: Sales and staging not authorized; the subscription does not exist or belongs to another account, product, payee or environment.
+        '503':
+          description: Account, database, configuration or provider unavailable; the limit of four simultaneous operations was reached.
+      tags:
+      - Credito
+  /api/credito/assinaturas/{id}:
+    get:
+      operationId: get_api_credito_assinaturas_by_id
+      summary: Gets your own subscription and the accepted offer, without creating a payment
+      description: 'Requires active monthly sales, or staging enabled and a test payment that the server authorizes. Without this authorization, it answers 404. Requires a valid session of this product. It does not query the provider. Sandbox also requires a valid ticket for reading.
+
+        Returns: { recurso, id, oferta_id, oferta{id,produto,versao,preco_centavos,moeda,ciclo,renovacao_automatica,compromisso_meses,cancelamento,acesso_pago,teste_dias,conversao_teste,beneficios,hash}, estado, simulado, pagamento_em, criado_em, atualizado_em, cancelamento_em, cancelado_em }'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: 'Local subscription ID: 32 lowercase hexadecimal characters.'
+        example: 0123456789abcdef0123456789abcdef
+      - name: dev
+        in: query
+        required: false
+        schema:
+          type: string
+        description: Signed, valid staging ticket. Optional; up to 512 characters in the query.
+      - name: x402_dev
+        in: query
+        required: false
+        schema:
+          type: string
+        description: Same ticket as `dev`. Use only one of these parameters per request.
+      - name: recurso
+        in: query
+        required: false
+        schema:
+          type: string
+        description: 'Product resource: up to 256 characters, without control characters. It filters the subscription of your own account; empty means a purchase per account.'
+      - name: X-X402-Dev
+        in: header
+        required: false
+        schema:
+          type: string
+        description: Signed, valid staging ticket. Without it, the body flag does not authorize sandbox.
+      responses:
+        '200':
+          description: '{ recurso, id, oferta_id, oferta{id,produto,versao,preco_centavos,moeda,ciclo,renovacao_automatica,compromisso_meses,cancelamento,acesso_pago,teste_dias,conversao_teste,beneficios,hash}, estado, simulado, pagamento_em, criado_em, atualizado_em, cancelamento_em, cancelado_em }'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegistroDeAssinatura'
+        '400':
+          description: Invalid body, query, offer, acceptance, card or environment; card declined.
+        '401':
+          description: Missing or invalid session; an API key does not authorize these requests.
+        '403':
+          description: Invalid origin or cookie; for writes, invalid CSRF protection.
+        '404':
+          description: Sales and staging not authorized; the subscription does not exist or belongs to another account, product, payee or environment.
+        '431':
+          description: Cookie header above 8 KiB.
+        '503':
+          description: Account, database, configuration or provider unavailable; the limit of four simultaneous operations was reached.
+      tags:
+      - Credito
+    post:
+      operationId: post_api_credito_assinaturas_by_id
+      summary: Stops future charges of your own subscription and keeps the paid period
+      description: 'Requires active monthly sales, or staging enabled and a test payment that the server authorizes. Without this authorization, it answers 404. Send only {} as JSON up to 4 KiB, with a valid session, origin and CSRF. It records the request before it calls Asaas. A pending cancellation is not a confirmed cancellation. You can repeat the same request. Refunds have their own process; this request does not refund the payment.
+
+        Returns: { recurso, id, oferta_id, oferta{id,produto,versao,preco_centavos,moeda,ciclo,renovacao_automatica,compromisso_meses,cancelamento,acesso_pago,teste_dias,conversao_teste,beneficios,hash}, estado, simulado, pagamento_em, criado_em, atualizado_em, cancelamento_em, cancelado_em }'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: 'Local subscription ID: 32 lowercase hexadecimal characters.'
+        example: 0123456789abcdef0123456789abcdef
+      - name: dev
+        in: query
+        required: false
+        schema:
+          type: string
+        description: Signed, valid staging ticket. Optional; up to 512 characters in the query.
+      - name: x402_dev
+        in: query
+        required: false
+        schema:
+          type: string
+        description: Same ticket as `dev`. Use only one of these parameters per request.
+      - name: recurso
+        in: query
+        required: false
+        schema:
+          type: string
+        description: 'Product resource: up to 256 characters, without control characters. It filters the subscription of your own account; empty means a purchase per account.'
+      - name: X-X402-Dev
+        in: header
+        required: false
+        schema:
+          type: string
+        description: Signed, valid staging ticket. Without it, the body flag does not authorize sandbox.
+      - name: Origin
+        in: header
+        required: true
+        schema:
+          type: string
+        description: Origem HTTPS exata deste produto.
+      - name: X-CSRF-Token
+        in: header
+        required: true
+        schema:
+          type: string
+        description: 64-character token from the session bootstrap of this product. It protects against requests from another site.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            example: {}
+      responses:
+        '200':
+          description: '{ recurso, id, oferta_id, oferta{id,produto,versao,preco_centavos,moeda,ciclo,renovacao_automatica,compromisso_meses,cancelamento,acesso_pago,teste_dias,conversao_teste,beneficios,hash}, estado, simulado, pagamento_em, criado_em, atualizado_em, cancelamento_em, cancelado_em }'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegistroDeAssinatura'
+        '400':
+          description: Invalid body, query, offer, acceptance, card or environment; card declined.
+        '401':
+          description: Missing or invalid session; an API key does not authorize these requests.
+        '403':
+          description: Invalid origin or cookie; for writes, invalid CSRF protection.
+        '404':
+          description: Sales and staging not authorized; the subscription does not exist or belongs to another account, product, payee or environment.
+        '409':
+          description: Incompatible state, or another offer is already reserved for this account and product.
+        '413':
+          description: JSON body above 4 KiB.
+        '415':
+          description: Body type other than application/json, or a compressed body.
+        '431':
+          description: Cookie header above 8 KiB.
+        '503':
+          description: Account, database, configuration or provider unavailable; the limit of four simultaneous operations was reached.
+      tags:
+      - Credito
+  /api/credito/assinaturas/{id}/estado:
+    get:
+      operationId: get_api_credito_assinaturas_by_id_estado
+      summary: Follows changes to your own subscription through the real-time channel
+      description: 'Requires active monthly sales, or staging enabled and a test payment that the server authorizes. Without this authorization, it answers 404. Requires a human session of this product. It returns only the ID and the cursor, also after a reconnection. The signal does not grant paid access and does not expose financial data. When it changes, read the authenticated subscription record. Reading the record keeps the checks of environment, payee and resource.
+
+        Returns: { id, cursor }'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: 'Local subscription ID: 32 lowercase hexadecimal characters.'
+        example: 0123456789abcdef0123456789abcdef
+      - name: dev
+        in: query
+        required: false
+        schema:
+          type: string
+        description: Signed, valid staging ticket. Optional; up to 512 characters in the query.
+      - name: x402_dev
+        in: query
+        required: false
+        schema:
+          type: string
+        description: Same ticket as `dev`. Use only one of these parameters per request.
+      - name: X-X402-Dev
+        in: header
+        required: false
+        schema:
+          type: string
+        description: Signed, valid staging ticket. Without it, the body flag does not authorize sandbox.
+      responses:
+        '200':
+          description: '{ id, cursor }'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: 'Local subscription ID: 32 lowercase hexadecimal characters.'
+                  cursor:
+                    type: string
+                    description: State version. Compare it for equality; do not read it as a payment confirmation.
+                required:
+                - id
+                - cursor
+        '400':
+          description: Invalid body, query, offer, acceptance, card or environment; card declined.
+        '401':
+          description: Missing or invalid session; an API key does not authorize these requests.
+        '403':
+          description: Invalid origin or cookie; for writes, invalid CSRF protection.
+        '404':
+          description: Sales and staging not authorized; the subscription does not exist or belongs to another account, product, payee or environment.
+        '431':
+          description: Cookie header above 8 KiB.
+        '503':
+          description: Account, database, configuration or provider unavailable; the limit of four simultaneous operations was reached.
+      tags:
+      - Credito
+components:
+  schemas:
+    OfertaDeAssinatura:
+      type: object
+      properties:
+        id:
+          type: string
+          description: 'Offer ID: 2 to 64 characters; a letter first, then lowercase letters, numbers, hyphens or underscores.'
+        produto:
+          type: string
+          description: Product of the offer; same format as the ID.
+        versao:
+          type: integer
+          description: Version from 1 to 1,000,000.
+        preco_centavos:
+          type: integer
+          description: 'Monthly price in cents: from 500 to 1,000,000.'
+        moeda:
+          type: string
+          description: 'Moeda fixa: BRL.'
+        ciclo:
+          type: string
+          description: 'Periodicidade fixa: MONTHLY.'
+        renovacao_automatica:
+          type: boolean
+          description: 'true: repeats the monthly charge until the cancellation.'
+        compromisso_meses:
+          type: integer
+          description: '1: one monthly period.'
+        cancelamento:
+          type: string
+          description: 'stop_future_charges: stops new charges.'
+        acesso_pago:
+          type: string
+          description: 'until_paid_period_end: keeps the access until the end of the paid period.'
+        teste_dias:
+          type: integer
+          description: Configured period from 0 to 30 days. The catalog does not grant a trial or benefit.
+        conversao_teste:
+          type: string
+          description: 'opt_in: the trial does not subscribe or renew by inference.'
+        beneficios:
+          type: array
+          items:
+            $ref: '#/components/schemas/BeneficioDeAssinatura'
+          description: From 1 to 8 distinct capabilities per paid period.
+        hash:
+          type: string
+          description: 'SHA-256 of the full offer: 64 lowercase hexadecimal characters.'
+      required:
+      - id
+      - produto
+      - versao
+      - preco_centavos
+      - moeda
+      - ciclo
+      - renovacao_automatica
+      - compromisso_meses
+      - cancelamento
+      - acesso_pago
+      - teste_dias
+      - conversao_teste
+      - beneficios
+      - hash
+    BeneficioDeAssinatura:
+      type: object
+      properties:
+        sku:
+          type: string
+          description: 'Product capability: a lowercase letter followed by letters, numbers or underscores; up to 64 characters.'
+        quantidade:
+          type: integer
+          description: Units from 1 to 1,000,000 for each paid period.
+      required:
+      - sku
+      - quantidade
+    RegistroDeAssinatura:
+      type: object
+      properties:
+        recurso:
+          type: string
+          description: 'Product resource: up to 256 characters, without control characters. It filters the subscription of your own account; empty means a purchase per account.'
+        id:
+          type: string
+          description: Local ID of 32 hexadecimal characters; it identifies the lookup and the cancellation.
+        oferta_id:
+          type: string
+          description: ID of the accepted offer.
+        oferta:
+          allOf:
+          - $ref: '#/components/schemas/OfertaDeAssinatura'
+          description: Offer recorded at acceptance. A change in the catalog does not replace this record.
+        estado:
+          type: string
+          description: criando, inconclusiva, checkout, aguardando_pagamento, ativa, cancelando, cancelada, falhou or expirada.
+        simulado:
+          type: boolean
+          description: 'Environment that the server recorded: true for sandbox, false for production.'
+        pagamento_em:
+          type: string
+          description: Null for a subscription made through the API. Old records can have an Asaas HTTPS link in the checkout state.
+          nullable: true
+        criado_em:
+          type: string
+          description: UTC date and time when the subscription was created.
+        atualizado_em:
+          type: string
+          description: UTC date and time of the last change.
+        cancelamento_em:
+          type: string
+          description: UTC date and time of the cancellation request, or null.
+          nullable: true
+        cancelado_em:
+          type: string
+          description: UTC date and time of the confirmed cancellation, or null.
+          nullable: true
+      required:
+      - recurso
+      - id
+      - oferta_id
+      - oferta
+      - estado
+      - simulado
+      - pagamento_em
+      - criado_em
+      - atualizado_em
+      - cancelamento_em
+      - cancelado_em
+    AceiteDeAssinatura:
+      type: object
+      properties:
+        oferta_id:
+          type: string
+          description: ID received in the current catalog.
+        versao:
+          type: integer
+          description: Version received in the current catalog.
+        hash:
+          type: string
+          description: 64-character hash received in the current catalog.
+        renovacao:
+          type: boolean
+          description: Must be true after the explicit acceptance of the monthly charge and the renewal.
+      required:
+      - oferta_id
+      - versao
+      - hash
+      - renovacao
+    CartaoDeAssinatura:
+      type: object
+      properties:
+        titular:
+          type: string
+          description: 'Name on the card: 3 to 100 characters.'
+        numero:
+          type: string
+          description: Valid number with 13 to 19 digits; spaces and separators are accepted.
+        mes:
+          type: string
+          description: 'Expiry month: 1 to 12.'
+        ano:
+          type: string
+          description: Expiry year with four digits; the card must not be expired.
+        cvv:
+          type: string
+          description: 'Security code: three digits; four for American Express.'
+        documento:
+          type: string
+          description: Valid CPF or CNPJ of the holder.
+        email:
+          type: string
+          description: 'E-mail of the holder: up to 254 characters.'
+        cep:
+          type: string
+          description: 'Billing CEP of the holder: eight digits.'
+        numero_endereco:
+          type: string
+          description: 'Number of the billing address: up to 20 characters.'
+        telefone:
+          type: string
+          description: 'Phone of the holder: 10 to 13 digits.'
+      required:
+      - titular
+      - numero
+      - mes
+      - ano
+      - cvv
+      - documento
+      - email
+      - cep
+      - numero_endereco
+      - telefone
+  securitySchemes:
+    globalAccount:
+      type: apiKey
+      in: cookie
+      name: __Host-mm-auth
+      description: Global session in the product's HttpOnly cookie; writes require exact Origin and X-CSRF-Token.
+    contaChaveApi:
+      type: http
+      scheme: bearer
+      bearerFormat: mmk_…
+      description: 'Account API key: `Authorization: Bearer mmk_…` or `X-Api-Key: mmk_…`. Created on the account page (API keys), valid only in the product where it was created; it acts as the account (or the organization that owns it).'
+    carteiraAgente:
+      type: http
+      scheme: bearer
+      bearerFormat: mmw_…
+      description: 'Wallet credential of an agent without an account (`Authorization: Bearer mmw_…`, 30 days, this product only): POST /api/auth/wallet/agent/start, sign the message with the wallet, POST /api/auth/wallet/agent/token. The owner is `x402:<address>`.'
+x-service-info:
+  categories:
+  - public-procurement
+  - documents
+  - data
+  docs:
+    homepage: https://editalmd.com/
+    apiReference: https://editalmd.com/developers
+    llms: https://editalmd.com/llms.txt

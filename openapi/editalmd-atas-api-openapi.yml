@@ -1,0 +1,167 @@
+openapi: 3.2.0
+info:
+  title: EditalMD Atas API
+  version: 1d751aaf
+servers:
+- url: https://editalmd.com
+tags:
+- name: Atas
+paths:
+  /api/atas:
+    get:
+      operationId: get_api_atas
+      summary: Valid framework agreements by object, with the validity and whether they accept…
+      description: 'Searches the framework agreements published on PNCP that are still valid (not cancelled, valid until today or later), the most relevant for the terms first: the managing agency, the object, the validity, whether it accepts joining (carona) and the address of the agreement on PNCP. `adesao=1` brings only the ones that accept it. The procurement record (`/api/compra/:id`) brings the agreements that it generated. `Accept: text/html` opens the Registered prices tab with the terms.
+
+        Returns: { itens[{ata,compra,atas,compra_id?,numero,orgao,orgao_cnpj,unidade,objeto,vigencia_inicio,vigencia_fim,adesao,pncp_url}], pagina, mais, fonte }'
+      parameters:
+      - name: q
+        in: query
+        required: true
+        schema:
+          type: string
+        description: Terms of the object or of the item, at least 3 letters.
+      - name: pagina
+        in: query
+        required: false
+        schema:
+          type: integer
+        description: Page, 0 to 49 (default 0).
+      - name: adesao
+        in: query
+        required: false
+        schema:
+          type: string
+        description: '`1`: only the agreements that accept joining.'
+      responses:
+        '200':
+          description: '{ itens[{ata,compra,atas,compra_id?,numero,orgao,orgao_cnpj,unidade,objeto,vigencia_inicio,vigencia_fim,adesao,pncp_url}], pagina, mais, fonte }'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AtasVigentes'
+        '400':
+          description: 'Short term: `termo_curto`, with `minimo_caracteres`.'
+        '502':
+          description: Origin unavailable.
+        '503':
+          description: Base loading (`base_indisponivel`) or a slow search, with `Retry-After`.
+      tags:
+      - Atas
+components:
+  schemas:
+    Ata:
+      type: object
+      properties:
+        ata:
+          type: string
+          description: Control number of the agreement on PNCP (`CNPJ-1-SEQ/ANO-SEQATA`); null when the line joins several.
+          nullable: true
+        compra:
+          type: string
+          description: Control number of the procurement that generated the agreement.
+          nullable: true
+        atas:
+          type: integer
+          description: How many agreements the line joins (the ones of the same procurement); in the record, 1.
+        compra_id:
+          type: integer
+          description: Procurement id in the collection (`/api/compra/:id`, with the documents); missing when it is not in the collection.
+        numero:
+          type: string
+          description: Agreement number at the agency; null when the line joins several.
+          nullable: true
+        orgao:
+          type: string
+          description: Managing agency.
+          nullable: true
+        orgao_cnpj:
+          type: string
+          description: CNPJ of the managing agency.
+          nullable: true
+        unidade:
+          type: string
+          description: Agency unit.
+          nullable: true
+        objeto:
+          type: string
+          description: Object of the contract.
+          nullable: true
+        vigencia_inicio:
+          type: string
+          description: Start of the validity, `AAAA-MM-DD`.
+          nullable: true
+        vigencia_fim:
+          type: string
+          description: End of the validity, `AAAA-MM-DD`.
+          nullable: true
+        adesao:
+          type: boolean
+          description: It accepts joining by another agency (carona); null when the source does not say.
+          nullable: true
+        pncp_url:
+          type: string
+          description: The framework agreement on PNCP, or the procurement (with its agreements) when the line joins several.
+          nullable: true
+      required:
+      - ata
+      - compra
+      - atas
+      - numero
+      - orgao
+      - orgao_cnpj
+      - unidade
+      - objeto
+      - vigencia_inicio
+      - vigencia_fim
+      - adesao
+      - pncp_url
+      description: A framework agreement published on PNCP; in the search, the agreements of the same procurement in one line (`atas`), with the longest validity and the link of the procurement.
+    AtasVigentes:
+      type: object
+      properties:
+        itens:
+          type: array
+          items:
+            $ref: '#/components/schemas/Ata'
+          description: Agreements not cancelled, valid until today or later.
+        pagina:
+          type: integer
+          description: Returned page (0 to 49).
+        mais:
+          type: boolean
+          description: There is another page.
+        fonte:
+          type: string
+          description: The data source.
+      required:
+      - itens
+      - pagina
+      - mais
+      - fonte
+      description: The valid framework agreements that matched the term, the most relevant first, 20 per page.
+  securitySchemes:
+    globalAccount:
+      type: apiKey
+      in: cookie
+      name: __Host-mm-auth
+      description: Global session in the product's HttpOnly cookie; writes require exact Origin and X-CSRF-Token.
+    contaChaveApi:
+      type: http
+      scheme: bearer
+      bearerFormat: mmk_…
+      description: 'Account API key: `Authorization: Bearer mmk_…` or `X-Api-Key: mmk_…`. Created on the account page (API keys), valid only in the product where it was created; it acts as the account (or the organization that owns it).'
+    carteiraAgente:
+      type: http
+      scheme: bearer
+      bearerFormat: mmw_…
+      description: 'Wallet credential of an agent without an account (`Authorization: Bearer mmw_…`, 30 days, this product only): POST /api/auth/wallet/agent/start, sign the message with the wallet, POST /api/auth/wallet/agent/token. The owner is `x402:<address>`.'
+x-service-info:
+  categories:
+  - public-procurement
+  - documents
+  - data
+  docs:
+    homepage: https://editalmd.com/
+    apiReference: https://editalmd.com/developers
+    llms: https://editalmd.com/llms.txt

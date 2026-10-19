@@ -1,7 +1,7 @@
 openapi: 3.2.0
 info:
-  version: 2d690e87
-  title: Editalmd Okf API
+  title: EditalMD Okf API
+  version: 1d751aaf
 servers:
 - url: https://editalmd.com
 tags:
@@ -10,18 +10,113 @@ paths:
   /okf/{arquivo}:
     get:
       operationId: get_okf_by_arquivo
-      summary: 'Bundle OKF (Open Knowledge Format v0.1): markdown com frontmatter para o agente…'
-      description: 'Devolve: `text/markdown`. Comece por `/okf/index.md`, que lista o bundle.'
+      summary: 'OKF bundle (Open Knowledge Format v0.1): Markdown with frontmatter, so that an…'
+      description: 'Returns: `text/markdown`. Start at `/okf/index.md`, which lists the bundle.'
       parameters:
       - name: arquivo
         in: path
         required: true
         schema:
           type: string
+        description: '`index.md`, `sobre.md`, `api.md` or `faq.md`.'
+        example: index.md
+      - name: X-Agent-Pass
+        in: header
+        required: false
+        schema:
+          type: string
+        description: Individual agent credential, required together with X-Editalmd-Avaliacao.
+      - name: X-Editalmd-Avaliacao
+        in: header
+        required: false
+        schema:
+          type: string
+        description: evaluation.access_code of the sponsored premium, only for this document and agent, with an expiry. Use it together with X-Agent-Pass; it is not a receipt or a purchase.
+      - name: X-Editalmd-Acesso
+        in: header
+        required: false
+        schema:
+          type: string
+        description: 'Private code in acesso.codigo after a payment by someone not signed in to the account; up to 4096 characters. It authorizes this document for whoever holds it. A purchase made with the account session issues no code: the global right of the account (HttpOnly cookie) applies, and the right of the edm_… guest applies with its token. A public receipt does not grant access.'
       responses:
         '200':
-          description: '`text/markdown`. Comece por `/okf/index.md`, que lista o bundle.'
+          description: '`text/markdown`. Start at `/okf/index.md`, which lists the bundle.'
+        '402':
+          description: Without valid purchased or sponsored access. Use the individual evaluation, buy through POST /api/documento/:id/geracao or a deposit; five examples are free.
         '404':
-          description: Arquivo fora do bundle.
+          description: Purchase not found for the authenticated account, or a missing document/resource.
       tags:
       - Okf
+  /okf/{tipo}/{id}.md:
+    get:
+      operationId: get_okf_by_tipo_by_id_md
+      summary: 'The same record that the API answers, in OKF Markdown: `documento` (Document of…'
+      description: 'Returns: `text/markdown` with OKF frontmatter; `resource` points to the equivalent JSON. Without `.md` it answers 301 to the canonical URL.'
+      parameters:
+      - name: tipo
+        in: path
+        required: true
+        schema:
+          type: string
+        description: 'One of: `documento`.'
+        example: documento
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: The record ID, as the API accepts it.
+        example: '123'
+      - name: X-Agent-Pass
+        in: header
+        required: false
+        schema:
+          type: string
+        description: Individual agent credential, required together with X-Editalmd-Avaliacao.
+      - name: X-Editalmd-Avaliacao
+        in: header
+        required: false
+        schema:
+          type: string
+        description: evaluation.access_code of the sponsored premium, only for this document and agent, with an expiry. Use it together with X-Agent-Pass; it is not a receipt or a purchase.
+      - name: X-Editalmd-Acesso
+        in: header
+        required: false
+        schema:
+          type: string
+        description: 'Private code in acesso.codigo after a payment by someone not signed in to the account; up to 4096 characters. It authorizes this document for whoever holds it. A purchase made with the account session issues no code: the global right of the account (HttpOnly cookie) applies, and the right of the edm_… guest applies with its token. A public receipt does not grant access.'
+      responses:
+        '200':
+          description: '`text/markdown` with OKF frontmatter; `resource` points to the equivalent JSON. Without `.md` it answers 301 to the canonical URL.'
+        '402':
+          description: Without valid purchased or sponsored access. Use the individual evaluation, buy through POST /api/documento/:id/geracao or a deposit; five examples are free.
+        '404':
+          description: Purchase not found for the authenticated account, or a missing document/resource.
+      tags:
+      - Okf
+components:
+  securitySchemes:
+    globalAccount:
+      type: apiKey
+      in: cookie
+      name: __Host-mm-auth
+      description: Global session in the product's HttpOnly cookie; writes require exact Origin and X-CSRF-Token.
+    contaChaveApi:
+      type: http
+      scheme: bearer
+      bearerFormat: mmk_…
+      description: 'Account API key: `Authorization: Bearer mmk_…` or `X-Api-Key: mmk_…`. Created on the account page (API keys), valid only in the product where it was created; it acts as the account (or the organization that owns it).'
+    carteiraAgente:
+      type: http
+      scheme: bearer
+      bearerFormat: mmw_…
+      description: 'Wallet credential of an agent without an account (`Authorization: Bearer mmw_…`, 30 days, this product only): POST /api/auth/wallet/agent/start, sign the message with the wallet, POST /api/auth/wallet/agent/token. The owner is `x402:<address>`.'
+x-service-info:
+  categories:
+  - public-procurement
+  - documents
+  - data
+  docs:
+    homepage: https://editalmd.com/
+    apiReference: https://editalmd.com/developers
+    llms: https://editalmd.com/llms.txt

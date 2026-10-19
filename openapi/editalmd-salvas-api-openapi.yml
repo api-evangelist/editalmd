@@ -1,0 +1,191 @@
+openapi: 3.2.0
+info:
+  title: EditalMD Salvas API
+  version: 1d751aaf
+servers:
+- url: https://editalmd.com
+tags:
+- name: Salvas
+paths:
+  /api/salvas:
+    get:
+      operationId: get_api_salvas
+      summary: Lists up to 200 tenders saved by the owner, free of charge
+      description: 'Returns: { itens[{compra_id,compra,salvo_em,url}], limite }'
+      responses:
+        '200':
+          description: '{ itens[{compra_id,compra,salvo_em,url}], limite }'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  itens:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CompraSalva'
+                    description: Most recent first; snapshot taken when saved.
+                  limite:
+                    type: integer
+                    description: 200 por dono.
+                required:
+                - itens
+                - limite
+        '401':
+          description: Missing or invalid owner token.
+        '503':
+          description: Database unavailable.
+      tags:
+      - Salvas
+  /api/salvas/{id}:
+    get:
+      operationId: get_api_salvas_by_id
+      summary: Reads a tender saved by the owner
+      description: 'Saving does not create a watch or a notification. The client gives only the ID; the snapshot comes from the collection.
+
+        Returns: { salva{compra_id,compra,salvo_em,url} }'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Procurement identifier in the collection.
+        example: '42'
+      responses:
+        '200':
+          description: '{ salva{compra_id,compra,salvo_em,url} }'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  salva:
+                    allOf:
+                    - $ref: '#/components/schemas/CompraSalva'
+                    description: Saved tender.
+                required:
+                - salva
+        '401':
+          description: Missing or invalid owner token.
+        '404':
+          description: Procurement not found.
+        '409':
+          description: Limit of 200 saved items reached.
+        '503':
+          description: Database, origin or daily budget unavailable.
+      tags:
+      - Salvas
+    put:
+      operationId: put_api_salvas_by_id
+      summary: Saves the tender free of charge; repeating does not duplicate
+      description: 'Saving does not create a watch or a notification. The client gives only the ID; the snapshot comes from the collection.
+
+        Returns: { salva{compra_id,compra,salvo_em,url} }'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Procurement identifier in the collection.
+        example: '42'
+      responses:
+        '200':
+          description: '{ salva{compra_id,compra,salvo_em,url} }'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  salva:
+                    allOf:
+                    - $ref: '#/components/schemas/CompraSalva'
+                    description: Saved tender.
+                required:
+                - salva
+        '401':
+          description: Missing or invalid owner token.
+        '404':
+          description: Procurement not found.
+        '409':
+          description: Limit of 200 saved items reached.
+        '503':
+          description: Database, origin or daily budget unavailable.
+      tags:
+      - Salvas
+    delete:
+      operationId: delete_api_salvas_by_id
+      summary: Removes the tender from the personal list; repeating is safe
+      description: 'Saving does not create a watch or a notification. The client gives only the ID; the snapshot comes from the collection.
+
+        Returns: 204 with no body.'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Procurement identifier in the collection.
+        example: '42'
+      responses:
+        '200':
+          description: 204 with no body.
+        '401':
+          description: Missing or invalid owner token.
+        '404':
+          description: Procurement not found.
+        '409':
+          description: Limit of 200 saved items reached.
+        '503':
+          description: Database, origin or daily budget unavailable.
+      tags:
+      - Salvas
+components:
+  schemas:
+    CompraSalva:
+      type: object
+      properties:
+        compra_id:
+          type: integer
+          description: Procurement ID.
+        compra:
+          type: object
+          description: 'Snapshot: id, object, state, municipality, agency, modality and estimated value.'
+        salvo_em:
+          type: string
+          description: ISO date of inclusion.
+        url:
+          type: string
+          description: Public record in the collection.
+      required:
+      - compra_id
+      - compra
+      - salvo_em
+      - url
+      description: Tender of the personal list, accessible with the owner's access code.
+  securitySchemes:
+    globalAccount:
+      type: apiKey
+      in: cookie
+      name: __Host-mm-auth
+      description: Global session in the product's HttpOnly cookie; writes require exact Origin and X-CSRF-Token.
+    contaChaveApi:
+      type: http
+      scheme: bearer
+      bearerFormat: mmk_…
+      description: 'Account API key: `Authorization: Bearer mmk_…` or `X-Api-Key: mmk_…`. Created on the account page (API keys), valid only in the product where it was created; it acts as the account (or the organization that owns it).'
+    carteiraAgente:
+      type: http
+      scheme: bearer
+      bearerFormat: mmw_…
+      description: 'Wallet credential of an agent without an account (`Authorization: Bearer mmw_…`, 30 days, this product only): POST /api/auth/wallet/agent/start, sign the message with the wallet, POST /api/auth/wallet/agent/token. The owner is `x402:<address>`.'
+x-service-info:
+  categories:
+  - public-procurement
+  - documents
+  - data
+  docs:
+    homepage: https://editalmd.com/
+    apiReference: https://editalmd.com/developers
+    llms: https://editalmd.com/llms.txt

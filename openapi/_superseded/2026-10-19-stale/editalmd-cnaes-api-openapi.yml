@@ -1,0 +1,117 @@
+openapi: 3.2.0
+info:
+  version: 2d690e87
+  title: Editalmd Cnaes API
+servers:
+- url: https://editalmd.com
+tags:
+- name: Cnaes
+paths:
+  /api/cnaes:
+    get:
+      operationId: get_api_cnaes
+      summary: 'A lista de CNAE como o alerta por CNPJ a lê: descrição oficial (IBGE), família…'
+      description: 'Sem `q`, o ranking dos CNAEs com mais fornecedores ativos no SICAF (dados abertos do compras.gov.br) — é a lista de quem vende para o governo, gravada e re-medida pelo cron diário. Com `q`, busca por prefixo do código (`1412`, `1412-6/01`) ou por palavra da descrição. `familia`/`termos` nulos dizem que o CNAE ainda não está no dicionário: um alerta por CNPJ não o usa.
+
+        Devolve: { itens[{codigo,cnae,descricao,familia,familia_nome,termos,fornecedores_sicaf,sicaf_medido_em,ibge_atualizado_em}], limite, q, dicionario, fontes }'
+      parameters:
+      - name: q
+        in: query
+        required: false
+        schema:
+          type: string
+        description: Prefixo do código (2 a 7 dígitos) ou palavra da descrição (2+ letras).
+      - name: limite
+        in: query
+        required: false
+        schema:
+          type: integer
+        description: 1 a 100 (padrão 20), por fornecedores no SICAF, decrescente.
+      responses:
+        '200':
+          description: '{ itens[{codigo,cnae,descricao,familia,familia_nome,termos,fornecedores_sicaf,sicaf_medido_em,ibge_atualizado_em}], limite, q, dicionario, fontes }'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  itens:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Cnae'
+                    description: Os CNAEs que casam, os com mais fornecedores primeiro.
+                  limite:
+                    type: integer
+                    description: Teto aplicado.
+                  q:
+                    type: string
+                    description: O filtro aplicado.
+                    nullable: true
+                  dicionario:
+                    type: object
+                    description: '`familias`, `cnaes_mapeados` e `medido_em` (quando a cobertura no acervo foi medida).'
+                  fontes:
+                    type: object
+                    description: De onde vêm `descricao` (IBGE) e `fornecedores_sicaf` (compras.gov.br).
+                required:
+                - itens
+                - limite
+                - q
+                - dicionario
+                - fontes
+        '400':
+          description: '`q` com menos de 2 caracteres.'
+        '503':
+          description: Banco indisponível.
+      tags:
+      - Cnaes
+components:
+  schemas:
+    Cnae:
+      type: object
+      properties:
+        codigo:
+          type: string
+          description: 7 dígitos.
+        cnae:
+          type: string
+          description: Formatado, ex. `1412-6/01`.
+        descricao:
+          type: string
+          description: Descrição oficial (IBGE/Concla).
+          nullable: true
+        familia:
+          type: string
+          description: Família de termos no dicionário; nulo se ainda não mapeado.
+          nullable: true
+        familia_nome:
+          type: string
+          description: Nome da família.
+          nullable: true
+        termos:
+          type: string
+          description: Termos que um alerta por CNPJ usaria para este CNAE.
+          nullable: true
+        fornecedores_sicaf:
+          type: integer
+          description: Fornecedores ativos com este CNAE no SICAF (dados abertos do compras.gov.br).
+          nullable: true
+        sicaf_medido_em:
+          type: string
+          description: Quando essa contagem foi medida.
+          nullable: true
+        ibge_atualizado_em:
+          type: string
+          description: Quando a descrição foi atualizada do IBGE.
+          nullable: true
+      required:
+      - codigo
+      - cnae
+      - descricao
+      - familia
+      - familia_nome
+      - termos
+      - fornecedores_sicaf
+      - sicaf_medido_em
+      - ibge_atualizado_em
+      description: 'Um CNAE (subclasse) como o produto o vê: descrição oficial, dicionário e fornecedores no SICAF.'

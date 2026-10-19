@@ -1,0 +1,2529 @@
+openapi: 3.2.0
+info:
+  title: EditalMD Consulta API
+  version: 1d751aaf
+servers:
+- url: https://editalmd.com
+tags:
+- name: Consulta
+paths:
+  /api/consulta/cadastro/{cnpj}:
+    get:
+      operationId: get_api_consulta_cadastro_by_cnpj
+      summary: 'Free registration record: name, status, activity and address'
+      description: 'It does not use the free allowance or the balance. It does not reveal contacts or partners and does not run extra analysis. It keeps the protection limit of the origin. For sanctions, tax situation and the live CNIA, request /api/consulta/cnpj/:cnpj explicitly.
+
+        Returns: { consulta, escopo, cnpj, empresa }'
+      parameters:
+      - name: cnpj
+        in: path
+        required: true
+        schema:
+          type: string
+        description: CNPJ with or without punctuation.
+        example: '66300125000145'
+      responses:
+        '200':
+          description: '{ consulta, escopo, cnpj, empresa }'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsultaCadastro'
+        '400':
+          description: Invalid CNPJ or CEP.
+        '404':
+          description: Record not found.
+        '429':
+          description: Protection limit of the origin. Wait for the Retry-After, at no charge.
+        '503':
+          description: Source unavailable. Try again, at no charge.
+      tags:
+      - Consulta
+  /api/consulta/endereco/{cep}:
+    get:
+      operationId: get_api_consulta_endereco_by_cep
+      summary: Addresses and companies of a CEP, without using the free allowance or the…
+      description: 'Up to 20 addresses and 20 companies. pontos_total gives the total; escopo=cadastro. Uses the ConsultaCep shape, without uso or _links. Keeps the protection limit of the origin.
+
+        Returns: { consulta, escopo, cep, endereco, pontos, pontos_total, empresas{itens,mais}, fonte }'
+      parameters:
+      - name: cep
+        in: path
+        required: true
+        schema:
+          type: string
+        description: CEP with or without a hyphen.
+        example: '71915000'
+      responses:
+        '200':
+          description: '{ consulta, escopo, cep, endereco, pontos, pontos_total, empresas{itens,mais}, fonte }'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsultaEndereco'
+        '400':
+          description: Invalid CNPJ or CEP.
+        '404':
+          description: Record not found.
+        '429':
+          description: Protection limit of the origin. Wait for the Retry-After, at no charge.
+        '503':
+          description: Source unavailable. Try again, at no charge.
+      tags:
+      - Consulta
+  /api/consulta/sugerir:
+    get:
+      operationId: get_api_consulta_sugerir
+      summary: Suggests companies by CNPJ, name, partner, phone or e-mail, without a selector
+      description: 'Up to 8 companies, sorted by match. It does not use lookups and does not reveal contacts. incompleto shows that one of the sources did not answer.
+
+        Returns: { ok, incompleto, results }'
+      parameters:
+      - name: q
+        in: query
+        required: true
+        schema:
+          type: string
+        description: Name with 3 to 120 characters, CNPJ, phone with area code or full e-mail.
+        example: wrp consultoria
+      responses:
+        '200':
+          description: '{ ok, incompleto, results }'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    description: True when at least one source answered.
+                  incompleto:
+                    type: boolean
+                    description: True when some suggestion source failed.
+                  results:
+                    type: array
+                    items:
+                      type: object
+                    description: 'Up to 8 companies without repetition: cnpj, label and correspondencia. The text search can include razaoSocial, municipio, bairro, uf, situacao, situacaoEspecial and perto. No contacts or personal names.'
+                required:
+                - ok
+                - incompleto
+                - results
+        '400':
+          description: Incomplete or invalid term.
+        '429':
+          description: Origin limit.
+        '503':
+          description: Search unavailable.
+      tags:
+      - Consulta
+  /api/consulta:
+    get:
+      operationId: get_api_consulta
+      summary: 'The CNPJ and address lookup service: today''s free allowance, the single…'
+      description: 'Without a credential, it shows the free allowance and the offers. With an account, credit (`X-Credito`) or an x402 wallet (`X-Wallet-Token`), it also shows the balance shared across Radar CNPJ, PontoFato and EditalMD. The wallet credential is issued separately on each portal.
+
+        Returns: { servico, nome, descricao, gratis{por_dia,restantes_hoje,renova_em?}, ofertas[{id,tipo,nome,consultas,dias,renovacao_automatica,preco_usd,preco_brl,disponivel,compra}], lote, saldo{dono,consultas,planos}, como_comprar, _links }'
+      parameters:
+      - name: lingua
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - pt
+          - en
+        description: 'Language of the messages: `pt` or `en` (default: the browser''s language, otherwise English).'
+      - name: X-Wallet-Token
+        in: header
+        required: false
+        schema:
+          type: string
+        description: mmw_… credential of this portal, obtained through the wallet signature at /api/auth/wallet/agent/start and /api/auth/wallet/agent/token. It authorizes the use of the x402 wallet balance.
+      responses:
+        '200':
+          description: '{ servico, nome, descricao, gratis{por_dia,restantes_hoje,renova_em?}, ofertas[{id,tipo,nome,consultas,dias,renovacao_automatica,preco_usd,preco_brl,disponivel,compra}], lote, saldo{dono,consultas,planos}, como_comprar, _links }'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsultaServico'
+        '401':
+          description: Credencial apresentada e recusada.
+        '503':
+          description: Account or balance service down.
+      tags:
+      - Consulta
+  /api/consulta/cnpj/{cnpj}:
+    get:
+      operationId: get_api_consulta_cnpj_by_cnpj
+      summary: 'Looks up a company by CNPJ: the Federal Revenue record, the company''s sanctions…'
+      description: 'One lookup uses the free daily allowance (10 per account, or per network without an account), then the account or credit balance. Without allowance or balance, HTTP 402 includes offers. Numeric and alphanumeric CNPJs are accepted. Missing records, unavailable sources and rate limits are not charged. Personal data stays masked. The sancoes block lists public records against the whole company: CEIS, CNEP, CEPIM, CGU leniency agreements and TCU debarred bidders. Check source dates before supplier decisions.
+
+        Returns: { consulta, temas?, cnpj, empresa, sancoes?{total,vigentes,porCadastro,itens,mais,conferidoEm,cadastros}, cnia?{situacao,registros,conferidoEm,cnpjs,link}, dividaAtiva?{inscricoes,valor,valorCorresponsavel,ajuizadas,maisAntiga,porNatureza,porSituacao,maiores,mais,referencia,conferidoEm,fonte}, parcelamentos?{quantidade,saldo,itens,referencia,conferidoEm,fonte}, regimeTributario?{atual,anos,referencia,conferidoEm,fonte}, beneficiosFiscais?{itens,mais,importacao,referencia,conferidoEm,fonte}, obras?{quantidade,ativas,anteriores,destinacoes,itens,mais,referencia,conferidoEm,fonte}, devedorContumaz?{consta,itens,lista,referencia,conferidoEm,fonte}, ambiental?{autos,embargos}, trabalhoEscravo?{consta,itens,referencia,conferidoEm,fonte}, governo?{quantidade,valor,ultimos12Meses,orgaos,itens,mais,referencia,conferidoEm,fonte}, pagamentos?{valor,quantidade,desde,ultimo,orgaos,referencia,fonte}, notasFederais?{valor,notas,desde,ate,compradores,anos,referencia,fonte}, contratosFederais?{quantidade,valor,desde,orgaos,itens,mais,referencia,fonte}, campanhas?{quantidade,valor,anos,partidos,itens,mais,referencia,fonte}, municipiosSp?{pago,empenhado,municipios,desde,anos,orgaos,elementos,modalidades,referencia,fonte}, pep?{quantidade,pessoas,referencia,conferidoEm,fonte}, registros?{itens,fontes}, bndes?{contratos,ativos,valorContratado,valorDesembolsado,itens,mais,referencia,fonte}, fundos?{proprio,fundos,patrimonio,papeis,itens,mais,referencia,fonte}, ponto?{lat,lon,precisao,logradouro,numero,bairro,cidade,uf,cep,fonte}, uso{via,restantes}, _links }'
+      parameters:
+      - name: cnpj
+        in: path
+        required: true
+        schema:
+          type: string
+        description: CNPJ with or without punctuation (14 characters).
+        example: 00000000000191
+      - name: lingua
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - pt
+          - en
+        description: 'Language of the messages: `pt` or `en` (default: the browser''s language, otherwise English).'
+      - name: temas
+        in: query
+        required: false
+        schema:
+          type: string
+        description: 'Comma-separated topics (up to 240 characters): dados, socios, sancoes, fiscal, divida, obras, trabalho, ibama, contratos, pep, vendas, campanhas, prefeituras, sicaf, aeronaves, fundos, rntrc, bndes, registros; todos. Omit for the full record. Basic company data always stays; partners require socios. Unrequested fields are omitted; null means an unchecked source. SICAF, aircraft and RNTRC select registry agencies; registros includes all agencies. Prices, limits and personal data masking do not change.'
+        example: sicaf,contratos,bndes
+      - name: Idempotency-Key
+        in: header
+        required: false
+        schema:
+          type: string
+        description: 'Attempt key (up to 80 characters): repeating the SAME lookup with the same key does not charge the balance twice.'
+      - name: X-Wallet-Token
+        in: header
+        required: false
+        schema:
+          type: string
+        description: mmw_… credential of this portal, obtained through the wallet signature at /api/auth/wallet/agent/start and /api/auth/wallet/agent/token. It authorizes the use of the x402 wallet balance.
+      responses:
+        '200':
+          description: '{ consulta, temas?, cnpj, empresa, sancoes?{total,vigentes,porCadastro,itens,mais,conferidoEm,cadastros}, cnia?{situacao,registros,conferidoEm,cnpjs,link}, dividaAtiva?{inscricoes,valor,valorCorresponsavel,ajuizadas,maisAntiga,porNatureza,porSituacao,maiores,mais,referencia,conferidoEm,fonte}, parcelamentos?{quantidade,saldo,itens,referencia,conferidoEm,fonte}, regimeTributario?{atual,anos,referencia,conferidoEm,fonte}, beneficiosFiscais?{itens,mais,importacao,referencia,conferidoEm,fonte}, obras?{quantidade,ativas,anteriores,destinacoes,itens,mais,referencia,conferidoEm,fonte}, devedorContumaz?{consta,itens,lista,referencia,conferidoEm,fonte}, ambiental?{autos,embargos}, trabalhoEscravo?{consta,itens,referencia,conferidoEm,fonte}, governo?{quantidade,valor,ultimos12Meses,orgaos,itens,mais,referencia,conferidoEm,fonte}, pagamentos?{valor,quantidade,desde,ultimo,orgaos,referencia,fonte}, notasFederais?{valor,notas,desde,ate,compradores,anos,referencia,fonte}, contratosFederais?{quantidade,valor,desde,orgaos,itens,mais,referencia,fonte}, campanhas?{quantidade,valor,anos,partidos,itens,mais,referencia,fonte}, municipiosSp?{pago,empenhado,municipios,desde,anos,orgaos,elementos,modalidades,referencia,fonte}, pep?{quantidade,pessoas,referencia,conferidoEm,fonte}, registros?{itens,fontes}, bndes?{contratos,ativos,valorContratado,valorDesembolsado,itens,mais,referencia,fonte}, fundos?{proprio,fundos,patrimonio,papeis,itens,mais,referencia,fonte}, ponto?{lat,lon,precisao,logradouro,numero,bairro,cidade,uf,cep,fonte}, uso{via,restantes}, _links }'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsultaCnpj'
+        '400':
+          description: Invalid CNPJ or temas_invalidos (nothing is charged).
+        '401':
+          description: 'Credential presented and refused: session ended or invalid API key.'
+        '402':
+          description: 'The free daily allowance and the balance are used up: `error` (`franquia_esgotada` or `saldo_esgotado`), `message`, `gratis` (with `renova_em`) and `ofertas[]` with the purchase URL, in the shape of `GET /api/consulta`. On the portal that sells the single call, also `accepts` (x402) and `por_chamada` (`preco_usd`, `como`): repeat the call with the x402 proof or with `Authorization: Bearer cred_…`, without an account or package; only what the origin delivered is charged.'
+        '404':
+          description: Not in the base (the lookup is not charged).
+        '429':
+          description: Too many lookups in this minute; obey the Retry-After (the lookup is not charged).
+        '503':
+          description: Data source or balance service down (the lookup is not charged).
+      tags:
+      - Consulta
+  /api/consulta/cep/{cep}:
+    get:
+      operationId: get_api_consulta_cep_by_cep
+      summary: 'Looks up an address by CEP: the addresses with coordinates (CNEFE/IBGE) and the…'
+      description: 'One lookup, paid like the CNPJ lookup: the free daily allowance, then the balance. It returns up to 20 addresses and up to 20 companies; the total of addresses comes in `pontos_total`.
+
+        Returns: { consulta, cep, endereco, pontos, pontos_total, empresas{itens,mais}, fonte, uso{via,restantes}, _links }'
+      parameters:
+      - name: cep
+        in: path
+        required: true
+        schema:
+          type: string
+        description: CEP with 8 digits, with or without a hyphen.
+        example: '01310100'
+      - name: lingua
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - pt
+          - en
+        description: 'Language of the messages: `pt` or `en` (default: the browser''s language, otherwise English).'
+      - name: Idempotency-Key
+        in: header
+        required: false
+        schema:
+          type: string
+        description: 'Attempt key (up to 80 characters): repeating the SAME lookup with the same key does not charge the balance twice.'
+      - name: X-Wallet-Token
+        in: header
+        required: false
+        schema:
+          type: string
+        description: mmw_… credential of this portal, obtained through the wallet signature at /api/auth/wallet/agent/start and /api/auth/wallet/agent/token. It authorizes the use of the x402 wallet balance.
+      responses:
+        '200':
+          description: '{ consulta, cep, endereco, pontos, pontos_total, empresas{itens,mais}, fonte, uso{via,restantes}, _links }'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsultaCep'
+        '400':
+          description: Invalid CNPJ or CEP (nothing is charged).
+        '401':
+          description: 'Credential presented and refused: session ended or invalid API key.'
+        '402':
+          description: 'The free daily allowance and the balance are used up: `error` (`franquia_esgotada` or `saldo_esgotado`), `message`, `gratis` (with `renova_em`) and `ofertas[]` with the purchase URL, in the shape of `GET /api/consulta`. On the portal that sells the single call, also `accepts` (x402) and `por_chamada` (`preco_usd`, `como`): repeat the call with the x402 proof or with `Authorization: Bearer cred_…`, without an account or package; only what the origin delivered is charged.'
+        '404':
+          description: Not in the base (the lookup is not charged).
+        '429':
+          description: Too many lookups in this minute; obey the Retry-After (the lookup is not charged).
+        '503':
+          description: Data source or balance service down (the lookup is not charged).
+      tags:
+      - Consulta
+  /api/consulta/planos/{oferta}:
+    post:
+      operationId: post_api_consulta_planos_by_oferta
+      summary: Buys the single package or one of the three plans, with credit or x402, also…
+      description: 'Without payment, it returns 402 with the price in dollars and reais. The body uses x402 v1; PAYMENT-REQUIRED uses v2. With an account or credit, the balance stays with that holder. Without identification, it stays with the wallet that the x402 payment confirmed. To use this balance, sign the wallet challenge and get the mmw_… credential at the wallet_start and wallet_token URLs of the answer. The payment does not grant a login or access to the linked account. A plan adds 30 days and the quota; a package is valid for 90 days. No automatic renewal.
+
+        Returns: { comprado, nome, consultas, valido_ate, saldo, via, cobranca, recibo, message, _links }'
+      parameters:
+      - name: oferta
+        in: path
+        required: true
+        schema:
+          type: string
+        description: 'The offer: `pacote`, `basico`, `profissional` or `empresa`.'
+        example: basico
+      - name: lingua
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - pt
+          - en
+        description: 'Language of the messages: `pt` or `en` (default: the browser''s language, otherwise English).'
+      - name: compra
+        in: query
+        required: false
+        schema:
+          type: string
+        description: 'Mark of this purchase (8 to 64 characters `A-Za-z0-9_-`): with credit, repeating with the same mark does not charge again. With x402, do not sign another payment to repeat the same purchase.'
+      - name: X-Credito
+        in: header
+        required: false
+        schema:
+          type: string
+        description: Prepaid credit token (`cred_…`) that pays for the purchase.
+      - name: X-Api-Key
+        in: header
+        required: false
+        schema:
+          type: string
+        description: 'Account API key (`mmk_…`): the plan stays with the account.'
+      - name: X-PAYMENT
+        in: header
+        required: false
+        schema:
+          type: string
+        description: Signed x402 payment, from the 402 quote.
+      - name: PAYMENT-SIGNATURE
+        in: header
+        required: false
+        schema:
+          type: string
+        description: x402 v2 payment. Use only one payment header.
+      - name: X-Wallet-Token
+        in: header
+        required: false
+        schema:
+          type: string
+        description: mmw_… credential of this portal, obtained through the wallet signature at /api/auth/wallet/agent/start and /api/auth/wallet/agent/token. It authorizes the use of the x402 wallet balance.
+      responses:
+        '200':
+          description: '{ comprado, nome, consultas, valido_ate, saldo, via, cobranca, recibo, message, _links }'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsultaCompra'
+        '400':
+          description: Malformed payment, unknown version, or an offer different from the quoted one.
+        '401':
+          description: Credential presented and refused. Without a credential, the purchase continues through x402.
+        '402':
+          description: 'Payment required: the price, the credit and x402.'
+        '404':
+          description: Oferta desconhecida.
+        '409':
+          description: 'Billing is off for this offer: nothing was charged or created.'
+        '503':
+          description: Offer without a configured price, or payment is down.
+      tags:
+      - Consulta
+components:
+  schemas:
+    ConsultaGoverno:
+      type: object
+      properties:
+        quantidade:
+          type: integer
+          description: How many contracts the company has in PNCP.
+        valor:
+          type: number
+          description: The sum of their total value, in reais.
+        ultimos12Meses:
+          type: object
+          description: '`{ quantidade, valor }` of the contracts signed in the last 12 months.'
+        orgaos:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConsultaOrgaoContratante'
+          description: The five agencies that contracted the most, by value.
+        itens:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConsultaContratoPublico'
+          description: The ten newest contracts, by signing date.
+        mais:
+          type: integer
+          description: How many contracts were left out of `itens`.
+        referencia:
+          type: string
+          description: The last PNCP day that entered the base (`YYYY-MM-DD`).
+          nullable: true
+        conferidoEm:
+          type: string
+          description: The day the database was checked.
+          nullable: true
+        fonte:
+          type: string
+          description: A fonte oficial.
+      required:
+      - quantidade
+      - valor
+      - ultimos12Meses
+      - orgaos
+      - itens
+      - mais
+      - referencia
+      - conferidoEm
+      - fonte
+      description: The government contracts of the whole company in the PNCP (federal, state and municipal, since 2021).
+    ConsultaSaldo:
+      type: object
+      properties:
+        dono:
+          type: string
+          description: '`conta` (session or API key), `carteira` (credit) or `x402`.'
+        consultas:
+          type: integer
+          description: Remaining lookups, added up.
+        planos:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConsultaPlanoAtivo'
+          description: The active purchases, the one that expires first at the top.
+      required:
+      - dono
+      - consultas
+      - planos
+      description: The requester's balance, added up across the plans and packages in force, valid on all portals.
+    ConsultaDevedorContumaz:
+      type: object
+      properties:
+        consta:
+          type: boolean
+          description: '`true` when the company (the CNPJ root) is on the list.'
+        itens:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConsultaContumaz'
+          description: The company's CNPJs on the list; empty when it is not on it.
+        lista:
+          type: string
+          description: The list page at the Federal Revenue.
+        referencia:
+          type: string
+          description: 'The source snapshot: the month that closes the PGFN quarter (`2026-06`) or the day of publication at the Federal Revenue.'
+          nullable: true
+        conferidoEm:
+          type: string
+          description: The day the snapshot entered the database (`AAAA-MM-DD`).
+        fonte:
+          type: string
+          description: Who publishes the data set.
+      required:
+      - consta
+      - itens
+      - lista
+      - referencia
+      - conferidoEm
+      - fonte
+      description: 'The Federal Revenue chronic tax debtor list (Complementary Law 225/2026): a company on it is barred from public tenders, among other restrictions.'
+    ConsultaUso:
+      type: object
+      properties:
+        via:
+          type: string
+          description: '`gratis` (daily allowance) or `saldo` (plan or package).'
+        restantes:
+          type: integer
+          description: How many are left on the same route after this one.
+          nullable: true
+      required:
+      - via
+      - restantes
+      description: Who paid for this lookup.
+    ConsultaFundo:
+      type: object
+      properties:
+        papel:
+          type: string
+          description: '`fundo` or `classe` (itself); `administrador`, `gestor`, `auditor`, `custodiante` or `controlador` (the role of the company).'
+        cnpj:
+          type: string
+          description: The CNPJ of the fund or of the class.
+        nome:
+          type: string
+          description: The corporate name.
+          nullable: true
+        tipo:
+          type: string
+          description: '`FI`, `FII`, `FIDC`, `FIP`, `Classes de Cotas de Fundos FII`…'
+          nullable: true
+        situacao:
+          type: string
+          description: '`Em Funcionamento Normal`, `Fase Pré-Operacional`, `Em Liquidação`, `Cancelado`.'
+          nullable: true
+        patrimonio:
+          type: number
+          description: The net assets, in reais (an impossible value, above R$ 1 trillion, comes as null).
+          nullable: true
+        patrimonioEm:
+          type: string
+          description: The day of the net assets (`YYYY-MM-DD`).
+          nullable: true
+        registro:
+          type: string
+          description: The CVM registration (`AAAA-MM-DD`).
+          nullable: true
+        detalhe:
+          type: string
+          description: 'In the fund itself: who administers, manages, audits and holds custody.'
+          nullable: true
+      required:
+      - papel
+      - cnpj
+      - nome
+      - tipo
+      - situacao
+      - patrimonio
+      - patrimonioEm
+      - registro
+      - detalhe
+      description: An investment fund or a fund class in the CVM register (Resolution 175).
+    ConsultaBndes:
+      type: object
+      properties:
+        contratos:
+          type: integer
+          description: How many contracts (subcredits count once); `0` when none.
+        ativos:
+          type: integer
+          description: How many active contracts.
+        valorContratado:
+          type: number
+          description: The contracted total, in reais.
+        valorDesembolsado:
+          type: number
+          description: The disbursed total, in reais.
+        itens:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConsultaOperacaoBndes'
+          description: The ten newest operations.
+        mais:
+          type: integer
+          description: How many operations were left out of `itens`.
+        referencia:
+          type: string
+          description: The day of the BNDES publication (`YYYY-MM-DD`).
+          nullable: true
+        fonte:
+          type: string
+          description: A fonte oficial.
+      required:
+      - contratos
+      - ativos
+      - valorContratado
+      - valorDesembolsado
+      - itens
+      - mais
+      - referencia
+      - fonte
+      description: The non-automatic BNDES financings of the whole company (the automatic operation does not identify the client).
+    ConsultaPonto:
+      type: object
+      properties:
+        lat:
+          type: number
+          description: Latitude WGS84.
+        lon:
+          type: number
+          description: Longitude WGS84.
+        precisao:
+          type: string
+          description: '`numero` (the same number at the CEP) or `cep` (the center of the CEP).'
+        logradouro:
+          type: string
+          description: Street of the point, when found by the number.
+          nullable: true
+        numero:
+          type: string
+          description: Number of the point, when found by the number.
+          nullable: true
+        bairro:
+          type: string
+          description: Neighborhood in the address register.
+          nullable: true
+        cidade:
+          type: string
+          description: IBGE municipality.
+          nullable: true
+        uf:
+          type: string
+          description: State code.
+          nullable: true
+        cep:
+          type: string
+          description: CEP formatado.
+          nullable: true
+        fonte:
+          type: string
+          description: Attribution of the address source.
+          nullable: true
+      required:
+      - lat
+      - lon
+      - precisao
+      - logradouro
+      - numero
+      - bairro
+      - cidade
+      - uf
+      - cep
+      - fonte
+      description: Where the company address is in the CNEFE (IBGE, 2022).
+    ConsultaCadastro:
+      type: object
+      properties:
+        consulta:
+          type: string
+          description: 'Always `cnpj`: it identifies the company record.'
+        escopo:
+          type: string
+          description: 'Always `cadastro`: public read at no charge.'
+        cnpj:
+          type: string
+          description: CNPJ formatado.
+        empresa:
+          type: object
+          description: 'Public registration data: corporate name, trade name, status, opening date, legal nature, size, capital, CNAE, address and Simples. It contains no contacts or partners.'
+      required:
+      - consulta
+      - escopo
+      - cnpj
+      - empresa
+      description: Free registration record. It does not include usage, balance or package offers.
+    ConsultaRegistro:
+      type: object
+      properties:
+        orgao:
+          type: string
+          description: '`CVM`, `Banco Central`, `ANS`, `ANTT` or `ANP`.'
+        tipo:
+          type: string
+          description: 'What the company is for the agency: `Companhia aberta`, `Banco Múltiplo`, `Operadora de plano de saúde`…'
+        registro:
+          type: string
+          description: The number at the agency (CVM code, ANS registration, RNTRC, authorization).
+          nullable: true
+        situacao:
+          type: string
+          description: 'The status as the source states it: `ATIVO`, `CANCELADA`, `SUSPENSO`…'
+          nullable: true
+        desde:
+          type: string
+          description: The registration, the authorization or the first registration (`YYYY-MM-DD`).
+          nullable: true
+        detalhe:
+          type: string
+          description: The category, the type, the brand or the place.
+          nullable: true
+        cnpj:
+          type: string
+          description: The registered establishment; `null` at the Central Bank (only the root).
+          nullable: true
+      required:
+      - orgao
+      - tipo
+      - registro
+      - situacao
+      - desde
+      - detalhe
+      - cnpj
+      description: A record of the company at a regulatory agency, as the official source publishes it.
+    ConsultaEmbargosIbama:
+      type: object
+      properties:
+        vigentes:
+          type: number
+          description: How many embargoes are in force.
+        levantados:
+          type: number
+          description: How many embargoes were already lifted.
+        areaVigente:
+          type: number
+          description: The embargoed area in force, in hectares.
+        itens:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConsultaEmbargoIbama'
+          description: Up to ten embargoes, the ones in force first.
+        mais:
+          type: number
+          description: How many embargoes were left out of `itens`.
+        referencia:
+          type: string
+          description: The day of the snapshot that the source published (`YYYY-MM-DD`).
+          nullable: true
+        conferidoEm:
+          type: string
+          description: The day the snapshot entered the database.
+          nullable: true
+        fonte:
+          type: string
+          description: A fonte oficial.
+      required:
+      - vigentes
+      - levantados
+      - areaVigente
+      - itens
+      - mais
+      - referencia
+      - conferidoEm
+      - fonte
+      description: The Ibama embargo terms of the whole company.
+    ConsultaAmbiental:
+      type: object
+      properties:
+        autos:
+          allOf:
+          - $ref: '#/components/schemas/ConsultaAutosIbama'
+          description: The infraction notices, with the sum of the fines.
+          nullable: true
+        embargos:
+          allOf:
+          - $ref: '#/components/schemas/ConsultaEmbargosIbama'
+          description: The embargoes, in force and lifted.
+          nullable: true
+      required:
+      - autos
+      - embargos
+      description: The Ibama infraction notices and embargoes of the whole company; each part is `null` when the base was not checked.
+    ConsultaCampanhas:
+      type: object
+      properties:
+        quantidade:
+          type: integer
+          description: How many campaigns contracted the company; `0` when none.
+        valor:
+          type: number
+          description: The contracted total, in reais.
+        anos:
+          type: array
+          items:
+            type: object
+          description: 'The total of each election: `{ ano, campanhas, valor }`.'
+        partidos:
+          type: array
+          items:
+            type: object
+          description: 'The five parties of the campaigns, by value: `{ partido, campanhas, valor }`.'
+        itens:
+          type: array
+          items:
+            type: object
+          description: 'The five largest contracts: `{ ano, candidato, cargo, partido, uf, local, despesas, valor, cnpj }` (the candidate is public through the candidacy).'
+        mais:
+          type: integer
+          description: How many campaigns were left out of `itens`.
+        referencia:
+          type: string
+          description: The end of the year of the newest election in the base (`YYYY-12`).
+          nullable: true
+        fonte:
+          type: string
+          description: A fonte oficial.
+      required:
+      - quantidade
+      - valor
+      - anos
+      - partidos
+      - itens
+      - mais
+      - referencia
+      - fonte
+      description: 'The whole company as a supplier to election campaigns: the expenses that the candidates'' campaigns contracted (accounts reported to the TSE, since 2018), added up per campaign.'
+    ConsultaParcelamentos:
+      type: object
+      properties:
+        quantidade:
+          type: integer
+          description: How many installment plans.
+        saldo:
+          type: number
+          description: The sum of the outstanding balance, in reais.
+        itens:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConsultaParcelamento'
+          description: The installment plans, newest first.
+        referencia:
+          type: string
+          description: 'The source snapshot: the month that closes the PGFN quarter (`2026-06`) or the day of publication at the Federal Revenue.'
+          nullable: true
+        conferidoEm:
+          type: string
+          description: The day the snapshot entered the database (`AAAA-MM-DD`).
+        fonte:
+          type: string
+          description: Who publishes the data set.
+      required:
+      - quantidade
+      - saldo
+      - itens
+      - referencia
+      - conferidoEm
+      - fonte
+      description: The company's installment plans at the Federal Revenue, in the monthly snapshot.
+    ConsultaContratosFederais:
+      type: object
+      properties:
+        quantidade:
+          type: integer
+          description: How many contracts; `0` when none.
+        valor:
+          type: number
+          description: The sum of their final value, in reais.
+        desde:
+          type: string
+          description: The oldest signature date (`AAAA-MM-DD`).
+          nullable: true
+        orgaos:
+          type: array
+          items:
+            type: object
+          description: 'The five agencies that contracted the most: `{ orgao, superior, quantidade, valor }`.'
+        itens:
+          type: array
+          items:
+            type: object
+          description: 'The five newest: `{ orgao, superior, unidade, objeto, modalidade, valor, assinatura, vigenciaFim, cnpj }`.'
+        mais:
+          type: integer
+          description: How many were left out of `itens`.
+        referencia:
+          type: string
+          description: The newest month in the base (`YYYY-MM`).
+          nullable: true
+        fonte:
+          type: string
+          description: A fonte oficial.
+      required:
+      - quantidade
+      - valor
+      - desde
+      - orgaos
+      - itens
+      - mais
+      - referencia
+      - fonte
+      description: 'The federal government contracts of the whole company since 2013 (Transparency Portal, the SIASG purchases): the history from before the PNCP.'
+    ConsultaEmbargoIbama:
+      type: object
+      properties:
+        numero:
+          type: string
+          description: The term number.
+          nullable: true
+        data:
+          type: string
+          description: The date of the embargo (`YYYY-MM-DD`).
+          nullable: true
+        area:
+          type: number
+          description: The embargoed area, in hectares.
+          nullable: true
+        tipoArea:
+          type: string
+          description: '`Desmatamento`, `Atividade`…'
+          nullable: true
+        municipio:
+          type: string
+          description: The municipality.
+          nullable: true
+        uf:
+          type: string
+          description: The state code of the embargo (`PA`, `MT`…).
+          nullable: true
+        imovel:
+          type: string
+          description: The property.
+          nullable: true
+        descricao:
+          type: string
+          description: What the embargo notice describes.
+          nullable: true
+        vigente:
+          type: boolean
+          description: In force (not lifted).
+        desembargo:
+          type: string
+          description: The day it was lifted.
+          nullable: true
+        tipoDesembargo:
+          type: string
+          description: How it was lifted (administrative, judicial…).
+          nullable: true
+        cnpj:
+          type: string
+          description: O CNPJ embargado.
+      required:
+      - numero
+      - data
+      - area
+      - tipoArea
+      - municipio
+      - uf
+      - imovel
+      - descricao
+      - vigente
+      - desembargo
+      - tipoDesembargo
+      - cnpj
+      description: An Ibama embargo term, in force or lifted.
+    ConsultaParcelamento:
+      type: object
+      properties:
+        tipo:
+          type: string
+          description: 'The Federal Revenue file: `convencional-sn`, `especial-pj`, `ordinario-pj`, `pem`…'
+        nome:
+          type: string
+          description: The name of the installment plan, in Portuguese.
+        modalidade:
+          type: string
+          description: The installment type, when the Federal Revenue states it (PERT, PRT…).
+          nullable: true
+        adesao:
+          type: string
+          description: The month of enrollment or approval (`YYYY-MM-01`).
+          nullable: true
+        situacao:
+          type: string
+          description: The status, when the Federal Revenue states it.
+          nullable: true
+        valorParcelado:
+          type: number
+          description: Amount in installments, in reais.
+          nullable: true
+        reducao:
+          type: number
+          description: Reduction granted, in reais.
+          nullable: true
+        parcelas:
+          type: integer
+          description: Number of installments.
+          nullable: true
+        saldo:
+          type: number
+          description: Outstanding balance in the snapshot, in reais.
+          nullable: true
+        cnpj:
+          type: string
+          description: The CNPJ of the installment plan.
+      required:
+      - tipo
+      - nome
+      - modalidade
+      - adesao
+      - situacao
+      - valorParcelado
+      - reducao
+      - parcelas
+      - saldo
+      - cnpj
+      description: An installment plan at the Federal Revenue.
+    ConsultaCargoPep:
+      type: object
+      properties:
+        funcao:
+          type: string
+          description: 'The office or function: `VEREADOR`, `PREFEITO`, `DIRETOR`…'
+          nullable: true
+        sigla:
+          type: string
+          description: The function code in the CGU list (`VEREAD`, `PREFEI`…).
+          nullable: true
+        orgao:
+          type: string
+          description: The agency or the legislative house (`GOIÂNIA-GO`, `SUDEMA`…).
+          nullable: true
+        inicio:
+          type: string
+          description: The start of the fiscal year (`YYYY-MM-DD`).
+          nullable: true
+        fim:
+          type: string
+          description: The end of the fiscal year (`YYYY-MM-DD`); `null` when not reported.
+          nullable: true
+        carencia:
+          type: string
+          description: The end of the waiting period, five years after the end of the fiscal year (`YYYY-MM-DD`).
+          nullable: true
+        situacao:
+          type: string
+          description: '`exercicio` (in office) or `carencia` (left less than five years ago).'
+      required:
+      - funcao
+      - sigla
+      - orgao
+      - inicio
+      - fim
+      - carencia
+      - situacao
+      description: An office that makes the partner a politically exposed person, as the CGU list publishes it.
+    ConsultaRegime:
+      type: object
+      properties:
+        atual:
+          type: object
+          description: 'The newest year: `{ ano, forma }`.'
+          nullable: true
+        anos:
+          type: array
+          items:
+            type: object
+          description: '`{ ano, forma }` per calendar year, the newest first (Lucro Real, Presumido…).'
+        referencia:
+          type: string
+          description: 'The source snapshot: the month that closes the PGFN quarter (`2026-06`) or the day of publication at the Federal Revenue.'
+          nullable: true
+        conferidoEm:
+          type: string
+          description: The day the snapshot entered the database (`AAAA-MM-DD`).
+        fonte:
+          type: string
+          description: Who publishes the data set.
+      required:
+      - atual
+      - anos
+      - referencia
+      - conferidoEm
+      - fonte
+      description: The taxation method declared in the ECF, per year (Simples Nacional and MEI are in the company record).
+    ConsultaAutoIbama:
+      type: object
+      properties:
+        numero:
+          type: string
+          description: The infraction notice number.
+          nullable: true
+        data:
+          type: string
+          description: The date of the infraction notice (`YYYY-MM-DD`).
+          nullable: true
+        valor:
+          type: number
+          description: The fine amount (before 07/1994, in an old currency).
+          nullable: true
+        tipo:
+          type: string
+          description: 'The type of infraction: `Flora`, `Fauna`, `Pesca`, `Licenciamento`…'
+          nullable: true
+        descricao:
+          type: string
+          description: What the infraction notice describes.
+          nullable: true
+        municipio:
+          type: string
+          description: The municipality.
+          nullable: true
+        uf:
+          type: string
+          description: The state code of the infraction notice (`PA`, `MT`…).
+          nullable: true
+        processo:
+          type: string
+          description: The case number.
+          nullable: true
+        cnpj:
+          type: string
+          description: The CNPJ in the infraction notice (sometimes another establishment of the same company).
+      required:
+      - numero
+      - data
+      - valor
+      - tipo
+      - descricao
+      - municipio
+      - uf
+      - processo
+      - cnpj
+      description: An Ibama infraction notice that is valid (not cancelled, deleted or replaced).
+    ConsultaMunicipiosSp:
+      type: object
+      properties:
+        pago:
+          type: number
+          description: The amount paid since 2008, in reais; `0` when none.
+        empenhado:
+          type: number
+          description: The amount committed since 2008 (with increases and cancellations), in reais.
+        municipios:
+          type: integer
+          description: In how many municipalities.
+        desde:
+          type: integer
+          description: The first year with a sale.
+          nullable: true
+        anos:
+          type: array
+          items:
+            type: object
+          description: 'Each year, newest first: `{ ano, pago, empenhado, empenhos, municipios }`.'
+        orgaos:
+          type: array
+          items:
+            type: object
+          description: 'The eight agencies that paid the most: `{ orgao, municipio, ibge, pago, empenhado, primeiro, ultimo }`.'
+        elementos:
+          type: array
+          items:
+            type: object
+          description: 'What they bought (the expense element of the largest commitment): `{ texto, empenhado, pago }`.'
+        modalidades:
+          type: array
+          items:
+            type: object
+          description: 'How they bought (the procurement method): `{ texto, empenhado, pago }`.'
+        referencia:
+          type: string
+          description: The end of the newest published year (`YYYY-12`).
+          nullable: true
+        fonte:
+          type: string
+          description: A fonte oficial.
+      required:
+      - pago
+      - empenhado
+      - municipios
+      - desde
+      - anos
+      - orgaos
+      - elementos
+      - modalidades
+      - referencia
+      - fonte
+      description: 'The sales of the whole company to city halls, city councils and municipal agencies of the 644 municipalities that the TCE-SP audits (the TCM audits the capital), per year since 2008: the amount paid and the amount committed.'
+    ConsultaOferta:
+      type: object
+      properties:
+        id:
+          type: string
+          description: '`pacote`, `basico`, `profissional` or `empresa`.'
+        tipo:
+          type: string
+          description: '`pacote` (valid for 90 days) or `plano` (30 days; buying again adds 30).'
+        nome:
+          type: string
+          description: Offer name in the requested language.
+        consultas:
+          type: integer
+          description: Lookups included.
+        dias:
+          type: integer
+          description: Validity in days, from the purchase.
+        renovacao_automatica:
+          type: boolean
+          description: 'Always `false`: a renewal is an explicit purchase.'
+        preco_usd:
+          type: string
+          description: Price in dollars (`"5.00"`); `null` when it is not for sale.
+          nullable: true
+        preco_brl:
+          type: string
+          description: The same price in reais, at the house Pix exchange rate.
+          nullable: true
+        disponivel:
+          type: boolean
+          description: '`false` when the portal does not have the price configured.'
+        compra:
+          type: string
+          description: Absolute purchase URL (POST).
+      required:
+      - id
+      - tipo
+      - nome
+      - consultas
+      - dias
+      - renovacao_automatica
+      - preco_usd
+      - preco_brl
+      - disponivel
+      - compra
+      description: The single package or one of the three plans, with the price of this portal.
+    ConsultaEmpresasDoCep:
+      type: object
+      properties:
+        itens:
+          type: array
+          items:
+            type: object
+          description: 'Up to 20 cards: `cnpj`, `cnpjFormatted`, `razaoSocial`, `nomeFantasia`, `situacao`, `bairro` and `cnae`.'
+        mais:
+          type: boolean
+          description: '`true` when the CEP has more companies than the ones returned.'
+      required:
+      - itens
+      - mais
+      description: The companies registered at the CEP (the first page).
+    ConsultaServico:
+      type: object
+      properties:
+        servico:
+          type: string
+          description: Always `consulta`.
+        nome:
+          type: string
+          description: Service name in the requested language.
+        descricao:
+          type: string
+          description: What it delivers and how you pay for it, in one sentence.
+        gratis:
+          allOf:
+          - $ref: '#/components/schemas/ConsultaFranquia'
+          description: 'Today''s free allowance: the account''s or, without an account, the network''s.'
+        ofertas:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConsultaOferta'
+          description: The single package and the three plans.
+        lote:
+          type: object
+          description: 'The batch check: `{ disponivel: true, maximo }` on Radar CNPJ; on the other portals, `{ disponivel: false, onde }`.'
+        saldo:
+          allOf:
+          - $ref: '#/components/schemas/ConsultaSaldo'
+          description: The requester's balance; `null` without an account, credit or x402 wallet credential.
+          nullable: true
+        como_comprar:
+          type: string
+          description: How to buy through the API, in the requested language.
+        _links:
+          type: object
+          description: '`self`, `cnpj`, `cep`, `pagina` e `api_index` absolutos.'
+      required:
+      - servico
+      - nome
+      - descricao
+      - gratis
+      - ofertas
+      - lote
+      - saldo
+      - como_comprar
+      - _links
+      description: The CNPJ and address lookup service on this portal.
+    ConsultaPagamentos:
+      type: object
+      properties:
+        valor:
+          type: number
+          description: The sum received in the last 12 months (or since `desde`), in reais.
+        quantidade:
+          type: integer
+          description: How many payments; `0` when none.
+        desde:
+          type: string
+          description: 'The start of the summed period (`YYYY-MM-DD`): 12 months ago, or the first day of the base.'
+        ultimo:
+          type: string
+          description: The day of the last payment (`YYYY-MM-DD`).
+          nullable: true
+        orgaos:
+          type: array
+          items:
+            type: object
+          description: 'The five agencies that paid the most: `{ orgao, superior, valor, quantidade }`.'
+        referencia:
+          type: string
+          description: The newest day that the CGU published in the base (`YYYY-MM-DD`).
+          nullable: true
+        fonte:
+          type: string
+          description: A fonte oficial.
+      required:
+      - valor
+      - quantidade
+      - desde
+      - ultimo
+      - orgaos
+      - referencia
+      - fonte
+      description: 'The federal government payments to the whole company: the federal budget bank orders (Transparency Portal).'
+    ConsultaCompra:
+      type: object
+      properties:
+        comprado:
+          type: string
+          description: ID of the purchased offer.
+        nome:
+          type: string
+          description: Offer name in the requested language.
+        consultas:
+          type: integer
+          description: Lookups in this purchase.
+        valido_ate:
+          type: string
+          description: Until when this purchase is valid (ISO).
+          nullable: true
+        saldo:
+          type: object
+          description: '`consultas` (the balance added up after the purchase) and `dono` (`conta`, `carteira` or `x402`).'
+        via:
+          type: string
+          description: '`credito` or `x402`.'
+        cobranca:
+          type: object
+          description: '`via` (`credito` or `x402`) and `saldo_usd`: the balance of the credit code after the purchase (`null` with x402).'
+        recibo:
+          type: string
+          description: The payment receipt (the same purchase, repeated, returns the same receipt).
+        message:
+          type: string
+          description: Confirmation in the requested language.
+        _links:
+          type: object
+          description: '`consulta`: the service. For the x402 wallet, `wallet_start` and `wallet_token` show where to sign the challenge and get the usage credential.'
+      required:
+      - comprado
+      - nome
+      - consultas
+      - valido_ate
+      - saldo
+      - via
+      - cobranca
+      - recibo
+      - message
+      - _links
+      description: What the purchase delivered.
+    ConsultaCep:
+      type: object
+      properties:
+        consulta:
+          type: string
+          description: Always `cep`.
+        cep:
+          type: string
+          description: CEP formatado.
+        endereco:
+          type: object
+          description: 'CEP summary: units, buildings, neighborhood, city, state, IBGE code, center (lat/lon) and types.'
+          nullable: true
+        pontos:
+          type: array
+          items:
+            type: object
+          description: Up to 20 addresses of the CEP, with street, number, neighborhood, city, state, coordinates and type.
+        pontos_total:
+          type: integer
+          description: How many addresses the origin returned for the CEP.
+        empresas:
+          allOf:
+          - $ref: '#/components/schemas/ConsultaEmpresasDoCep'
+          description: '`null` when the company base did not answer.'
+          nullable: true
+        fonte:
+          type: string
+          description: Attribution of the address source.
+          nullable: true
+        uso:
+          allOf:
+          - $ref: '#/components/schemas/ConsultaUso'
+          description: Who paid for this lookup.
+        _links:
+          type: object
+          description: '`self`, `cnpj`, `cep`, `pagina` e `api_index` absolutos.'
+      required:
+      - consulta
+      - cep
+      - endereco
+      - pontos
+      - pontos_total
+      - empresas
+      - fonte
+      - uso
+      - _links
+      description: The addresses of a CEP and the companies registered at it.
+    ConsultaFundos:
+      type: object
+      properties:
+        proprio:
+          allOf:
+          - $ref: '#/components/schemas/ConsultaFundo'
+          description: The fund or class of the CNPJ looked up; `null` when it is not a fund.
+          nullable: true
+        fundos:
+          type: integer
+          description: How many funds and classes the company administers, manages, audits, holds in custody or controls; `0` when none.
+        patrimonio:
+          type: number
+          description: Their summed net assets, in reais.
+        papeis:
+          type: array
+          items:
+            type: object
+          description: 'Each role: `{ papel, fundos, patrimonio }`.'
+        itens:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConsultaFundo'
+          description: The ten largest by net assets, with the role of the company in each one.
+        mais:
+          type: integer
+          description: How many were left out of `itens`.
+        referencia:
+          type: string
+          description: The day of the CVM publication (`YYYY-MM-DD`).
+          nullable: true
+        fonte:
+          type: string
+          description: A fonte oficial.
+      required:
+      - proprio
+      - fundos
+      - patrimonio
+      - papeis
+      - itens
+      - mais
+      - referencia
+      - fonte
+      description: 'The company''s investment funds in the CVM register: the fund itself, when the CNPJ belongs to one, and the funds that it serves.'
+    ConsultaTrabalhoEscravo:
+      type: object
+      properties:
+        consta:
+          type: boolean
+          description: Some establishment of the company is on the list.
+        itens:
+          type: array
+          items:
+            type: object
+          description: 'Each entry: `cnpj`, `empregador`, `anoAcao`, `uf`, `estabelecimento`, `trabalhadores`, `cnae`, `decisao`, `inclusao`, `inclusaoTexto` (the periods, as the source writes them) and `saidaPrevista` (two years later).'
+        referencia:
+          type: string
+          description: The day of the snapshot that the source published (`YYYY-MM-DD`).
+          nullable: true
+        conferidoEm:
+          type: string
+          description: The day the snapshot entered the database.
+          nullable: true
+        fonte:
+          type: string
+          description: A fonte oficial.
+      required:
+      - consta
+      - itens
+      - referencia
+      - conferidoEm
+      - fonte
+      description: The MTE Employer Register (the dirty list of labor analogous to slavery), for the whole company.
+    ConsultaBeneficios:
+      type: object
+      properties:
+        itens:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConsultaBeneficio'
+          description: Up to 30, the newest first.
+        mais:
+          type: boolean
+          description: '`true` when the company has more than 30.'
+        importacao:
+          type: object
+          description: '`{ ano, valor }`: the total import waiver in the newest year of the company; `null` without a waiver.'
+          nullable: true
+        referencia:
+          type: string
+          description: 'The source snapshot: the month that closes the PGFN quarter (`2026-06`) or the day of publication at the Federal Revenue.'
+          nullable: true
+        conferidoEm:
+          type: string
+          description: The day the snapshot entered the database (`AAAA-MM-DD`).
+        fonte:
+          type: string
+          description: Who publishes the data set.
+      required:
+      - itens
+      - mais
+      - importacao
+      - referencia
+      - conferidoEm
+      - fonte
+      description: The company's tax benefits (SISEN, ECF, DIRBI and the import tax waivers of the Transparency Portal).
+    ConsultaContumaz:
+      type: object
+      properties:
+        cnpj:
+          type: string
+          description: The qualified CNPJ (the head office, when the record is of a branch).
+        razaoSocial:
+          type: string
+          description: The legal name, as the list shows it.
+          nullable: true
+        qualificacao:
+          type: string
+          description: The day of the qualification as a chronic tax debtor (`YYYY-MM-DD`).
+          nullable: true
+        motivo:
+          type: string
+          description: The reasons for the qualification, as the list shows them.
+          nullable: true
+        ente:
+          type: string
+          description: The federal, state or municipal authority responsible for the qualification.
+          nullable: true
+        ato:
+          type: string
+          description: The declaratory act in the Federal Official Gazette (an in.gov.br URL).
+          nullable: true
+      required:
+      - cnpj
+      - razaoSocial
+      - qualificacao
+      - motivo
+      - ente
+      - ato
+      description: A CNPJ of the company on the Federal Revenue chronic tax debtor list.
+    ConsultaOrgaoContratante:
+      type: object
+      properties:
+        orgao:
+          type: string
+          description: The contracting agency (corporate name).
+          nullable: true
+        uf:
+          type: string
+          description: The state code of the agency (`SP`, `BA`…).
+          nullable: true
+        esfera:
+          type: string
+          description: '`federal`, `estadual`, `municipal` or `distrital`.'
+          nullable: true
+        quantidade:
+          type: integer
+          description: How many contracts with the company.
+        valor:
+          type: number
+          description: The sum of their total value, in reais.
+      required:
+      - orgao
+      - uf
+      - esfera
+      - quantidade
+      - valor
+      description: An agency that contracted the company, with what it contracted from it.
+    ConsultaCnpj:
+      type: object
+      properties:
+        consulta:
+          type: string
+          description: Always `cnpj`.
+        temas:
+          type: array
+          items:
+            type: string
+          description: Selected topics, in catalog order. Present only when the request uses temas.
+        cnpj:
+          type: string
+          description: CNPJ formatado.
+        empresa:
+          type: object
+          description: 'The Federal Revenue (Receita) record: corporate name, trade name, status and special status (`situacaoEspecial`: `{ codigo, label, gravidade, descricao, data }` in bankruptcy, judicial recovery, liquidation, intervention or estate, with `daMatriz: true` on a branch that inherited it from the head office; `null` when there is none), opening date, legal nature, size, capital, CNAEs, address, Simples/MEI and partners; individual partners, phones, fax and e-mail are masked (`mascarado: true`).'
+        sancoes:
+          allOf:
+          - $ref: '#/components/schemas/ConsultaSancoes'
+          description: The company's sanctions in the public registers; `null` when they could not be checked now.
+          nullable: true
+        cnia:
+          allOf:
+          - $ref: '#/components/schemas/ConsultaCnia'
+          description: 'The CNIA (administrative misconduct, CNJ), checked live: up to ~6 s the first time for a CNPJ, when the TCU generates the certificate; `null` when it did not answer in time.'
+          nullable: true
+        dividaAtiva:
+          allOf:
+          - $ref: '#/components/schemas/ConsultaDividaAtiva'
+          description: The federal active debt (PGFN) of the whole company; zero when the snapshot shows nothing.
+          nullable: true
+        parcelamentos:
+          allOf:
+          - $ref: '#/components/schemas/ConsultaParcelamentos'
+          description: The installment plans at the Federal Revenue (conventional, special, ordinary, Simples, MEI).
+          nullable: true
+        regimeTributario:
+          allOf:
+          - $ref: '#/components/schemas/ConsultaRegime'
+          description: The taxation method declared in the ECF, per year (Lucro Real, Presumido, Arbitrado, immune or exempt).
+          nullable: true
+        beneficiosFiscais:
+          allOf:
+          - $ref: '#/components/schemas/ConsultaBeneficios'
+          description: 'The tax benefits: qualified special regimes (SISEN), IRPJ/CSLL waivers in the ECF and the ones declared in the DIRBI.'
+          nullable: true
+        obras:
+          allOf:
+          - $ref: '#/components/schemas/ConsultaObras'
+          description: The construction works for which the company is responsible (CNO); zero when it has none.
+          nullable: true
+        devedorContumaz:
+          allOf:
+          - $ref: '#/components/schemas/ConsultaDevedorContumaz'
+          description: 'The Federal Revenue chronic tax debtor list: `consta: true` when the company is on it and is barred from public tenders; `consta: false` and an empty `itens` when it is not.'
+          nullable: true
+        ambiental:
+          allOf:
+          - $ref: '#/components/schemas/ConsultaAmbiental'
+          description: The Ibama infraction notices and embargoes; zero when the snapshot shows nothing.
+          nullable: true
+        trabalhoEscravo:
+          allOf:
+          - $ref: '#/components/schemas/ConsultaTrabalhoEscravo'
+          description: 'The dirty list of labor analogous to slavery (MTE); `consta: false` when the company is not on it.'
+          nullable: true
+        governo:
+          allOf:
+          - $ref: '#/components/schemas/ConsultaGoverno'
+          description: 'The government contracts (PNCP); `quantidade: 0` when the company has no published contract.'
+          nullable: true
+        pagamentos:
+          allOf:
+          - $ref: '#/components/schemas/ConsultaPagamentos'
+          description: 'The federal government payments (federal bank orders) in the last 12 months; `quantidade: 0` when none.'
+          nullable: true
+        notasFederais:
+          allOf:
+          - $ref: '#/components/schemas/ConsultaNotasFederais'
+          description: 'The sales to federal agencies by invoice in the 12 months up to the newest month; `notas: 0` when none.'
+          nullable: true
+        contratosFederais:
+          allOf:
+          - $ref: '#/components/schemas/ConsultaContratosFederais'
+          description: 'The federal government contracts since 2013 (Transparency Portal); `quantidade: 0` when none.'
+          nullable: true
+        campanhas:
+          allOf:
+          - $ref: '#/components/schemas/ConsultaCampanhas'
+          description: 'The election campaigns that contracted the company (TSE, since 2018); `quantidade: 0` when none.'
+          nullable: true
+        municipiosSp:
+          allOf:
+          - $ref: '#/components/schemas/ConsultaMunicipiosSp'
+          description: 'The sales to São Paulo city halls, city councils and municipal agencies (TCE-SP, since 2008); `anos: []` when none.'
+          nullable: true
+        pep:
+          allOf:
+          - $ref: '#/components/schemas/ConsultaPep'
+          description: 'The partners on the list of politically exposed persons (CGU); `quantidade: 0` when none is on it.'
+          nullable: true
+        registros:
+          allOf:
+          - $ref: '#/components/schemas/ConsultaRegistros'
+          description: The records at regulatory agencies (CVM, Central Bank, ANS, ANTT, ANP, ANEEL, Anatel, Anvisa, CNES, Cadastur, Ibama, ANAC and SICAF); `itens` is empty when the company appears in none.
+          nullable: true
+        bndes:
+          allOf:
+          - $ref: '#/components/schemas/ConsultaBndes'
+          description: 'The non-automatic BNDES financings; `contratos: 0` when there are none.'
+          nullable: true
+        fundos:
+          allOf:
+          - $ref: '#/components/schemas/ConsultaFundos'
+          description: 'The investment funds (CVM): the fund itself and the ones the company serves; `fundos: 0` and `proprio: null` when none.'
+          nullable: true
+        ponto:
+          allOf:
+          - $ref: '#/components/schemas/ConsultaPonto'
+          description: The address on the map; `null` when the CEP is not in the CNEFE.
+          nullable: true
+        uso:
+          allOf:
+          - $ref: '#/components/schemas/ConsultaUso'
+          description: Who paid for this lookup.
+        _links:
+          type: object
+          description: '`self`, `cnpj`, `cep`, `pagina` e `api_index` absolutos.'
+      required:
+      - consulta
+      - cnpj
+      - empresa
+      - uso
+      - _links
+      description: The public company record, its sanctions (with the CNIA), its tax situation (federal active debt, installment plans, tax regime, tax benefits, CNO construction works and the chronic tax debtor list), its socio-environmental risk (Ibama infraction notices and embargoes, and the slave labor dirty list) and where the address is.
+    ConsultaEndereco:
+      type: object
+      properties:
+        consulta:
+          type: string
+          description: 'Always `cep`: it identifies the address lookup.'
+        escopo:
+          type: string
+          description: 'Always `cadastro`: public read at no charge.'
+        cep:
+          type: string
+          description: CEP formatado.
+        endereco:
+          type: object
+          description: 'CEP summary: units, buildings, neighborhood, city, state, IBGE code, center (lat/lon) and types.'
+          nullable: true
+        pontos:
+          type: array
+          items:
+            type: object
+          description: Up to 20 addresses with street, number, neighborhood, city, state, coordinates and type.
+        pontos_total:
+          type: integer
+          description: Number of addresses that the origin returned before the cut to 20.
+        empresas:
+          allOf:
+          - $ref: '#/components/schemas/ConsultaEmpresasDoCep'
+          description: First page of companies at the CEP; null when the source does not answer.
+          nullable: true
+        fonte:
+          type: string
+          description: Attribution of the address source.
+          nullable: true
+      required:
+      - consulta
+      - escopo
+      - cep
+      - endereco
+      - pontos
+      - pontos_total
+      - empresas
+      - fonte
+      description: Public addresses of the CEP. It does not include usage, balance or package offers.
+    ConsultaPlanoAtivo:
+      type: object
+      properties:
+        oferta:
+          type: string
+          description: ID of the purchased offer.
+        nome:
+          type: string
+          description: Offer name in the requested language.
+        restantes:
+          type: integer
+          description: Lookups still left in this purchase.
+        valido_ate:
+          type: string
+          description: Until when it is valid (ISO).
+          nullable: true
+      required:
+      - oferta
+      - nome
+      - restantes
+      - valido_ate
+      description: A plan or package of the owner that is in force.
+    ConsultaCnia:
+      type: object
+      properties:
+        situacao:
+          type: string
+          description: '`nada_consta` or `constam_registros`.'
+        registros:
+          type: array
+          items:
+            type: string
+          description: The certificate lines when there are records (up to 20).
+        conferidoEm:
+          type: string
+          description: When the certificate was issued (ISO).
+        cnpjs:
+          type: array
+          items:
+            type: string
+          description: 'The CNPJs checked: the requested one and, for a branch, the head office.'
+        link:
+          type: string
+          description: The public CNJ lookup, to check by hand.
+      required:
+      - situacao
+      - registros
+      - conferidoEm
+      - cnpjs
+      - link
+      description: 'The CNJ CNIA (National Register of Civil Convictions for Administrative Misconduct and Ineligibility), checked LIVE through the consolidated TCU lookup: the CNJ does not publish the register in bulk. For a branch, the head office is checked too.'
+    ConsultaOperacaoBndes:
+      type: object
+      properties:
+        contrato:
+          type: string
+          description: The contract number (the same in each of its subcredits).
+        data:
+          type: string
+          description: The contract date (`YYYY-MM-DD`).
+          nullable: true
+        valorContratado:
+          type: number
+          description: The contracted amount, in reais.
+          nullable: true
+        valorDesembolsado:
+          type: number
+          description: The disbursed amount, in reais.
+          nullable: true
+        produto:
+          type: string
+          description: '`BNDES FINEM`, `BNDES FINAME`, `BNDES PROJECT FINANCE`…'
+          nullable: true
+        forma:
+          type: string
+          description: '`DIRETA` or `INDIRETA` (through an intermediary bank, in `agente`).'
+          nullable: true
+        situacao:
+          type: string
+          description: '`ATIVO` or `LIQUIDADO`.'
+          nullable: true
+        projeto:
+          type: string
+          description: The description of the financed project.
+          nullable: true
+      required:
+      - contrato
+      - data
+      - valorContratado
+      - valorDesembolsado
+      - produto
+      - forma
+      - situacao
+      - projeto
+      description: 'A non-automatic BNDES operation (a subcredit): direct or through an intermediary bank.'
+    ConsultaObra:
+      type: object
+      properties:
+        cno:
+          type: string
+          description: The number of the construction work in the CNO (`01.001.00922/78`).
+        nome:
+          type: string
+          description: The name of the construction work. In the free record, it comes without a CPF, and a person's name in it comes masked (`RESIDENCIA MARIA S.`).
+          nullable: true
+        papel:
+          type: string
+          description: 'The role of the company: `construtora`, `donoDaObra`, `incorporador`, `proprietario`, `consorcio`, `nomeColetivo` or `liderDeConsorcio`.'
+          nullable: true
+        endereco:
+          type: string
+          description: The address of the construction work (street, number, neighborhood). In the free record, the number comes as `•••` when the work belongs to a sole proprietor, carries a person's name or is a family house (single-family or affordable).
+          nullable: true
+        municipio:
+          type: string
+          description: The municipality of the construction work.
+          nullable: true
+        uf:
+          type: string
+          description: The state (UF) of the construction work.
+          nullable: true
+        area:
+          type: number
+          description: The total area.
+          nullable: true
+        unidade:
+          type: string
+          description: The area unit (`m2`, `m3`, `km`…).
+          nullable: true
+        situacao:
+          type: string
+          description: '`ativa`, `paralisada`, `suspensa`, `encerrada` or `nula`.'
+          nullable: true
+        situacaoEm:
+          type: string
+          description: The day of the status (`YYYY-MM-DD`).
+          nullable: true
+        inicio:
+          type: string
+          description: The start of the construction work (`YYYY-MM-DD`).
+          nullable: true
+        cnpj:
+          type: string
+          description: The responsible CNPJ (sometimes another establishment of the same company).
+        categoria:
+          type: string
+          description: 'The category of the main area: `Obra Nova`, `Existente`, `Reforma`…'
+          nullable: true
+        destinacao:
+          type: string
+          description: 'The intended use: `Residencial multifamiliar`, `Comercial salas e lojas`…'
+          nullable: true
+        tipoObra:
+          type: string
+          description: 'O tipo: `Alvenaria`, `Madeira`, `Mista`…'
+          nullable: true
+        cnae:
+          type: object
+          description: 'The CNAE of the construction work: `{ codigo, descricao }`.'
+          nullable: true
+        vinculo:
+          type: boolean
+          description: The company is on the construction work through a link (it was responsible before, or is jointly responsible).
+        vinculoAte:
+          type: string
+          description: The end of the link (`YYYY-MM-DD`); empty while it is responsible.
+          nullable: true
+      required:
+      - cno
+      - nome
+      - papel
+      - endereco
+      - municipio
+      - uf
+      - area
+      - unidade
+      - situacao
+      - situacaoEm
+      - inicio
+      - cnpj
+      - categoria
+      - destinacao
+      - tipoObra
+      - cnae
+      - vinculo
+      - vinculoAte
+      description: A construction work in the CNO (National Register of Construction Works, Federal Revenue).
+    ConsultaSancoes:
+      type: object
+      properties:
+        total:
+          type: integer
+          description: Records of the company in the five registers.
+        vigentes:
+          type: integer
+          description: How many of them are in force today.
+        porCadastro:
+          type: object
+          description: '`{ ceis, cnep, cepim, leniencia, tcu }`, each one `{ total, vigentes }`.'
+        itens:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConsultaSancao'
+          description: Up to 50, the ones in force first and the newest first.
+        mais:
+          type: boolean
+          description: '`true` when the company has more than 50 records.'
+        conferidoEm:
+          type: object
+          description: 'The snapshot day of each register (`{ ceis: "2026-09-28", … }`).'
+        cadastros:
+          type: array
+          items:
+            type: object
+          description: 'The five registers: `cadastro`, `nome`, `titulo` and `orgao`.'
+      required:
+      - total
+      - vigentes
+      - porCadastro
+      - itens
+      - mais
+      - conferidoEm
+      - cadastros
+      description: The sanctions of the COMPANY (the CNPJ root) in CEIS, CNEP, CEPIM, the leniency agreements (CGU) and the TCU list of debarred bidders, updated every day; legal entities only.
+    ConsultaAutosIbama:
+      type: object
+      properties:
+        quantidade:
+          type: number
+          description: How many infraction notices are in force.
+        valor:
+          type: number
+          description: The sum of the fines from 1995 on (before that, the value is in an old currency).
+        maisRecente:
+          type: string
+          description: The day of the newest infraction notice (`YYYY-MM-DD`).
+          nullable: true
+        itens:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConsultaAutoIbama'
+          description: The ten newest infraction notices.
+        mais:
+          type: number
+          description: How many infraction notices were left out of `itens`.
+        referencia:
+          type: string
+          description: The day of the snapshot that the source published (`YYYY-MM-DD`).
+          nullable: true
+        conferidoEm:
+          type: string
+          description: The day the snapshot entered the database.
+          nullable: true
+        fonte:
+          type: string
+          description: A fonte oficial.
+      required:
+      - quantidade
+      - valor
+      - maisRecente
+      - itens
+      - mais
+      - referencia
+      - conferidoEm
+      - fonte
+      description: The Ibama infraction notices of the whole company.
+    ConsultaFranquia:
+      type: object
+      properties:
+        por_dia:
+          type: integer
+          description: How many lookups are free per day.
+        restantes_hoje:
+          type: integer
+          description: How many are still free today (UTC day).
+        renova_em:
+          type: string
+          description: When the free allowance comes back (ISO, at the UTC day change).
+      required:
+      - por_dia
+      - restantes_hoje
+      description: Today's free lookups, per account (without an account, per network), added up across Radar CNPJ, PontoFato and EditalMD.
+    ConsultaNotasFederais:
+      type: object
+      properties:
+        valor:
+          type: number
+          description: The sum of the sale items in the 12 months from `desde` to `ate`, in reais.
+        notas:
+          type: integer
+          description: How many sale invoices in these 12 months; `0` when none.
+        desde:
+          type: string
+          description: The first summed month (`YYYY-MM`).
+        ate:
+          type: string
+          description: The newest month that the CGU published (`YYYY-MM`).
+        compradores:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConsultaCompradorFederal'
+          description: The five units that bought the most, by value.
+        anos:
+          type: array
+          items:
+            type: object
+          description: 'The total of each year of the series: `{ ano, notas, valor }`.'
+        referencia:
+          type: string
+          description: The newest month in the base (`YYYY-MM`).
+          nullable: true
+        fonte:
+          type: string
+          description: A fonte oficial.
+      required:
+      - valor
+      - notas
+      - desde
+      - ate
+      - compradores
+      - anos
+      - referencia
+      - fonte
+      description: 'What the whole company sold to federal agencies by electronic invoice (Transparency Portal, since 09/2021): only the sale item by CFOP, without cancelled invoices.'
+    ConsultaInscricao:
+      type: object
+      properties:
+        inscricao:
+          type: string
+          description: The debt entry number (it matches the PGFN Debtor List).
+        natureza:
+          type: string
+          description: '`naoPrevidenciaria`, `previdenciaria` or `fgts`.'
+          nullable: true
+        devedor:
+          type: string
+          description: '`principal`, `corresponsavel`, `solidario` or `outro`.'
+        cnpj:
+          type: string
+          description: The registered CNPJ (sometimes another establishment of the same company).
+        receita:
+          type: string
+          description: The tax or main revenue item (IRPJ, PIS, contribution…).
+          nullable: true
+        tipo:
+          type: string
+          description: In collection, tax benefit (in installments), guaranteed, suspended…
+          nullable: true
+        situacao:
+          type: string
+          description: 'The status of the debt entry: entered, filed in court, protested…'
+          nullable: true
+        inscritaEm:
+          type: string
+          description: The day of the debt entry (`YYYY-MM-DD`).
+          nullable: true
+        ajuizada:
+          type: boolean
+          description: '`true` when the collection is already in court.'
+        valor:
+          type: number
+          description: Consolidated amount in the snapshot, in reais.
+      required:
+      - inscricao
+      - natureza
+      - devedor
+      - cnpj
+      - receita
+      - tipo
+      - situacao
+      - inscritaEm
+      - ajuizada
+      - valor
+      description: An entry in the federal active debt.
+    ConsultaCompradorFederal:
+      type: object
+      properties:
+        comprador:
+          type: string
+          description: The buying unit (the name of the invoice recipient).
+        orgao:
+          type: string
+          description: The agency of the unit, when it differs from the unit name.
+          nullable: true
+        superior:
+          type: string
+          description: The parent agency (the ministry).
+          nullable: true
+        uf:
+          type: string
+          description: The state (UF) of the unit.
+          nullable: true
+        notas:
+          type: integer
+          description: How many sale invoices.
+        valor:
+          type: number
+          description: The sum of the sale items, in reais.
+      required:
+      - comprador
+      - orgao
+      - superior
+      - uf
+      - notas
+      - valor
+      description: A federal unit that bought from the company by invoice, with what it bought in the 12 months.
+    ConsultaContratoPublico:
+      type: object
+      properties:
+        orgao:
+          type: string
+          description: The contracting agency (corporate name).
+          nullable: true
+        unidade:
+          type: string
+          description: The unit of the agency that signed the contract.
+          nullable: true
+        esfera:
+          type: string
+          description: '`federal`, `estadual`, `municipal` or `distrital`.'
+          nullable: true
+        uf:
+          type: string
+          description: The state code of the agency (`SP`, `BA`…).
+          nullable: true
+        municipio:
+          type: string
+          description: The municipality of the agency.
+          nullable: true
+        categoria:
+          type: string
+          description: 'The process category: `Serviços`, `Compras`, `Obras`…'
+          nullable: true
+        tipo:
+          type: string
+          description: 'The contract type: `Contrato (termo inicial)`, `Empenho`…'
+          nullable: true
+        objeto:
+          type: string
+          description: The object of the contract (up to 300 characters).
+          nullable: true
+        valor:
+          type: number
+          description: The total value of the contract, in reais.
+          nullable: true
+        assinatura:
+          type: string
+          description: The signing day (`YYYY-MM-DD`).
+          nullable: true
+        vigenciaFim:
+          type: string
+          description: The end of the term (`YYYY-MM-DD`).
+          nullable: true
+        cnpj:
+          type: string
+          description: The supplier CNPJ (sometimes another establishment of the same company).
+        link:
+          type: string
+          description: The contract page on PNCP.
+          nullable: true
+      required:
+      - orgao
+      - unidade
+      - esfera
+      - uf
+      - municipio
+      - categoria
+      - tipo
+      - objeto
+      - valor
+      - assinatura
+      - vigenciaFim
+      - cnpj
+      - link
+      description: A contract published in the PNCP (Law 14.133) in which the company is the supplier.
+    ConsultaRegistros:
+      type: object
+      properties:
+        itens:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConsultaRegistro'
+          description: The registrations, in the order CVM, Banco Central, ANS, ANTT, ANP, ANEEL, Anatel, Anvisa, CNES, Cadastur, Ibama, ANAC and SICAF.
+        fontes:
+          type: array
+          items:
+            type: object
+          description: 'The agencies checked: `{ orgao, quantidade, referencia, conferidoEm, fonte }`, with how many records each one has.'
+      required:
+      - itens
+      - fontes
+      description: The records of the whole company at regulatory agencies, up to 20 per agency.
+    ConsultaObras:
+      type: object
+      properties:
+        quantidade:
+          type: integer
+          description: How many construction works the company has in the CNO (including the ones with an ended link).
+        ativas:
+          type: integer
+          description: How many are active and still with it.
+        anteriores:
+          type: integer
+          description: In how many it was responsible before (the link has ended).
+        destinacoes:
+          type: array
+          items:
+            type: object
+          description: 'The main intended uses: `{ destinacao, quantidade }`, up to 5.'
+        itens:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConsultaObra'
+          description: 'Up to 20: the ones in progress first, then the active ones, the newest first.'
+        mais:
+          type: integer
+          description: How many construction works were left out of the list.
+        referencia:
+          type: string
+          description: 'The source snapshot: the month that closes the PGFN quarter (`2026-06`) or the day of publication at the Federal Revenue.'
+          nullable: true
+        conferidoEm:
+          type: string
+          description: The day the snapshot entered the database (`AAAA-MM-DD`).
+        fonte:
+          type: string
+          description: Who publishes the data set.
+      required:
+      - quantidade
+      - ativas
+      - anteriores
+      - destinacoes
+      - itens
+      - mais
+      - referencia
+      - conferidoEm
+      - fonte
+      description: The construction works for which the company is or was responsible, in the monthly CNO snapshot.
+    ConsultaPep:
+      type: object
+      properties:
+        quantidade:
+          type: integer
+          description: How many partners are on the list; `0` when none.
+        pessoas:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConsultaPessoaPep'
+          description: The partners on the list, with their offices.
+        referencia:
+          type: string
+          description: The month of the CGU list (`YYYY-MM`).
+          nullable: true
+        conferidoEm:
+          type: string
+          description: The day the list entered the database.
+          nullable: true
+        fonte:
+          type: string
+          description: A fonte oficial.
+      required:
+      - quantidade
+      - pessoas
+      - referencia
+      - conferidoEm
+      - fonte
+      description: The company's partners on the CGU list of politically exposed persons, matched by the six CPF digits and by the name.
+    ConsultaBeneficio:
+      type: object
+      properties:
+        fonte:
+          type: string
+          description: '`sisen`, `ecf`, `dirbi` or `importacao`.'
+        beneficio:
+          type: string
+          description: The name of the benefit (in the DIRBI, the one of IN RFB no. 2.198/2024).
+        ano:
+          type: integer
+          description: 'ECF, DIRBI and import: the calendar year.'
+          nullable: true
+        tributo:
+          type: string
+          description: 'Import and DIRBI: the taxes of the benefit in the year (`Imposto de Importação`, `COFINS, PIS`, `CSLL, IRPJ`…).'
+          nullable: true
+        ultimoMes:
+          type: string
+          description: 'DIRBI: the last month declared in the year (`YYYY-MM`), from the monthly DIRBI.'
+          nullable: true
+        inicio:
+          type: string
+          description: 'SISEN: the start of the benefit period.'
+          nullable: true
+        fim:
+          type: string
+          description: 'SISEN: the end of the benefit period (empty: in force).'
+          nullable: true
+        vigente:
+          type: boolean
+          description: 'SISEN: whether the benefit is in force today.'
+          nullable: true
+        valor:
+          type: number
+          description: 'ECF, DIRBI and import: the tax relief amount in the year, in reais.'
+          nullable: true
+        cnpj:
+          type: string
+          description: The qualified or declaring CNPJ (for imports, empty when the benefit groups establishments).
+          nullable: true
+        vezes:
+          type: integer
+          description: How many times the same record appears in the source, joined in one line (in the SISEN, the RET appears once per development).
+      required:
+      - fonte
+      - beneficio
+      - ano
+      - tributo
+      - ultimoMes
+      - inicio
+      - fim
+      - vigente
+      - valor
+      - cnpj
+      - vezes
+      description: 'A tax benefit: the qualification in a special regime (SISEN), an IRPJ/CSLL waiver in the ECF, a waiver declared in the DIRBI or an import waiver (Transparency Portal).'
+    ConsultaPessoaPep:
+      type: object
+      properties:
+        nome:
+          type: string
+          description: The partner's name, abbreviated as in the partner list of the record (`MARIA F. S.`).
+        qualificacao:
+          type: string
+          description: The role in the partner list (`Sócio-Administrador`…).
+          nullable: true
+        cargos:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConsultaCargoPep'
+          description: The offices that make the person a PEP, the current ones first.
+      required:
+      - nome
+      - qualificacao
+      - cargos
+      description: A partner of the company who is on the list of politically exposed persons.
+    ConsultaSancao:
+      type: object
+      properties:
+        cadastro:
+          type: string
+          description: '`ceis`, `cnep`, `cepim`, `leniencia` (CGU) or `tcu` (debarred bidders).'
+        id:
+          type: string
+          description: 'Identifier in the register: code of the sanction, grant agreement, agreement or case#ruling.'
+        cnpj:
+          type: string
+          description: The CNPJ under which it was registered (it can be another establishment of the same company).
+        sancionado:
+          type: string
+          description: The name in the register.
+          nullable: true
+        tipo:
+          type: string
+          description: Category of the sanction, reason for the debarment or, for leniency, the status of the agreement.
+          nullable: true
+        orgao:
+          type: string
+          description: Sanctioning or granting agency.
+          nullable: true
+        ufOrgao:
+          type: string
+          description: State (UF) of the agency.
+          nullable: true
+        esfera:
+          type: string
+          description: '`FEDERAL`, `ESTADUAL` or `MUNICIPAL`.'
+          nullable: true
+        inicio:
+          type: string
+          description: Start (YYYY-MM-DD).
+          nullable: true
+        fim:
+          type: string
+          description: End (YYYY-MM-DD); `null` when the register does not state it.
+          nullable: true
+        vigente:
+          type: boolean
+          description: '`true` without an end date, or with the end from today on (Brasília time).'
+        publicacao:
+          type: string
+          description: Publication or date of the information (YYYY-MM-DD).
+          nullable: true
+        processo:
+          type: string
+          description: Case number.
+          nullable: true
+        valorMulta:
+          type: number
+          description: Fine in reais (CNEP).
+          nullable: true
+        fundamentacao:
+          type: string
+          description: Legal basis or terms of the agreement, up to 600 characters.
+          nullable: true
+        link:
+          type: string
+          description: The case on the TCU website, when the register is the TCU.
+          nullable: true
+      required:
+      - cadastro
+      - id
+      - cnpj
+      - sancionado
+      - tipo
+      - orgao
+      - ufOrgao
+      - esfera
+      - inicio
+      - fim
+      - vigente
+      - publicacao
+      - processo
+      - valorMulta
+      - fundamentacao
+      - link
+      description: A record of the company in a public sanctions register.
+    ConsultaDividaAtiva:
+      type: object
+      properties:
+        inscricoes:
+          type: integer
+          description: Debt entries in which the company appears (as debtor or co-responsible party).
+        valor:
+          type: number
+          description: Total owed as the main debtor, in reais.
+        valorCorresponsavel:
+          type: number
+          description: Total debt of another party for which the company is jointly responsible.
+        ajuizadas:
+          type: integer
+          description: How many debt entries are in judicial collection.
+        maisAntiga:
+          type: string
+          description: The day of the oldest debt entry.
+          nullable: true
+        porNatureza:
+          type: object
+          description: '`{ naoPrevidenciaria, previdenciaria, fgts }`, each one `{ inscricoes, valor }`.'
+        porSituacao:
+          type: array
+          items:
+            type: object
+          description: '`{ tipo, inscricoes, valor }` per status type, the highest value first.'
+        maiores:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConsultaInscricao'
+          description: The 10 debt entries with the highest value.
+        mais:
+          type: integer
+          description: How many debt entries were left out of the list.
+        referencia:
+          type: string
+          description: 'The source snapshot: the month that closes the PGFN quarter (`2026-06`) or the day of publication at the Federal Revenue.'
+          nullable: true
+        conferidoEm:
+          type: string
+          description: The day the snapshot entered the database (`AAAA-MM-DD`).
+        fonte:
+          type: string
+          description: Who publishes the data set.
+      required:
+      - inscricoes
+      - valor
+      - valorCorresponsavel
+      - ajuizadas
+      - maisAntiga
+      - porNatureza
+      - porSituacao
+      - maiores
+      - mais
+      - referencia
+      - conferidoEm
+      - fonte
+      description: The federal active debt of the company, in the quarterly PGFN snapshot.
+  securitySchemes:
+    globalAccount:
+      type: apiKey
+      in: cookie
+      name: __Host-mm-auth
+      description: Global session in the product's HttpOnly cookie; writes require exact Origin and X-CSRF-Token.
+    contaChaveApi:
+      type: http
+      scheme: bearer
+      bearerFormat: mmk_…
+      description: 'Account API key: `Authorization: Bearer mmk_…` or `X-Api-Key: mmk_…`. Created on the account page (API keys), valid only in the product where it was created; it acts as the account (or the organization that owns it).'
+    carteiraAgente:
+      type: http
+      scheme: bearer
+      bearerFormat: mmw_…
+      description: 'Wallet credential of an agent without an account (`Authorization: Bearer mmw_…`, 30 days, this product only): POST /api/auth/wallet/agent/start, sign the message with the wallet, POST /api/auth/wallet/agent/token. The owner is `x402:<address>`.'
+x-service-info:
+  categories:
+  - public-procurement
+  - documents
+  - data
+  docs:
+    homepage: https://editalmd.com/
+    apiReference: https://editalmd.com/developers
+    llms: https://editalmd.com/llms.txt

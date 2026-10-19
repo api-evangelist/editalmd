@@ -1,0 +1,294 @@
+openapi: 3.2.0
+info:
+  title: EditalMD Auth API
+  version: 1d751aaf
+servers:
+- url: https://editalmd.com
+tags:
+- name: Auth
+paths:
+  /api/auth/bootstrap:
+    get:
+      operationId: get_api_auth_bootstrap
+      summary: Prepares the browser to sign in to the global account
+      description: 'Sets an HttpOnly cookie restricted to the host. CSRF is bound to the current session. No CORS.
+
+        Returns: { csrf, context }'
+      responses:
+        '200':
+          description: '{ csrf, context }'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  csrf:
+                    type: string
+                    description: X-CSRF-Token
+                  context:
+                    type: string
+                    description: Opaque view context, also in X-MM-Context; not a credential.
+                required:
+                - csrf
+                - context
+        '400':
+          description: invalid_request
+        '403':
+          description: invalid_origin / invalid_csrf
+        '503':
+          description: 'auth_unavailable: the previous session is preserved'
+      security: []
+      tags:
+      - Auth
+  /api/auth/logout:
+    post:
+      operationId: post_api_auth_logout
+      summary: Revokes this product session
+      description: 'Requires the bootstrap/CSRF of this browser and session. The sessions of other products stay active.
+
+        Returns: { ok }'
+      responses:
+        '200':
+          description: '{ ok }'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    description: 'true'
+                required:
+                - ok
+        '400':
+          description: invalid_request
+        '403':
+          description: invalid_origin / invalid_csrf
+        '503':
+          description: 'auth_unavailable: the previous session is preserved'
+      security:
+      - globalAccount: []
+      tags:
+      - Auth
+  /api/auth/wallet/agent/start:
+    post:
+      operationId: post_api_auth_wallet_agent_start
+      summary: Starts the wallet credential of an agent without an account
+      description: 'Without an account: the wallet proves ownership by signing the message (EIP-4361). Signing does not pay or transfer anything. The message names this product and is valid for 5 minutes. Sign with personal_sign and send it to /api/auth/wallet/agent/token.
+
+        Returns: { message, issuedAt, expiresIn }'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                address:
+                  type: string
+                  description: 0x…, the wallet (an EOA or a contract on Base)
+              required:
+              - address
+            example:
+              address: '0x2c7536E3605D9C16a7a3D7b1898e529396a65c23'
+      responses:
+        '200':
+          description: '{ message, issuedAt, expiresIn }'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: EIP-4361
+                  issuedAt:
+                    type: number
+                    description: segundos / seconds
+                  expiresIn:
+                    type: number
+                    description: '300'
+                required:
+                - message
+                - issuedAt
+                - expiresIn
+        '400':
+          description: invalid_wallet_address
+        '503':
+          description: auth_unavailable
+      security: []
+      tags:
+      - Auth
+  /api/auth/wallet/agent/token:
+    post:
+      operationId: post_api_auth_wallet_agent_token
+      summary: Gets the wallet credential (mmw_…) of this product
+      description: 'The wallet signature of the start message, checked here (own key) or on Base (contract, EIP-1271/6492). The credential is valid for 30 days: send `Authorization: Bearer mmw_…` to the routes that accept the wallet as owner (owner `x402:`). When the wallet is linked to an account, what it did here moves to the account when the person signs in.
+
+        Returns: { token, owner, expiresAt }'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                address:
+                  type: string
+                  description: 0x…, the same wallet as in start
+                issuedAt:
+                  type: number
+                  description: the issuedAt of start
+                signature:
+                  type: string
+                  description: personal_sign (0x…)
+              required:
+              - address
+              - issuedAt
+              - signature
+            example:
+              address: '0x2c7536E3605D9C16a7a3D7b1898e529396a65c23'
+              issuedAt: 1791400000
+              signature: 0x…
+      responses:
+        '200':
+          description: '{ token, owner, expiresAt }'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    description: mmw_…
+                  owner:
+                    type: string
+                    description: x402:0x…
+                  expiresAt:
+                    type: number
+                    description: segundos / seconds
+                required:
+                - token
+                - owner
+                - expiresAt
+        '400':
+          description: invalid_body
+        '401':
+          description: invalid_wallet
+        '429':
+          description: wallet_limited
+        '503':
+          description: wallet_unavailable / auth_unavailable
+      security: []
+      tags:
+      - Auth
+  /api/auth/claim/wallets:
+    post:
+      operationId: post_api_auth_claim_wallets
+      summary: Moves to the account what its wallets did without an account
+      description: 'The sign-in window calls this after every sign-in. For each wallet linked to the account: the rights bought here through x402 (owner x402:) and what this product keeps for that owner. Repeating moves nothing.
+
+        Returns: { carteiras, direitos }'
+      responses:
+        '200':
+          description: '{ carteiras, direitos }'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  carteiras:
+                    type: number
+                    description: wallets
+                  direitos:
+                    type: number
+                    description: rights moved
+                required:
+                - carteiras
+                - direitos
+        '401':
+          description: invalid_session
+        '503':
+          description: auth_unavailable
+      security:
+      - globalAccount: []
+      tags:
+      - Auth
+  /api/auth/claim:
+    post:
+      operationId: post_api_auth_claim
+      summary: 'Moves to the account what the guest created: the Saved searches, Alerts and…'
+      description: 'Requires the bootstrap/CSRF of this browser; the page does this right after sign-in. It moves only what the guest still has, in one transaction, and what conflicts with what the account already has stays with the guest. What the guest bought moves too. An old token without a signature that owns nothing here is refused. Repeating does no harm (it moves zero).
+
+        Returns: { ok, claimed }'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                guest_token:
+                  type: string
+                  description: Convidado `edm_…` deste navegador.
+              required:
+              - guest_token
+            example:
+              guest_token: edm_…
+      responses:
+        '200':
+          description: '{ ok, claimed }'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    description: Whether the guest was recognized and let through.
+                  claimed:
+                    type: object
+                    description: '`product.movidos` (lines that changed owner, per table), `product.apagados` (discarded guest duplicates) and `product.direitos` (purchases that moved).'
+                required:
+                - ok
+                - claimed
+        '400':
+          description: invalid_product_claim / invalid_body
+        '401':
+          description: invalid_session
+        '403':
+          description: invalid_origin / invalid_csrf
+        '409':
+          description: unknown_guest (in `claimed.reason`)
+        '503':
+          description: product_claim_pending / auth_unavailable
+      security:
+      - globalAccount: []
+      tags:
+      - Auth
+components:
+  securitySchemes:
+    globalAccount:
+      type: apiKey
+      in: cookie
+      name: __Host-mm-auth
+      description: Global session in the product's HttpOnly cookie; writes require exact Origin and X-CSRF-Token.
+    contaChaveApi:
+      type: http
+      scheme: bearer
+      bearerFormat: mmk_…
+      description: 'Account API key: `Authorization: Bearer mmk_…` or `X-Api-Key: mmk_…`. Created on the account page (API keys), valid only in the product where it was created; it acts as the account (or the organization that owns it).'
+    carteiraAgente:
+      type: http
+      scheme: bearer
+      bearerFormat: mmw_…
+      description: 'Wallet credential of an agent without an account (`Authorization: Bearer mmw_…`, 30 days, this product only): POST /api/auth/wallet/agent/start, sign the message with the wallet, POST /api/auth/wallet/agent/token. The owner is `x402:<address>`.'
+x-service-info:
+  categories:
+  - public-procurement
+  - documents
+  - data
+  docs:
+    homepage: https://editalmd.com/
+    apiReference: https://editalmd.com/developers
+    llms: https://editalmd.com/llms.txt

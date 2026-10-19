@@ -1,0 +1,2845 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "version": "2d690e87"
+  },
+  "servers": [
+    {
+      "url": "https://editalmd.com"
+    }
+  ],
+  "components": {
+    "schemas": {
+      "Saude": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "description": "`true` quando a origem respondeu."
+          },
+          "acervo": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Acervo"
+              }
+            ],
+            "description": "Números do acervo."
+          },
+          "preco_markdown_usd": {
+            "type": "string",
+            "description": "Preço vigente do documento recente."
+          },
+          "gratis_acima_de_dias": {
+            "type": "integer",
+            "description": "Idade a partir da qual o documento é amostra grátis."
+          }
+        },
+        "required": [
+          "ok",
+          "acervo",
+          "preco_markdown_usd",
+          "gratis_acima_de_dias"
+        ],
+        "description": "Saúde do Worker e da origem."
+      },
+      "Acervo": {
+        "type": "object",
+        "properties": {
+          "compras": {
+            "type": "integer",
+            "description": "Compras públicas indexadas."
+          },
+          "documentos_lidos": {
+            "type": "integer",
+            "description": "Documentos com texto extraído e disponível."
+          }
+        },
+        "required": [
+          "compras",
+          "documentos_lidos"
+        ],
+        "description": "Tamanho do acervo lido na origem."
+      },
+      "Busca": {
+        "type": "object",
+        "properties": {
+          "itens": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Compra"
+            },
+            "description": "Compras que casaram com o termo."
+          },
+          "preco_markdown_usd": {
+            "type": "string",
+            "description": "Preço do documento recente."
+          },
+          "gratis_acima_de_dias": {
+            "type": "integer",
+            "description": "Janela de amostra grátis, em dias."
+          },
+          "pago": {
+            "type": "boolean",
+            "description": "Sempre `false`: buscar não custa."
+          }
+        },
+        "required": [
+          "itens",
+          "preco_markdown_usd",
+          "gratis_acima_de_dias",
+          "pago"
+        ],
+        "description": "Resultado da busca — sempre grátis."
+      },
+      "Compra": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Identificador interno da compra — é ele que abre a ficha."
+          },
+          "pncp": {
+            "type": "string",
+            "description": "Número de controle PNCP da compra.",
+            "nullable": true
+          },
+          "objeto": {
+            "type": "string",
+            "description": "Objeto da compra, como publicado.",
+            "nullable": true
+          },
+          "uf": {
+            "type": "string",
+            "description": "Sigla da unidade da federação do órgão.",
+            "nullable": true
+          },
+          "modalidade": {
+            "type": "string",
+            "description": "Modalidade (pregão eletrônico, dispensa…).",
+            "nullable": true
+          },
+          "situacao": {
+            "type": "string",
+            "description": "Situação da compra no PNCP.",
+            "nullable": true
+          },
+          "orgao": {
+            "type": "string",
+            "description": "Razão social do órgão comprador.",
+            "nullable": true
+          },
+          "unidade": {
+            "type": "string",
+            "description": "Unidade administrativa responsável.",
+            "nullable": true
+          },
+          "valor_estimado": {
+            "type": "number",
+            "description": "Valor total estimado em reais.",
+            "nullable": true
+          },
+          "publicado_em": {
+            "type": "string",
+            "description": "Data de publicação no PNCP — é ela que define o regime de cobrança.",
+            "nullable": true
+          },
+          "informacao_complementar": {
+            "type": "string",
+            "description": "Informação complementar publicada.",
+            "nullable": true
+          },
+          "processo": {
+            "type": "string",
+            "description": "Número do processo administrativo.",
+            "nullable": true
+          },
+          "abertura_proposta": {
+            "type": "string",
+            "description": "Início do recebimento de propostas, hora de Brasília.",
+            "nullable": true
+          },
+          "encerramento_proposta": {
+            "type": "string",
+            "description": "Fim do recebimento de propostas, que é a abertura da sessão — a base da impugnação.",
+            "nullable": true
+          },
+          "amparo_legal": {
+            "type": "string",
+            "description": "Amparo legal declarado, ex.: `Lei 14.133/2021, Art. 28, I`.",
+            "nullable": true
+          },
+          "amparo_legal_codigo": {
+            "type": "integer",
+            "description": "Código do amparo legal no PNCP.",
+            "nullable": true
+          },
+          "modalidade_id": {
+            "type": "integer",
+            "description": "Código da modalidade no PNCP (6 = pregão eletrônico, 8 = dispensa…).",
+            "nullable": true
+          },
+          "situacao_id": {
+            "type": "integer",
+            "description": "Código da situação: 1 divulgada, 2 revogada, 3 anulada, 4 suspensa.",
+            "nullable": true
+          },
+          "municipio": {
+            "type": "string",
+            "description": "Município da unidade compradora.",
+            "nullable": true
+          },
+          "municipio_ibge": {
+            "type": "string",
+            "description": "Código IBGE do município.",
+            "nullable": true
+          },
+          "orgao_cnpj": {
+            "type": "string",
+            "description": "CNPJ do órgão, só dígitos.",
+            "nullable": true
+          },
+          "ano_compra": {
+            "type": "integer",
+            "description": "Ano da compra na numeração do PNCP.",
+            "nullable": true
+          },
+          "sequencial_compra": {
+            "type": "integer",
+            "description": "Sequencial da compra no órgão e ano.",
+            "nullable": true
+          },
+          "atualizado_em": {
+            "type": "string",
+            "description": "Última atualização da compra vista pelo acervo.",
+            "nullable": true
+          },
+          "prazos": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Prazos"
+              }
+            ],
+            "description": "Proposta e impugnação, calculados pelo Worker."
+          },
+          "pncp_url": {
+            "type": "string",
+            "description": "Página humana da compra no PNCP.",
+            "nullable": true
+          },
+          "markdown_url": {
+            "type": "string",
+            "description": "Atalho para o markdown do documento."
+          },
+          "compra_url": {
+            "type": "string",
+            "description": "Ficha completa da compra."
+          }
+        },
+        "required": [
+          "id",
+          "pncp",
+          "objeto",
+          "uf",
+          "modalidade",
+          "situacao",
+          "orgao",
+          "unidade",
+          "valor_estimado",
+          "publicado_em",
+          "informacao_complementar",
+          "processo",
+          "abertura_proposta",
+          "encerramento_proposta",
+          "amparo_legal",
+          "amparo_legal_codigo",
+          "modalidade_id",
+          "situacao_id",
+          "municipio",
+          "municipio_ibge",
+          "orgao_cnpj",
+          "ano_compra",
+          "sequencial_compra",
+          "atualizado_em",
+          "prazos",
+          "pncp_url",
+          "markdown_url",
+          "compra_url"
+        ],
+        "description": "Uma compra pública do PNCP, como o acervo a conhece."
+      },
+      "Prazos": {
+        "type": "object",
+        "properties": {
+          "proposta_inicio": {
+            "type": "string",
+            "description": "Início do recebimento de propostas.",
+            "nullable": true
+          },
+          "proposta_ate": {
+            "type": "string",
+            "description": "Fim do recebimento de propostas (abertura da sessão).",
+            "nullable": true
+          },
+          "proposta_aberta": {
+            "type": "boolean",
+            "description": "Se ainda dá para enviar proposta agora."
+          },
+          "impugnacao_ate": {
+            "type": "string",
+            "description": "Último dia (AAAA-MM-DD) para impugnar: 3 dias úteis antes da sessão, Lei 14.133 art. 164.",
+            "nullable": true
+          },
+          "impugnacao_aberta": {
+            "type": "boolean",
+            "description": "Se hoje, em Brasília, ainda cabe impugnação."
+          },
+          "estimado": {
+            "type": "boolean",
+            "description": "Sempre `true`: feriado municipal não está em base nenhuma."
+          },
+          "base_legal": {
+            "type": "string",
+            "description": "Regra usada na impugnação.",
+            "nullable": true
+          },
+          "feriados": {
+            "type": "string",
+            "description": "Calendário considerado: `nacionais`."
+          },
+          "motivo": {
+            "type": "string",
+            "description": "Por que não há impugnação: `sem_data_de_encerramento` ou `amparo_sem_regra`.",
+            "nullable": true
+          }
+        },
+        "required": [
+          "proposta_inicio",
+          "proposta_ate",
+          "proposta_aberta",
+          "impugnacao_ate",
+          "impugnacao_aberta",
+          "estimado",
+          "base_legal",
+          "feriados",
+          "motivo"
+        ],
+        "description": "Os relógios da compra: proposta vem do PNCP; impugnação é estimada pela lei, com feriados nacionais."
+      },
+      "Cnae": {
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "description": "7 dígitos."
+          },
+          "cnae": {
+            "type": "string",
+            "description": "Formatado, ex. `1412-6/01`."
+          },
+          "descricao": {
+            "type": "string",
+            "description": "Descrição oficial (IBGE/Concla).",
+            "nullable": true
+          },
+          "familia": {
+            "type": "string",
+            "description": "Família de termos no dicionário; nulo se ainda não mapeado.",
+            "nullable": true
+          },
+          "familia_nome": {
+            "type": "string",
+            "description": "Nome da família.",
+            "nullable": true
+          },
+          "termos": {
+            "type": "string",
+            "description": "Termos que um alerta por CNPJ usaria para este CNAE.",
+            "nullable": true
+          },
+          "fornecedores_sicaf": {
+            "type": "integer",
+            "description": "Fornecedores ativos com este CNAE no SICAF (dados abertos do compras.gov.br).",
+            "nullable": true
+          },
+          "sicaf_medido_em": {
+            "type": "string",
+            "description": "Quando essa contagem foi medida.",
+            "nullable": true
+          },
+          "ibge_atualizado_em": {
+            "type": "string",
+            "description": "Quando a descrição foi atualizada do IBGE.",
+            "nullable": true
+          }
+        },
+        "required": [
+          "codigo",
+          "cnae",
+          "descricao",
+          "familia",
+          "familia_nome",
+          "termos",
+          "fornecedores_sicaf",
+          "sicaf_medido_em",
+          "ibge_atualizado_em"
+        ],
+        "description": "Um CNAE (subclasse) como o produto o vê: descrição oficial, dicionário e fornecedores no SICAF."
+      },
+      "FichaCompra": {
+        "type": "object",
+        "properties": {
+          "compra": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Compra"
+              }
+            ],
+            "description": "A compra."
+          },
+          "documentos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Documento"
+            },
+            "description": "Documentos com texto extraído."
+          },
+          "regime": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Regime"
+              }
+            ],
+            "description": "Grátis ou pago, e por quê."
+          },
+          "prazos": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Prazos"
+              }
+            ],
+            "description": "Proposta e impugnação da compra — o mesmo objeto de `compra.prazos`."
+          }
+        },
+        "required": [
+          "compra",
+          "documentos",
+          "regime",
+          "prazos"
+        ],
+        "description": "Compra + documentos disponíveis + o regime que se aplica a eles."
+      },
+      "Documento": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Identificador do documento — é ele que se pede em markdown."
+          },
+          "titulo": {
+            "type": "string",
+            "description": "Título do documento no PNCP.",
+            "nullable": true
+          },
+          "tipo": {
+            "type": "string",
+            "description": "Tipo declarado (edital, anexo, ata…).",
+            "nullable": true
+          },
+          "sequencial": {
+            "type": "integer",
+            "description": "Sequencial do documento dentro da compra no PNCP.",
+            "nullable": true
+          },
+          "publicado_em": {
+            "type": "string",
+            "description": "Publicação do documento no PNCP.",
+            "nullable": true
+          },
+          "caracteres": {
+            "type": "integer",
+            "description": "Tamanho do texto extraído, em caracteres.",
+            "nullable": true
+          },
+          "paginas": {
+            "type": "integer",
+            "description": "Páginas do documento original.",
+            "nullable": true
+          },
+          "motor": {
+            "type": "string",
+            "description": "Motor que extraiu (`ocr-api`, `tika`, …).",
+            "nullable": true
+          },
+          "formato": {
+            "type": "string",
+            "description": "`markdown` quando a extração é estruturada; `plain` no resto."
+          },
+          "sha256": {
+            "type": "string",
+            "description": "Hash do texto extraído na origem.",
+            "nullable": true
+          },
+          "extraido_em": {
+            "type": "string",
+            "description": "Quando a extração rodou.",
+            "nullable": true
+          },
+          "gratuito": {
+            "type": "boolean",
+            "description": "Se este documento sai sem pagamento (histórico) ou é cobrado."
+          },
+          "preco_usd": {
+            "type": "string",
+            "description": "Preço da requisição quando é pago; nulo quando é amostra.",
+            "nullable": true
+          },
+          "markdown_url": {
+            "type": "string",
+            "description": "Onde pedir o markdown deste documento."
+          },
+          "disponivel": {
+            "type": "boolean",
+            "description": "Se o texto está neste acervo agora. `false` nunca é cobrado."
+          }
+        },
+        "required": [
+          "id",
+          "titulo",
+          "tipo",
+          "sequencial",
+          "publicado_em",
+          "caracteres",
+          "paginas",
+          "motor",
+          "formato",
+          "sha256",
+          "extraido_em",
+          "gratuito",
+          "preco_usd",
+          "markdown_url",
+          "disponivel"
+        ],
+        "description": "Um documento da compra que já teve o texto extraído."
+      },
+      "Regime": {
+        "type": "object",
+        "properties": {
+          "gratuito": {
+            "type": "boolean",
+            "description": "`true` = amostra sem cobrança."
+          },
+          "motivo": {
+            "type": "string",
+            "description": "`amostra_historica`, `publicacao_recente` ou `sem_data_de_publicacao`."
+          },
+          "idade_dias": {
+            "type": "integer",
+            "description": "Dias desde a publicação no PNCP.",
+            "nullable": true
+          }
+        },
+        "required": [
+          "gratuito",
+          "motivo",
+          "idade_dias"
+        ],
+        "description": "Por que este documento é grátis ou pago — a regra de recência, explicada."
+      },
+      "Habilitacao": {
+        "type": "object",
+        "properties": {
+          "documento_id": {
+            "type": "integer",
+            "description": "Documento lido."
+          },
+          "compra_id": {
+            "type": "integer",
+            "description": "Compra do documento.",
+            "nullable": true
+          },
+          "sha256_texto": {
+            "type": "string",
+            "description": "Hash do texto lido — a chave do cache."
+          },
+          "modelo": {
+            "type": "string",
+            "description": "Modelo que extraiu.",
+            "nullable": true
+          },
+          "cache": {
+            "type": "boolean",
+            "description": "`true` quando saiu do cache, sem cobrança."
+          },
+          "recibo": {
+            "type": "string",
+            "description": "Recibo da entrega paga; nulo no cache.",
+            "nullable": true
+          },
+          "recibo_url": {
+            "type": "string",
+            "description": "Onde consultar o recibo.",
+            "nullable": true
+          },
+          "aviso": {
+            "type": "string",
+            "description": "Lembrete de conferir no edital."
+          },
+          "habilitacao": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ListaHabilitacao"
+              }
+            ],
+            "description": "As exigências por família e o que o edital diz de prazo."
+          }
+        },
+        "required": [
+          "documento_id",
+          "compra_id",
+          "sha256_texto",
+          "modelo",
+          "cache",
+          "recibo",
+          "recibo_url",
+          "aviso",
+          "habilitacao"
+        ],
+        "description": "A lista de habilitação extraída de um edital, por família, com procedência."
+      },
+      "ListaHabilitacao": {
+        "type": "object",
+        "properties": {
+          "juridica": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Exigencia"
+            },
+            "description": "Habilitação jurídica: ato constitutivo, registro, procuração…"
+          },
+          "fiscal_social_trabalhista": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Exigencia"
+            },
+            "description": "Regularidade fiscal, social e trabalhista: CND federal, FGTS, CNDT…"
+          },
+          "economico_financeira": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Exigencia"
+            },
+            "description": "Qualificação econômico-financeira: balanço, certidão de falência, índices."
+          },
+          "tecnica": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Exigencia"
+            },
+            "description": "Qualificação técnica: atestados, registro em conselho, equipe."
+          },
+          "exclusivo_me_epp": {
+            "type": "boolean",
+            "description": "Participação exclusiva de ME/EPP, quando o edital diz.",
+            "nullable": true
+          },
+          "impugnacao_texto": {
+            "type": "string",
+            "description": "O que o edital diz sobre o prazo de impugnação, copiado.",
+            "nullable": true
+          },
+          "proposta_texto": {
+            "type": "string",
+            "description": "O que o edital diz sobre a sessão ou o fim das propostas, copiado.",
+            "nullable": true
+          },
+          "total": {
+            "type": "integer",
+            "description": "Exigências aceitas, somando as quatro famílias."
+          },
+          "descartados": {
+            "type": "integer",
+            "description": "Itens que o modelo sugeriu sem trecho literal no texto e foram descartados."
+          }
+        },
+        "required": [
+          "juridica",
+          "fiscal_social_trabalhista",
+          "economico_financeira",
+          "tecnica",
+          "exclusivo_me_epp",
+          "impugnacao_texto",
+          "proposta_texto",
+          "total",
+          "descartados"
+        ],
+        "description": "Exigências de habilitação por família, mais as marcações que o edital traz em texto."
+      },
+      "Exigencia": {
+        "type": "object",
+        "properties": {
+          "exigencia": {
+            "type": "string",
+            "description": "Descrição curta, ex.: `Certidão negativa de débitos trabalhistas (CNDT)`."
+          },
+          "trecho": {
+            "type": "string",
+            "description": "Cópia literal do edital, até 300 caracteres — existe no texto, sempre."
+          }
+        },
+        "required": [
+          "exigencia",
+          "trecho"
+        ],
+        "description": "Um documento ou requisito de habilitação e a linha do edital que o exige."
+      },
+      "Dono": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "`edm_…` — guarde; não é mostrado de novo nem recuperável."
+          },
+          "aviso": {
+            "type": "string",
+            "description": "Lembrete de guardar o token e como usá-lo."
+          },
+          "webhook_segredo": {
+            "type": "string",
+            "description": "`whsec_…` — assina todo POST de webhook (Standard Webhooks). Releia em `GET /api/dono`; rotacione em `POST /api/dono/segredo`."
+          },
+          "webhook_assinatura": {
+            "type": "string",
+            "description": "Como conferir a assinatura, em uma linha."
+          },
+          "franquia": {
+            "type": "object",
+            "description": "`alertas_gratis` e `vigias_gratis` incluídos."
+          }
+        },
+        "required": [
+          "token",
+          "aviso",
+          "webhook_segredo",
+          "webhook_assinatura",
+          "franquia"
+        ],
+        "description": "O token de dono, mostrado uma única vez, o segredo que assina os webhooks e a franquia."
+      },
+      "Alerta": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Identificador do alerta."
+          },
+          "termos": {
+            "type": "string",
+            "description": "Palavras do objeto que o alerta procura (`|` = qualquer uma do grupo)."
+          },
+          "origem": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OrigemCnae"
+              }
+            ],
+            "description": "De onde veio um alerta criado por CNPJ; nulo no alerta por termos.",
+            "nullable": true
+          },
+          "uf": {
+            "type": "string",
+            "description": "UF restrita, ou nulo para o Brasil.",
+            "nullable": true
+          },
+          "canal": {
+            "type": "string",
+            "description": "`pull`, `webhook` ou `email`."
+          },
+          "destino": {
+            "type": "string",
+            "description": "URL do webhook, ou e-mail mascarado; nulo no pull.",
+            "nullable": true
+          },
+          "ativo": {
+            "type": "boolean",
+            "description": "Se o cron ainda confere este alerta."
+          },
+          "pago_ate": {
+            "type": "string",
+            "description": "Fim da validade paga; nulo na franquia.",
+            "nullable": true
+          },
+          "ultimo_check": {
+            "type": "string",
+            "description": "Cursor: até quando a origem já foi conferida.",
+            "nullable": true
+          },
+          "falhas_seguidas": {
+            "type": "integer",
+            "description": "Entregas seguidas que falharam; em 10 o alerta pausa."
+          },
+          "criado_em": {
+            "type": "string",
+            "description": "Criação em ISO 8601."
+          },
+          "alerta_url": {
+            "type": "string",
+            "description": "URL deste alerta."
+          },
+          "compras_url": {
+            "type": "string",
+            "description": "Onde ler as compras casadas (pull)."
+          }
+        },
+        "required": [
+          "id",
+          "termos",
+          "origem",
+          "uf",
+          "canal",
+          "destino",
+          "ativo",
+          "pago_ate",
+          "ultimo_check",
+          "falhas_seguidas",
+          "criado_em",
+          "alerta_url",
+          "compras_url"
+        ],
+        "description": "Um alerta de compra nova: termos + UF, canal de entrega e o cursor do cron."
+      },
+      "OrigemCnae": {
+        "type": "object",
+        "properties": {
+          "cnpj": {
+            "type": "string",
+            "description": "CNPJ da empresa, 14 dígitos."
+          },
+          "familia": {
+            "type": "string",
+            "description": "Identificador da família de termos no dicionário."
+          },
+          "cnae": {
+            "type": "string",
+            "description": "O primeiro CNAE da empresa que acionou a família, 7 dígitos."
+          },
+          "descricao": {
+            "type": "string",
+            "description": "Descrição oficial (IBGE) desse CNAE.",
+            "nullable": true
+          },
+          "cnaes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Todos os CNAEs da empresa que caem nesta família."
+          }
+        },
+        "required": [
+          "cnpj",
+          "familia",
+          "cnae",
+          "descricao",
+          "cnaes"
+        ],
+        "description": "A empresa e a atividade (CNAE) que geraram um alerta por CNPJ."
+      },
+      "Empresa": {
+        "type": "object",
+        "properties": {
+          "cnpj": {
+            "type": "string",
+            "description": "14 dígitos."
+          },
+          "cnpj_formatado": {
+            "type": "string",
+            "description": "Com pontuação, para gente."
+          },
+          "razao_social": {
+            "type": "string",
+            "description": "Razão social na Receita.",
+            "nullable": true
+          },
+          "nome_fantasia": {
+            "type": "string",
+            "description": "O nome comercial, quando difere da razão social.",
+            "nullable": true
+          },
+          "situacao": {
+            "type": "string",
+            "description": "Situação cadastral (Ativa, Baixada…).",
+            "nullable": true
+          },
+          "uf": {
+            "type": "string",
+            "description": "UF da sede.",
+            "nullable": true
+          },
+          "municipio": {
+            "type": "string",
+            "description": "Município da sede.",
+            "nullable": true
+          },
+          "cnaes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CnaeDaEmpresa"
+            },
+            "description": "Principal primeiro, depois os secundários."
+          }
+        },
+        "required": [
+          "cnpj",
+          "cnpj_formatado",
+          "razao_social",
+          "nome_fantasia",
+          "situacao",
+          "uf",
+          "municipio",
+          "cnaes"
+        ],
+        "description": "A ficha resumida da empresa consultada pelo CNPJ, com a leitura do dicionário para cada CNAE."
+      },
+      "CnaeDaEmpresa": {
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "description": "7 dígitos."
+          },
+          "cnae": {
+            "type": "string",
+            "description": "Formatado como o IBGE escreve, ex. `1412-6/01`."
+          },
+          "descricao": {
+            "type": "string",
+            "description": "Descrição oficial.",
+            "nullable": true
+          },
+          "principal": {
+            "type": "boolean",
+            "description": "Se é o CNAE principal da empresa."
+          },
+          "familia": {
+            "type": "string",
+            "description": "Família de termos que este CNAE aciona; nulo fora do dicionário.",
+            "nullable": true
+          },
+          "termos": {
+            "type": "string",
+            "description": "Os termos dessa família; nulo fora do dicionário.",
+            "nullable": true
+          }
+        },
+        "required": [
+          "codigo",
+          "cnae",
+          "descricao",
+          "principal",
+          "familia",
+          "termos"
+        ],
+        "description": "Um CNAE da empresa e o que o dicionário faz com ele."
+      },
+      "FamiliaNaoCriada": {
+        "type": "object",
+        "properties": {
+          "familia": {
+            "type": "string",
+            "description": "Identificador da família."
+          },
+          "nome": {
+            "type": "string",
+            "description": "Nome da família."
+          },
+          "termos": {
+            "type": "string",
+            "description": "Os termos que o alerta teria."
+          },
+          "cnaes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "CNAEs da empresa que caem nela."
+          },
+          "motivo": {
+            "type": "string",
+            "description": "`acima_de_max_familias`."
+          }
+        },
+        "required": [
+          "familia",
+          "nome",
+          "termos",
+          "cnaes",
+          "motivo"
+        ],
+        "description": "Uma família da empresa que não virou alerta neste pedido."
+      },
+      "AlertaCompra": {
+        "type": "object",
+        "properties": {
+          "compra_id": {
+            "type": "integer",
+            "description": "Identificador da compra no acervo."
+          },
+          "status": {
+            "type": "string",
+            "description": "`pull`, `webhook:ok`, `webhook:falhou`, `email:ok`, `email:falhou`, `email:nao_confirmado`, `email:teto_do_dia` ou `pendente`."
+          },
+          "visto_em": {
+            "type": "string",
+            "description": "Quando o cron viu a compra."
+          },
+          "compra": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Compra"
+              }
+            ],
+            "description": "A compra como estava quando casou, com prazos.",
+            "nullable": true
+          }
+        },
+        "required": [
+          "compra_id",
+          "status",
+          "visto_em",
+          "compra"
+        ],
+        "description": "Uma compra que casou com o alerta e o que aconteceu com a entrega."
+      },
+      "Vigia": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Identificador da vigia."
+          },
+          "compra_id": {
+            "type": "integer",
+            "description": "Compra vigiada no acervo."
+          },
+          "canal": {
+            "type": "string",
+            "description": "`pull`, `webhook` ou `email`."
+          },
+          "destino": {
+            "type": "string",
+            "description": "URL do webhook; nulo no pull e no e-mail.",
+            "nullable": true
+          },
+          "ativo": {
+            "type": "boolean",
+            "description": "Se o cron ainda reconfere; encerra 30 dias após o fim das propostas."
+          },
+          "pago_ate": {
+            "type": "string",
+            "description": "Fim da validade paga; nulo na franquia.",
+            "nullable": true
+          },
+          "ultimo_check": {
+            "type": "string",
+            "description": "Última reconferência.",
+            "nullable": true
+          },
+          "criado_em": {
+            "type": "string",
+            "description": "Criação em ISO 8601."
+          },
+          "vigia_url": {
+            "type": "string",
+            "description": "URL desta vigia."
+          },
+          "eventos_url": {
+            "type": "string",
+            "description": "Onde ler os eventos (pull)."
+          },
+          "compra_url": {
+            "type": "string",
+            "description": "Ficha da compra."
+          }
+        },
+        "required": [
+          "id",
+          "compra_id",
+          "canal",
+          "destino",
+          "ativo",
+          "pago_ate",
+          "ultimo_check",
+          "criado_em",
+          "vigia_url",
+          "eventos_url",
+          "compra_url"
+        ],
+        "description": "Uma compra vigiada: canal de aviso, validade e o cursor do cron."
+      },
+      "Snapshot": {
+        "type": "object",
+        "properties": {
+          "situacao_id": {
+            "type": "integer",
+            "description": "Situação: 1 divulgada, 2 revogada, 3 anulada, 4 suspensa.",
+            "nullable": true
+          },
+          "situacao": {
+            "type": "string",
+            "description": "Situação por extenso.",
+            "nullable": true
+          },
+          "encerramento_proposta": {
+            "type": "string",
+            "description": "Fim das propostas visto na fotografia.",
+            "nullable": true
+          },
+          "valor_estimado": {
+            "type": "number",
+            "description": "Valor estimado visto na fotografia.",
+            "nullable": true
+          },
+          "atualizado_em": {
+            "type": "string",
+            "description": "Última atualização conhecida da compra.",
+            "nullable": true
+          },
+          "documentos": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            },
+            "description": "Documentos por sequencial do PNCP: `sequencial`, `id`, `titulo`, `tipo`."
+          }
+        },
+        "required": [
+          "situacao_id",
+          "situacao",
+          "encerramento_proposta",
+          "valor_estimado",
+          "atualizado_em",
+          "documentos"
+        ],
+        "description": "A fotografia da compra que a vigia compara."
+      },
+      "Evento": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Identificador do evento."
+          },
+          "tipo": {
+            "type": "string",
+            "description": "`situacao`, `prazo_adiado`, `valor`, `documento_novo`, `documento_removido`, `prazo_impugnacao` ou `prazo_proposta`."
+          },
+          "antes": {
+            "type": "string",
+            "description": "Valor anterior; nulo em documento novo e nos avisos de prazo.",
+            "nullable": true
+          },
+          "depois": {
+            "type": "string",
+            "description": "Valor novo; nulo em documento removido.",
+            "nullable": true
+          },
+          "visto_em": {
+            "type": "string",
+            "description": "Quando o cron viu."
+          },
+          "entregue_em": {
+            "type": "string",
+            "description": "Quando o aviso saiu por webhook ou e-mail; nulo no pull ou em falha.",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "tipo",
+          "antes",
+          "depois",
+          "visto_em",
+          "entregue_em"
+        ],
+        "description": "Uma mudança vista na compra vigiada, ou um aviso de prazo."
+      },
+      "Metricas": {
+        "type": "object",
+        "properties": {
+          "app": {
+            "type": "string",
+            "description": "Nome do produto."
+          },
+          "today": {
+            "type": "string",
+            "description": "Dia de referência (UTC, AAAA-MM-DD)."
+          },
+          "today_visits": {
+            "type": "integer",
+            "description": "Visitas contadas hoje pela interface."
+          },
+          "today_contacts": {
+            "type": "integer",
+            "description": "Mensagens de contato hoje — este produto não tem formulário, fica em zero. Só com `METRICS_TOKEN`: contato não sai sem token."
+          },
+          "days": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            },
+            "description": "Um registro por dia da janela, com as contagens de cada métrica."
+          },
+          "usage": {
+            "type": "object",
+            "description": "Uso por recurso: `markdown` (entregas), `alertas` e `vigias` criados, por dia."
+          },
+          "accounts": {
+            "type": "object",
+            "description": "Totais: `donos` com token emitido."
+          },
+          "financeiro": {
+            "type": "object",
+            "description": "Agregado do dia: `hoje_usd`, `hoje_count`, `rede`. Só com `METRICS_TOKEN`: dinheiro não sai sem token; a série completa é `payments`."
+          },
+          "payments": {
+            "type": "object",
+            "description": "Resumo financeiro do x402; só com METRICS_TOKEN."
+          }
+        },
+        "required": [
+          "app",
+          "today",
+          "today_visits",
+          "days",
+          "usage",
+          "accounts"
+        ],
+        "description": "Painel de 7 dias do operador. `payments` só aparece com o token e só em Base mainnet."
+      },
+      "Recibo": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Identificador do recibo (32 hex)."
+          },
+          "recurso": {
+            "type": "string",
+            "description": "Recurso entregue, ex.: `documento/123/markdown`."
+          },
+          "documento_id": {
+            "type": "integer",
+            "description": "Documento entregue.",
+            "nullable": true
+          },
+          "preco_usd": {
+            "type": "string",
+            "description": "Preço cobrado — `$0.00` em amostra."
+          },
+          "modo": {
+            "type": "string",
+            "description": "`gratuito`, `homolog` ou `onchain`."
+          },
+          "sha256_entregue": {
+            "type": "string",
+            "description": "SHA-256 do markdown entregue, ou `nao_entregue`."
+          },
+          "bytes": {
+            "type": "integer",
+            "description": "Tamanho do que foi entregue."
+          },
+          "criado_em": {
+            "type": "string",
+            "description": "Instante da entrega em ISO 8601."
+          }
+        },
+        "required": [
+          "id",
+          "recurso",
+          "documento_id",
+          "preco_usd",
+          "modo",
+          "sha256_entregue",
+          "bytes",
+          "criado_em"
+        ],
+        "description": "Prova da entrega: o que foi pago, quanto, como e o hash do que saiu."
+      }
+    }
+  },
+  "paths": {
+    "/api/": {
+      "get": {
+        "operationId": "get_api",
+        "summary": "Índice auto-descrito: rotas, regime de cobrança, preço e MCP.",
+        "description": "Devolve: { name, description, build, base_url, docs, regime, gratis_acima_de_dias, pago, endpoints, mcp_tools, cota }",
+        "responses": {
+          "200": {
+            "description": "{ name, description, build, base_url, docs, regime, gratis_acima_de_dias, pago, endpoints, mcp_tools, cota }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "description": "Nome do produto."
+                    },
+                    "description": {
+                      "type": "string",
+                      "description": "O que o produto faz."
+                    },
+                    "build": {
+                      "type": "string",
+                      "description": "Commit publicado."
+                    },
+                    "base_url": {
+                      "type": "string",
+                      "description": "Origem em que esta API está servindo."
+                    },
+                    "docs": {
+                      "type": "object",
+                      "description": "Links para llms.txt, OpenAPI, MCP e a UI."
+                    },
+                    "regime": {
+                      "type": "string",
+                      "description": "A regra de cobrança por recência, em uma frase."
+                    },
+                    "gratis_acima_de_dias": {
+                      "type": "integer",
+                      "description": "Idade de publicação a partir da qual o documento é amostra grátis."
+                    },
+                    "pago": {
+                      "type": "object",
+                      "description": "Rota paga e o preço por requisição."
+                    },
+                    "endpoints": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      },
+                      "description": "Catálogo de endpoints."
+                    },
+                    "mcp_tools": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Tools do MCP."
+                    },
+                    "cota": {
+                      "type": "object",
+                      "description": "O que é grátis, o que é pago e como pagar."
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "description",
+                    "build",
+                    "base_url",
+                    "docs",
+                    "regime",
+                    "gratis_acima_de_dias",
+                    "pago",
+                    "endpoints",
+                    "mcp_tools",
+                    "cota"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/health": {
+      "get": {
+        "operationId": "get_api_health",
+        "summary": "Saúde da origem e tamanho do acervo.",
+        "description": "Devolve: { ok, acervo{compras,documentos_lidos}, preco_markdown_usd, gratis_acima_de_dias }",
+        "responses": {
+          "200": {
+            "description": "{ ok, acervo{compras,documentos_lidos}, preco_markdown_usd, gratis_acima_de_dias }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Saude"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Origem indisponível."
+          }
+        }
+      }
+    },
+    "/mcp": {
+      "post": {
+        "operationId": "post_mcp",
+        "summary": "MCP Streamable HTTP — as tools deste catálogo, despachadas neste mesmo Worker.",
+        "description": "Devolve: JSON-RPC 2.0 (`initialize`, `tools/list`, `tools/call`).",
+        "responses": {
+          "200": {
+            "description": "JSON-RPC 2.0 (`initialize`, `tools/list`, `tools/call`)."
+          }
+        }
+      }
+    },
+    "/okf/{arquivo}": {
+      "get": {
+        "operationId": "get_okf_by_arquivo",
+        "summary": "Bundle OKF (Open Knowledge Format v0.1): markdown com frontmatter para o agente ler o produto inteiro sem parsear HTML.",
+        "description": "Devolve: `text/markdown`. Comece por `/okf/index.md`, que lista o bundle.",
+        "parameters": [
+          {
+            "name": "arquivo",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "`text/markdown`. Comece por `/okf/index.md`, que lista o bundle."
+          },
+          "404": {
+            "description": "Arquivo fora do bundle."
+          }
+        }
+      }
+    },
+    "/.well-known/{arquivo}": {
+      "get": {
+        "operationId": "get_well_known_by_arquivo",
+        "summary": "Descoberta de máquina antes da home: `api-catalog` (RFC 9727, linkset com a API e o MCP), `security.txt` (RFC 9116) e `mcp-registry-auth` (chave do registro oficial de MCP).",
+        "description": "Devolve: `application/linkset+json` no api-catalog; `text/plain` nos outros dois.",
+        "parameters": [
+          {
+            "name": "arquivo",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "`application/linkset+json` no api-catalog; `text/plain` nos outros dois."
+          },
+          "404": {
+            "description": "Nome fora dos quatro publicados."
+          }
+        }
+      }
+    },
+    "/apis.json": {
+      "get": {
+        "operationId": "get_apis_json",
+        "summary": "APIs.json (apisjson.org, 0.19): o índice que o APIs.io colhe — a API, o MCP, OpenAPI, guia e bundle OKF num arquivo só. Também em `/.well-known/apis.json`.",
+        "description": "Devolve: `application/json` no formato APIs.json 0.19: `apis[]` com `baseURL`, `humanURL` e `properties[]`.",
+        "responses": {
+          "200": {
+            "description": "`application/json` no formato APIs.json 0.19: `apis[]` com `baseURL`, `humanURL` e `properties[]`."
+          }
+        }
+      }
+    },
+    "/feed.xml": {
+      "get": {
+        "operationId": "get_feed_xml",
+        "summary": "RSS 2.0 das compras publicadas mais recentemente no acervo.",
+        "description": "Devolve: `application/rss+xml`.",
+        "responses": {
+          "200": {
+            "description": "`application/rss+xml`."
+          }
+        }
+      }
+    },
+    "/feed.json": {
+      "get": {
+        "operationId": "get_feed_json",
+        "summary": "JSON Feed 1.1 das compras publicadas mais recentemente — o mesmo stream do RSS.",
+        "description": "Devolve: `application/feed+json`.",
+        "responses": {
+          "200": {
+            "description": "`application/feed+json`."
+          }
+        }
+      }
+    },
+    "/api/busca": {
+      "get": {
+        "operationId": "get_api_busca",
+        "summary": "Busca compras do PNCP por termo. Sempre grátis — é a descoberta.",
+        "description": "Devolve: { itens[{id,pncp,objeto,uf,modalidade,situacao,orgao,unidade,valor_estimado,publicado_em,informacao_complementar,processo,abertura_proposta,encerramento_proposta,amparo_legal,amparo_legal_codigo,modalidade_id,situacao_id,municipio,municipio_ibge,orgao_cnpj,ano_compra,sequencial_compra,atualizado_em,prazos,pncp_url,markdown_url,compra_url}], preco_markdown_usd, gratis_acima_de_dias, pago }",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Termo de busca; mínimo 3 letras."
+          },
+          {
+            "name": "uf",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filtra por sigla de UF."
+          },
+          {
+            "name": "abertas",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "1"
+              ]
+            },
+            "description": "`1` devolve só compras com prazo de proposta ainda por vencer."
+          },
+          {
+            "name": "limite",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "1 a 50 (padrão 20)."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "{ itens[{id,pncp,objeto,uf,modalidade,situacao,orgao,unidade,valor_estimado,publicado_em,informacao_complementar,processo,abertura_proposta,encerramento_proposta,amparo_legal,amparo_legal_codigo,modalidade_id,situacao_id,municipio,municipio_ibge,orgao_cnpj,ano_compra,sequencial_compra,atualizado_em,prazos,pncp_url,markdown_url,compra_url}], preco_markdown_usd, gratis_acima_de_dias, pago }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Busca"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Termo com menos de 3 letras."
+          },
+          "502": {
+            "description": "Origem indisponível."
+          }
+        }
+      }
+    },
+    "/api/cnaes": {
+      "get": {
+        "operationId": "get_api_cnaes",
+        "summary": "A lista de CNAE como o alerta por CNPJ a lê: descrição oficial (IBGE), família e termos do dicionário, e fornecedores ativos no SICAF. Grátis.",
+        "description": "Sem `q`, o ranking dos CNAEs com mais fornecedores ativos no SICAF (dados abertos do compras.gov.br) — é a lista de quem vende para o governo, gravada e re-medida pelo cron diário. Com `q`, busca por prefixo do código (`1412`, `1412-6/01`) ou por palavra da descrição. `familia`/`termos` nulos dizem que o CNAE ainda não está no dicionário: um alerta por CNPJ não o usa.\nDevolve: { itens[{codigo,cnae,descricao,familia,familia_nome,termos,fornecedores_sicaf,sicaf_medido_em,ibge_atualizado_em}], limite, q, dicionario, fontes }",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Prefixo do código (2 a 7 dígitos) ou palavra da descrição (2+ letras)."
+          },
+          {
+            "name": "limite",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "1 a 100 (padrão 20), por fornecedores no SICAF, decrescente."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "{ itens[{codigo,cnae,descricao,familia,familia_nome,termos,fornecedores_sicaf,sicaf_medido_em,ibge_atualizado_em}], limite, q, dicionario, fontes }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "itens": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Cnae"
+                      },
+                      "description": "Os CNAEs que casam, os com mais fornecedores primeiro."
+                    },
+                    "limite": {
+                      "type": "integer",
+                      "description": "Teto aplicado."
+                    },
+                    "q": {
+                      "type": "string",
+                      "description": "O filtro aplicado.",
+                      "nullable": true
+                    },
+                    "dicionario": {
+                      "type": "object",
+                      "description": "`familias`, `cnaes_mapeados` e `medido_em` (quando a cobertura no acervo foi medida)."
+                    },
+                    "fontes": {
+                      "type": "object",
+                      "description": "De onde vêm `descricao` (IBGE) e `fornecedores_sicaf` (compras.gov.br)."
+                    }
+                  },
+                  "required": [
+                    "itens",
+                    "limite",
+                    "q",
+                    "dicionario",
+                    "fontes"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`q` com menos de 2 caracteres."
+          },
+          "503": {
+            "description": "Banco indisponível."
+          }
+        }
+      }
+    },
+    "/api/compra/{id}": {
+      "get": {
+        "operationId": "get_api_compra_by_id",
+        "summary": "Ficha da compra com prazos de proposta e impugnação, documentos e o regime de cobrança de cada um.",
+        "description": "Devolve: { compra{id,pncp,objeto,uf,modalidade,situacao,orgao,unidade,valor_estimado,publicado_em,informacao_complementar,processo,abertura_proposta,encerramento_proposta,amparo_legal,amparo_legal_codigo,modalidade_id,situacao_id,municipio,municipio_ibge,orgao_cnpj,ano_compra,sequencial_compra,atualizado_em,prazos,pncp_url,markdown_url,compra_url}, documentos[{id,titulo,tipo,sequencial,publicado_em,caracteres,paginas,motor,formato,sha256,extraido_em,gratuito,preco_usd,markdown_url,disponivel}], regime{gratuito,motivo,idade_dias}, prazos{proposta_inicio,proposta_ate,proposta_aberta,impugnacao_ate,impugnacao_aberta,estimado,base_legal,feriados,motivo} }",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "{ compra{id,pncp,objeto,uf,modalidade,situacao,orgao,unidade,valor_estimado,publicado_em,informacao_complementar,processo,abertura_proposta,encerramento_proposta,amparo_legal,amparo_legal_codigo,modalidade_id,situacao_id,municipio,municipio_ibge,orgao_cnpj,ano_compra,sequencial_compra,atualizado_em,prazos,pncp_url,markdown_url,compra_url}, documentos[{id,titulo,tipo,sequencial,publicado_em,caracteres,paginas,motor,formato,sha256,extraido_em,gratuito,preco_usd,markdown_url,disponivel}], regime{gratuito,motivo,idade_dias}, prazos{proposta_inicio,proposta_ate,proposta_aberta,impugnacao_ate,impugnacao_aberta,estimado,base_legal,feriados,motivo} }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FichaCompra"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Compra não encontrada."
+          },
+          "502": {
+            "description": "Origem indisponível."
+          }
+        }
+      }
+    },
+    "/api/documento/{id}/markdown": {
+      "get": {
+        "operationId": "get_api_documento_by_id_markdown",
+        "summary": "Documento em markdown com front-matter de procedência e hash. Grátis se a compra tem 30+ dias; pago se é recente.",
+        "description": "Devolve: `text/markdown`. Headers: `x-editalmd-regime`, `x-editalmd-recibo`, `x-editalmd-sha256`.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "`text/markdown`. Headers: `x-editalmd-regime`, `x-editalmd-recibo`, `x-editalmd-sha256`."
+          },
+          "402": {
+            "description": "Documento recente sem pagamento — o corpo traz `accepts[]` do x402 e o caminho da recarga de crédito."
+          },
+          "404": {
+            "description": "Documento não encontrado (não cobra)."
+          },
+          "409": {
+            "description": "Documento ainda não baixado para o acervo: não há o que extrair (não cobra)."
+          },
+          "502": {
+            "description": "Pago e sem entrega: o corpo traz o número do recibo."
+          }
+        }
+      }
+    },
+    "/api/documento/{id}/habilitacao": {
+      "post": {
+        "operationId": "post_api_documento_by_id_habilitacao",
+        "summary": "Lista de habilitação do edital: cada exigência com o trecho literal de onde saiu. Pago por documento; mesmo texto não paga de novo.",
+        "description": "Extraída por modelo de linguagem na origem e ancorada no texto: item cujo trecho não existe literalmente no edital é descartado (`descartados` conta). Cobre só o lado do edital — o que a empresa tem não entra. `impugnacao_texto` e `proposta_texto` são o que o próprio edital diz, copiado.\nDevolve: { documento_id, compra_id, sha256_texto, modelo, cache, recibo, recibo_url, aviso, habilitacao{juridica,fiscal_social_trabalhista,economico_financeira,tecnica,exclusivo_me_epp,impugnacao_texto,proposta_texto,total,descartados} }",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "{ documento_id, compra_id, sha256_texto, modelo, cache, recibo, recibo_url, aviso, habilitacao{juridica,fiscal_social_trabalhista,economico_financeira,tecnica,exclusivo_me_epp,impugnacao_texto,proposta_texto,total,descartados} }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Habilitacao"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Compra recente sem pagamento — `accepts[]` do x402 e o caminho da recarga de crédito. Compra com 30+ dias e cache (mesmo `sha256_texto`) não cobram."
+          },
+          "404": {
+            "description": "Documento não encontrado (não cobra)."
+          },
+          "409": {
+            "description": "Sem texto e sem binário no acervo, ou texto curto demais (não cobra)."
+          },
+          "502": {
+            "description": "Pago e sem entrega: o corpo traz o número do recibo."
+          },
+          "503": {
+            "description": "Extração por modelo desligada na origem."
+          }
+        }
+      }
+    },
+    "/api/dono": {
+      "post": {
+        "operationId": "post_api_dono",
+        "summary": "Cria o token de dono que abre alertas e vigias, e o segredo que assina os webhooks. Sem cadastro.",
+        "description": "Teto por rede e por dia (`TETO_DONOS_REDE_DIA`), para a franquia grátis não virar infinita. O token é mostrado uma única vez e não tem recuperação; o `webhook_segredo` pode ser relido em `GET /api/dono`. Todo POST do webhook leva `webhook-id`, `webhook-timestamp` (segundos Unix) e `webhook-signature: v1,<base64>`: HMAC-SHA256 de `id.timestamp.corpo` com a chave do seu `whsec_…` (o base64 depois do prefixo). É o padrão Standard Webhooks — qualquer biblioteca dele confere; rejeite timestamp fora de 5 minutos. Depois de `POST /api/dono/segredo`, o anterior ainda assina por 24 h (duas partes `v1,` no cabeçalho).\nDevolve: { token, aviso, webhook_segredo, webhook_assinatura, franquia }",
+        "responses": {
+          "200": {
+            "description": "{ token, aviso, webhook_segredo, webhook_assinatura, franquia }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Dono"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "A rede já criou o teto de donos do dia."
+          },
+          "503": {
+            "description": "Banco indisponível."
+          }
+        }
+      },
+      "get": {
+        "operationId": "get_api_dono",
+        "summary": "O estado do dono: e-mail confirmado, franquia e o segredo que assina os webhooks.",
+        "description": "Todo POST do webhook leva `webhook-id`, `webhook-timestamp` (segundos Unix) e `webhook-signature: v1,<base64>`: HMAC-SHA256 de `id.timestamp.corpo` com a chave do seu `whsec_…` (o base64 depois do prefixo). É o padrão Standard Webhooks — qualquer biblioteca dele confere; rejeite timestamp fora de 5 minutos. Depois de `POST /api/dono/segredo`, o anterior ainda assina por 24 h (duas partes `v1,` no cabeçalho).\nDevolve: { email_confirmado, email_confirmado_em, webhook_segredo, assinatura, franquia }",
+        "responses": {
+          "200": {
+            "description": "{ email_confirmado, email_confirmado_em, webhook_segredo, assinatura, franquia }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "email_confirmado": {
+                      "type": "boolean",
+                      "description": "Se há e-mail confirmado para os alertas por e-mail."
+                    },
+                    "email_confirmado_em": {
+                      "type": "string",
+                      "description": "Instante da confirmação em ISO 8601; nulo sem e-mail.",
+                      "nullable": true
+                    },
+                    "webhook_segredo": {
+                      "type": "string",
+                      "description": "`whsec_…` — a chave que assina cada POST de webhook."
+                    },
+                    "assinatura": {
+                      "type": "string",
+                      "description": "Como conferir a assinatura, em uma linha."
+                    },
+                    "franquia": {
+                      "type": "object",
+                      "description": "`alertas_gratis` e `vigias_gratis` incluídos."
+                    }
+                  },
+                  "required": [
+                    "email_confirmado",
+                    "email_confirmado_em",
+                    "webhook_segredo",
+                    "assinatura",
+                    "franquia"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token de dono, ou token desconhecido."
+          }
+        }
+      }
+    },
+    "/api/dono/segredo": {
+      "post": {
+        "operationId": "post_api_dono_segredo",
+        "summary": "Rotaciona o segredo do webhook. O anterior ainda assina por 24 h, para trocar sem janela de falha.",
+        "description": "Durante as 24 h o cabeçalho `webhook-signature` traz duas partes `v1,…`: uma com o novo, outra com o anterior. Basta o receptor aceitar qualquer uma que bata.\nDevolve: { webhook_segredo, anterior_valido_ate }",
+        "responses": {
+          "200": {
+            "description": "{ webhook_segredo, anterior_valido_ate }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "webhook_segredo": {
+                      "type": "string",
+                      "description": "O novo `whsec_…`."
+                    },
+                    "anterior_valido_ate": {
+                      "type": "string",
+                      "description": "Até quando o segredo anterior ainda assina (ISO 8601)."
+                    }
+                  },
+                  "required": [
+                    "webhook_segredo",
+                    "anterior_valido_ate"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token de dono, ou token desconhecido."
+          }
+        }
+      }
+    },
+    "/api/dono/confirmar-email": {
+      "post": {
+        "operationId": "post_api_dono_confirmar_email",
+        "summary": "Confirma o e-mail de destino dos alertas com o código de 6 dígitos recebido.",
+        "description": "Devolve: { ok, email_confirmado_em }",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "codigo": {
+                    "type": "string",
+                    "description": "Os 6 dígitos que chegaram no e-mail; vale 30 minutos."
+                  }
+                },
+                "required": [
+                  "codigo"
+                ]
+              },
+              "example": {
+                "codigo": "123456"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "{ ok, email_confirmado_em }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "description": "`true` quando o e-mail passou a valer."
+                    },
+                    "email_confirmado_em": {
+                      "type": "string",
+                      "description": "Instante da confirmação em ISO 8601."
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "email_confirmado_em"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Código inválido, expirado ou sem confirmação pendente."
+          },
+          "401": {
+            "description": "Sem token de dono, ou token desconhecido."
+          },
+          "429": {
+            "description": "Cinco tentativas erradas: peça outro código."
+          }
+        }
+      }
+    },
+    "/api/alertas": {
+      "post": {
+        "operationId": "post_api_alertas",
+        "summary": "Cria alertas de compra nova: por termos do objeto e UF, ou pelo CNPJ da empresa (um alerta por família de atividade), entregues por pull, webhook ou e-mail.",
+        "description": "Dois modos. Por `termos`: espaço exige todas as palavras, `|` aceita qualquer uma do grupo (`uniforme|fardamento escolar`). Por `cnpj`: a ficha da empresa (Radar CNPJ) dá os CNAEs, o dicionário (`GET /api/cnaes`) transforma cada CNAE numa família de termos e sai um alerta por família distinta, principal primeiro, até `max_familias`; CNAE fora do dicionário não vira alerta e é listado em `empresa.cnaes` com `familia: null`. O primeiro alerta ativo é grátis (`FRANQUIA_ALERTAS`); os seguintes custam `PRECO_ALERTA` por 30 dias cada — no modo CNPJ, numa cobrança só (N × preço), por x402 ou crédito. O cron confere a cada 30 minutos. Canal e-mail exige confirmação do destinatário e só existe com `EMAIL_ALERTAS=1`.\nDevolve: { alerta?{id,termos,origem,uf,canal,destino,ativo,pago_ate,ultimo_check,falhas_seguidas,criado_em,alerta_url,compras_url}, alertas?[{id,termos,origem,uf,canal,destino,ativo,pago_ate,ultimo_check,falhas_seguidas,criado_em,alerta_url,compras_url}], empresa?{cnpj,cnpj_formatado,razao_social,nome_fantasia,situacao,uf,municipio,cnaes}, nao_criados?[{familia,nome,termos,cnaes,motivo}], pagamento, email_confirmacao? }",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "termos": {
+                    "type": "string",
+                    "description": "Palavras do objeto da compra (3 a 200 letras); espaço = todas, `|` = qualquer uma do grupo. Obrigatório sem `cnpj`; ignorado com `cnpj`."
+                  },
+                  "cnpj": {
+                    "type": "string",
+                    "description": "CNPJ da empresa (14 dígitos, com ou sem pontuação): os termos saem das atividades (CNAE) dela, um alerta por família."
+                  },
+                  "max_familias": {
+                    "type": "integer",
+                    "description": "Só com `cnpj`: quantas famílias viram alerta, principal primeiro (1 a 8)."
+                  },
+                  "uf": {
+                    "type": "string",
+                    "description": "Sigla da UF para restringir; sem UF vale o Brasil inteiro."
+                  },
+                  "canal": {
+                    "type": "string",
+                    "description": "`pull` (só a API), `webhook` (POST na sua URL https) ou `email`."
+                  },
+                  "destino": {
+                    "type": "string",
+                    "description": "URL https pública (webhook) ou e-mail (email). Ignorado no pull."
+                  }
+                }
+              },
+              "example": {
+                "termos": "uniforme|fardamento escolar",
+                "uf": "GO",
+                "canal": "pull"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "{ alerta?{id,termos,origem,uf,canal,destino,ativo,pago_ate,ultimo_check,falhas_seguidas,criado_em,alerta_url,compras_url}, alertas?[{id,termos,origem,uf,canal,destino,ativo,pago_ate,ultimo_check,falhas_seguidas,criado_em,alerta_url,compras_url}], empresa?{cnpj,cnpj_formatado,razao_social,nome_fantasia,situacao,uf,municipio,cnaes}, nao_criados?[{familia,nome,termos,cnaes,motivo}], pagamento, email_confirmacao? }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "alerta": {
+                      "allOf": [
+                        {
+                          "$ref": "#/components/schemas/Alerta"
+                        }
+                      ],
+                      "description": "O alerta criado (modo termos)."
+                    },
+                    "alertas": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Alerta"
+                      },
+                      "description": "Os alertas criados, um por família (modo CNPJ)."
+                    },
+                    "empresa": {
+                      "allOf": [
+                        {
+                          "$ref": "#/components/schemas/Empresa"
+                        }
+                      ],
+                      "description": "A ficha resumida e cada CNAE com a família que o acionou (modo CNPJ)."
+                    },
+                    "nao_criados": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/FamiliaNaoCriada"
+                      },
+                      "description": "Famílias que ficaram de fora por `max_familias` (modo CNPJ)."
+                    },
+                    "pagamento": {
+                      "type": "object",
+                      "description": "`via` (franquia, credito ou x402), `preco_usd`, `pago_ate` e, no modo CNPJ, `alertas_pagos` e `preco_unitario_usd`."
+                    },
+                    "email_confirmacao": {
+                      "type": "string",
+                      "description": "`confirmado`, `pendente` ou `falhou_envio`, só no canal e-mail."
+                    }
+                  },
+                  "required": [
+                    "pagamento"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Termos, CNPJ, UF, canal ou destino inválidos."
+          },
+          "401": {
+            "description": "Sem token de dono, ou token desconhecido."
+          },
+          "402": {
+            "description": "Acima da franquia sem pagamento — `accepts[]` do x402 e o caminho do crédito."
+          },
+          "404": {
+            "description": "CNPJ não existe na base da Receita."
+          },
+          "422": {
+            "description": "CNPJ sem nenhuma atividade no dicionário: crie por termos (a resposta traz os CNAEs)."
+          },
+          "503": {
+            "description": "Canal e-mail desligado, ou a consulta ao CNPJ indisponível agora (`retry_after`)."
+          }
+        }
+      },
+      "get": {
+        "operationId": "get_api_alertas",
+        "summary": "Lista os alertas deste dono, os mais novos primeiro.",
+        "description": "Devolve: { itens[{id,termos,origem,uf,canal,destino,ativo,pago_ate,ultimo_check,falhas_seguidas,criado_em,alerta_url,compras_url}], franquia_alertas }",
+        "responses": {
+          "200": {
+            "description": "{ itens[{id,termos,origem,uf,canal,destino,ativo,pago_ate,ultimo_check,falhas_seguidas,criado_em,alerta_url,compras_url}], franquia_alertas }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "itens": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Alerta"
+                      },
+                      "description": "Até 50 alertas do dono."
+                    },
+                    "franquia_alertas": {
+                      "type": "integer",
+                      "description": "Quantos alertas ativos são grátis."
+                    }
+                  },
+                  "required": [
+                    "itens",
+                    "franquia_alertas"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token de dono, ou token desconhecido."
+          }
+        }
+      }
+    },
+    "/api/alertas/{id}": {
+      "get": {
+        "operationId": "get_api_alertas_by_id",
+        "summary": "Um alerta do dono, com o cursor da última verificação do cron.",
+        "description": "Devolve: { alerta{id,termos,origem,uf,canal,destino,ativo,pago_ate,ultimo_check,falhas_seguidas,criado_em,alerta_url,compras_url} }",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "{ alerta{id,termos,origem,uf,canal,destino,ativo,pago_ate,ultimo_check,falhas_seguidas,criado_em,alerta_url,compras_url} }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "alerta": {
+                      "allOf": [
+                        {
+                          "$ref": "#/components/schemas/Alerta"
+                        }
+                      ],
+                      "description": "O alerta."
+                    }
+                  },
+                  "required": [
+                    "alerta"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token de dono, ou token desconhecido."
+          },
+          "404": {
+            "description": "Alerta inexistente ou de outro dono."
+          }
+        }
+      },
+      "patch": {
+        "operationId": "patch_api_alertas_by_id",
+        "summary": "Pausa, reativa ou muda termos, UF, canal e destino de um alerta.",
+        "description": "Devolve: { alerta{id,termos,origem,uf,canal,destino,ativo,pago_ate,ultimo_check,falhas_seguidas,criado_em,alerta_url,compras_url}, email_confirmacao? }",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "ativo": {
+                    "type": "boolean",
+                    "description": "`false` pausa sem apagar; `true` reativa."
+                  },
+                  "termos": {
+                    "type": "string",
+                    "description": "Novos termos do objeto (3 a 200 letras; `|` = qualquer uma do grupo)."
+                  },
+                  "uf": {
+                    "type": "string",
+                    "description": "Nova UF; vazio tira a restrição."
+                  },
+                  "canal": {
+                    "type": "string",
+                    "description": "Novo canal: `pull`, `webhook` ou `email`."
+                  },
+                  "destino": {
+                    "type": "string",
+                    "description": "Nova URL https ou novo e-mail, conforme o canal."
+                  }
+                }
+              },
+              "example": {
+                "ativo": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "{ alerta{id,termos,origem,uf,canal,destino,ativo,pago_ate,ultimo_check,falhas_seguidas,criado_em,alerta_url,compras_url}, email_confirmacao? }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "alerta": {
+                      "allOf": [
+                        {
+                          "$ref": "#/components/schemas/Alerta"
+                        }
+                      ],
+                      "description": "O alerta depois da mudança."
+                    },
+                    "email_confirmacao": {
+                      "type": "string",
+                      "description": "Estado da confirmação, só no canal e-mail."
+                    }
+                  },
+                  "required": [
+                    "alerta"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Nada para mudar ou valor inválido."
+          },
+          "401": {
+            "description": "Sem token de dono, ou token desconhecido."
+          },
+          "404": {
+            "description": "Alerta inexistente ou de outro dono."
+          },
+          "503": {
+            "description": "Canal e-mail desligado."
+          }
+        }
+      },
+      "delete": {
+        "operationId": "delete_api_alertas_by_id",
+        "summary": "Apaga o alerta e o histórico de compras casadas. Sem volta.",
+        "description": "Devolve: 204 sem corpo.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "204 sem corpo."
+          },
+          "401": {
+            "description": "Sem token de dono, ou token desconhecido."
+          },
+          "404": {
+            "description": "Alerta inexistente ou de outro dono."
+          }
+        }
+      }
+    },
+    "/api/alertas/{id}/compras": {
+      "get": {
+        "operationId": "get_api_alertas_by_id_compras",
+        "summary": "As compras que já casaram com o alerta — é o canal pull, e a prova do que foi entregue.",
+        "description": "Devolve: { alerta{id,termos,origem,uf,canal,destino,ativo,pago_ate,ultimo_check,falhas_seguidas,criado_em,alerta_url,compras_url}, itens[{compra_id,status,visto_em,compra}], limite }",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limite",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "1 a 100 (padrão 50), mais recentes primeiro."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "{ alerta{id,termos,origem,uf,canal,destino,ativo,pago_ate,ultimo_check,falhas_seguidas,criado_em,alerta_url,compras_url}, itens[{compra_id,status,visto_em,compra}], limite }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "alerta": {
+                      "allOf": [
+                        {
+                          "$ref": "#/components/schemas/Alerta"
+                        }
+                      ],
+                      "description": "O alerta."
+                    },
+                    "itens": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/AlertaCompra"
+                      },
+                      "description": "Compras casadas, com o status da entrega."
+                    },
+                    "limite": {
+                      "type": "integer",
+                      "description": "Teto aplicado."
+                    }
+                  },
+                  "required": [
+                    "alerta",
+                    "itens",
+                    "limite"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token de dono, ou token desconhecido."
+          },
+          "404": {
+            "description": "Alerta inexistente ou de outro dono."
+          }
+        }
+      }
+    },
+    "/api/vigias": {
+      "post": {
+        "operationId": "post_api_vigias",
+        "summary": "Vigia uma compra: fotografa agora e avisa quando mudar — documento novo, suspensão, prazo adiado, valor — e nos prazos.",
+        "description": "A primeira vigia ativa é grátis (`FRANQUIA_VIGIAS`); as seguintes custam `PRECO_VIGIA` até 30 dias após o encerramento. O cron reconfere a cada hora; compra que o acervo não revisita há mais de 3 dias é conferida direto no PNCP. Avisos `prazo_impugnacao` (no dia) e `prazo_proposta` (24 h antes) saem uma vez cada.\nDevolve: { vigia{id,compra_id,canal,destino,ativo,pago_ate,ultimo_check,criado_em,vigia_url,eventos_url,compra_url}, snapshot{situacao_id,situacao,encerramento_proposta,valor_estimado,atualizado_em,documentos}, pagamento }",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "compra_id": {
+                    "type": "integer",
+                    "description": "Identificador da compra no acervo, vindo da busca."
+                  },
+                  "canal": {
+                    "type": "string",
+                    "description": "`pull` (ler em `/eventos`), `webhook` ou `email`."
+                  },
+                  "destino": {
+                    "type": "string",
+                    "description": "URL https pública (webhook) ou e-mail confirmado (email)."
+                  }
+                },
+                "required": [
+                  "compra_id"
+                ]
+              },
+              "example": {
+                "compra_id": 42,
+                "canal": "pull"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "{ vigia{id,compra_id,canal,destino,ativo,pago_ate,ultimo_check,criado_em,vigia_url,eventos_url,compra_url}, snapshot{situacao_id,situacao,encerramento_proposta,valor_estimado,atualizado_em,documentos}, pagamento }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "vigia": {
+                      "allOf": [
+                        {
+                          "$ref": "#/components/schemas/Vigia"
+                        }
+                      ],
+                      "description": "A vigia criada."
+                    },
+                    "snapshot": {
+                      "allOf": [
+                        {
+                          "$ref": "#/components/schemas/Snapshot"
+                        }
+                      ],
+                      "description": "A fotografia inicial da compra."
+                    },
+                    "pagamento": {
+                      "type": "object",
+                      "description": "`via` (franquia, credito ou x402), `preco_usd` e `pago_ate`."
+                    }
+                  },
+                  "required": [
+                    "vigia",
+                    "snapshot",
+                    "pagamento"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`compra_id`, canal ou destino inválidos."
+          },
+          "401": {
+            "description": "Sem token de dono, ou token desconhecido."
+          },
+          "402": {
+            "description": "Acima da franquia sem pagamento — `accepts[]` do x402 e o caminho do crédito."
+          },
+          "404": {
+            "description": "Compra não encontrada no acervo."
+          },
+          "503": {
+            "description": "Canal e-mail desligado, ou origem indisponível."
+          }
+        }
+      },
+      "get": {
+        "operationId": "get_api_vigias",
+        "summary": "Lista as vigias deste dono, as mais novas primeiro.",
+        "description": "Devolve: { itens[{id,compra_id,canal,destino,ativo,pago_ate,ultimo_check,criado_em,vigia_url,eventos_url,compra_url}], franquia_vigias }",
+        "responses": {
+          "200": {
+            "description": "{ itens[{id,compra_id,canal,destino,ativo,pago_ate,ultimo_check,criado_em,vigia_url,eventos_url,compra_url}], franquia_vigias }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "itens": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Vigia"
+                      },
+                      "description": "Até 50 vigias do dono."
+                    },
+                    "franquia_vigias": {
+                      "type": "integer",
+                      "description": "Quantas vigias ativas são grátis."
+                    }
+                  },
+                  "required": [
+                    "itens",
+                    "franquia_vigias"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token de dono, ou token desconhecido."
+          }
+        }
+      }
+    },
+    "/api/vigias/{id}": {
+      "get": {
+        "operationId": "get_api_vigias_by_id",
+        "summary": "Uma vigia do dono com a fotografia mais recente da compra.",
+        "description": "Devolve: { vigia{id,compra_id,canal,destino,ativo,pago_ate,ultimo_check,criado_em,vigia_url,eventos_url,compra_url}, snapshot{situacao_id,situacao,encerramento_proposta,valor_estimado,atualizado_em,documentos} }",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "{ vigia{id,compra_id,canal,destino,ativo,pago_ate,ultimo_check,criado_em,vigia_url,eventos_url,compra_url}, snapshot{situacao_id,situacao,encerramento_proposta,valor_estimado,atualizado_em,documentos} }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "vigia": {
+                      "allOf": [
+                        {
+                          "$ref": "#/components/schemas/Vigia"
+                        }
+                      ],
+                      "description": "A vigia."
+                    },
+                    "snapshot": {
+                      "allOf": [
+                        {
+                          "$ref": "#/components/schemas/Snapshot"
+                        }
+                      ],
+                      "description": "O que o cron viu por último."
+                    }
+                  },
+                  "required": [
+                    "vigia",
+                    "snapshot"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token de dono, ou token desconhecido."
+          },
+          "404": {
+            "description": "Vigia inexistente ou de outro dono."
+          }
+        }
+      },
+      "delete": {
+        "operationId": "delete_api_vigias_by_id",
+        "summary": "Apaga a vigia e seus eventos. Sem volta.",
+        "description": "Devolve: 204 sem corpo.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "204 sem corpo."
+          },
+          "401": {
+            "description": "Sem token de dono, ou token desconhecido."
+          },
+          "404": {
+            "description": "Vigia inexistente ou de outro dono."
+          }
+        }
+      }
+    },
+    "/api/vigias/{id}/eventos": {
+      "get": {
+        "operationId": "get_api_vigias_by_id_eventos",
+        "summary": "O que mudou na compra vigiada, evento a evento — é a série temporal e o canal pull.",
+        "description": "Devolve: { vigia{id,compra_id,canal,destino,ativo,pago_ate,ultimo_check,criado_em,vigia_url,eventos_url,compra_url}, snapshot{situacao_id,situacao,encerramento_proposta,valor_estimado,atualizado_em,documentos}, itens[{id,tipo,antes,depois,visto_em,entregue_em}], limite }",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limite",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "1 a 100 (padrão 50), mais recentes primeiro."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "{ vigia{id,compra_id,canal,destino,ativo,pago_ate,ultimo_check,criado_em,vigia_url,eventos_url,compra_url}, snapshot{situacao_id,situacao,encerramento_proposta,valor_estimado,atualizado_em,documentos}, itens[{id,tipo,antes,depois,visto_em,entregue_em}], limite }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "vigia": {
+                      "allOf": [
+                        {
+                          "$ref": "#/components/schemas/Vigia"
+                        }
+                      ],
+                      "description": "A vigia."
+                    },
+                    "snapshot": {
+                      "allOf": [
+                        {
+                          "$ref": "#/components/schemas/Snapshot"
+                        }
+                      ],
+                      "description": "A fotografia atual."
+                    },
+                    "itens": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Evento"
+                      },
+                      "description": "Eventos registrados."
+                    },
+                    "limite": {
+                      "type": "integer",
+                      "description": "Teto aplicado."
+                    }
+                  },
+                  "required": [
+                    "vigia",
+                    "snapshot",
+                    "itens",
+                    "limite"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token de dono, ou token desconhecido."
+          },
+          "404": {
+            "description": "Vigia inexistente ou de outro dono."
+          }
+        }
+      }
+    },
+    "/api/credito": {
+      "post": {
+        "operationId": "post_api_credito",
+        "summary": "Recarrega crédito pré-pago: paga uma vez com x402 e recebe o token que desconta em qualquer API da casa.",
+        "description": "Devolve: { token, saldo_usd, guarde, usar, saldo_em }",
+        "parameters": [
+          {
+            "name": "usd",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Pacote: 1, 5, 10 ou 25 dólares."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "{ token, saldo_usd, guarde, usar, saldo_em }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "token": {
+                      "type": "string",
+                      "description": "Token portador do saldo (`cred_…`). Mostrado UMA vez — não há como recuperá-lo."
+                    },
+                    "saldo_usd": {
+                      "type": "string",
+                      "description": "Saldo creditado."
+                    },
+                    "guarde": {
+                      "type": "string",
+                      "description": "Aviso de que o token é o portador do crédito."
+                    },
+                    "usar": {
+                      "type": "string",
+                      "description": "Como apresentar o token nas rotas pagas."
+                    },
+                    "saldo_em": {
+                      "type": "string",
+                      "description": "Onde consultar saldo e extrato."
+                    }
+                  },
+                  "required": [
+                    "token",
+                    "saldo_usd",
+                    "guarde",
+                    "usar",
+                    "saldo_em"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Pacote fora da lista (1, 5, 10 ou 25)."
+          },
+          "402": {
+            "description": "Sem pagamento — o corpo traz `accepts[]` do x402."
+          }
+        }
+      },
+      "get": {
+        "operationId": "get_api_credito",
+        "summary": "Saldo e extrato do crédito — as últimas movimentações, sem devolver o token.",
+        "description": "Devolve: { saldo_micros, saldo_usd, criado_em, movimentos }",
+        "responses": {
+          "200": {
+            "description": "{ saldo_micros, saldo_usd, criado_em, movimentos }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "saldo_micros": {
+                      "type": "integer",
+                      "description": "Saldo em micro-dólares (1e-6 USD)."
+                    },
+                    "saldo_usd": {
+                      "type": "string",
+                      "description": "Saldo formatado."
+                    },
+                    "criado_em": {
+                      "type": "string",
+                      "description": "Quando o crédito foi aberto."
+                    },
+                    "movimentos": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      },
+                      "description": "Entradas e saídas recentes, com produto e recurso."
+                    }
+                  },
+                  "required": [
+                    "saldo_micros",
+                    "saldo_usd",
+                    "criado_em",
+                    "movimentos"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token ou token desconhecido."
+          }
+        }
+      }
+    },
+    "/api/visit": {
+      "post": {
+        "operationId": "post_api_visit",
+        "summary": "Ping da interface que incrementa a visita do dia no painel do operador. Agente não precisa chamar.",
+        "description": "Smoke não conta: `X-MM-Smoke`, User-Agent `mm-smoke` ou `smoke: true` no corpo entram como `counted: false`.\nDevolve: { ok, counted, reason? }",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "p": {
+                    "type": "string",
+                    "description": "Caminho da página visitada, só para agrupar."
+                  },
+                  "smoke": {
+                    "type": "boolean",
+                    "description": "`true` marca a chamada como teste e ela fica fora da contagem."
+                  }
+                }
+              },
+              "example": {
+                "p": "/"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "{ ok, counted, reason? }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "description": "Sempre `true`."
+                    },
+                    "counted": {
+                      "type": "boolean",
+                      "description": "Se a visita entrou na contagem do dia."
+                    },
+                    "reason": {
+                      "type": "string",
+                      "description": "Por que não contou, quando `counted` é `false`."
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "counted"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/metrics": {
+      "get": {
+        "operationId": "get_api_metrics",
+        "summary": "Métricas dos últimos 7 dias para o painel do operador; com o token, inclui os pagamentos.",
+        "description": "Sem credencial devolve visitas, uso (entregas de markdown, alertas, vigias) e donos. Com `METRICS_TOKEN` em Bearer acrescenta `payments` — só x402 liquidado em Base mainnet.\nDevolve: { app, today, today_visits, today_contacts?, days, usage, accounts, financeiro?, payments? }",
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "`Bearer <METRICS_TOKEN>` para incluir o bloco financeiro; token errado é 401."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "{ app, today, today_visits, today_contacts?, days, usage, accounts, financeiro?, payments? }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Metricas"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token de operador errado."
+          },
+          "503": {
+            "description": "Worker sem METRICS_TOKEN configurado."
+          }
+        }
+      }
+    },
+    "/api/recibo/{id}": {
+      "get": {
+        "operationId": "get_api_recibo_by_id",
+        "summary": "Recibo de uma entrega — a prova de o que saiu, quanto custou e com qual hash.",
+        "description": "Devolve: { recibo{id,recurso,documento_id,preco_usd,modo,sha256_entregue,bytes,criado_em} }",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "{ recibo{id,recurso,documento_id,preco_usd,modo,sha256_entregue,bytes,criado_em} }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "recibo": {
+                      "allOf": [
+                        {
+                          "$ref": "#/components/schemas/Recibo"
+                        }
+                      ],
+                      "description": "O recibo."
+                    }
+                  },
+                  "required": [
+                    "recibo"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recibo não encontrado."
+          }
+        }
+      }
+    }
+  }
+}

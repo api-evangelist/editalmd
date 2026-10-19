@@ -1,0 +1,78 @@
+openapi: 3.2.0
+info:
+  version: 2d690e87
+  title: Editalmd Metrics API
+servers:
+- url: https://editalmd.com
+tags:
+- name: Metrics
+paths:
+  /api/metrics:
+    get:
+      operationId: get_api_metrics
+      summary: Métricas dos últimos 7 dias para o painel do operador; com o token, inclui os…
+      description: 'Sem credencial devolve visitas, uso (entregas de markdown, alertas, vigias) e donos. Com `METRICS_TOKEN` em Bearer acrescenta `payments` — só x402 liquidado em Base mainnet.
+
+        Devolve: { app, today, today_visits, today_contacts?, days, usage, accounts, financeiro?, payments? }'
+      parameters:
+      - name: Authorization
+        in: header
+        required: false
+        schema:
+          type: string
+        description: '`Bearer <METRICS_TOKEN>` para incluir o bloco financeiro; token errado é 401.'
+      responses:
+        '200':
+          description: '{ app, today, today_visits, today_contacts?, days, usage, accounts, financeiro?, payments? }'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Metricas'
+        '401':
+          description: Token de operador errado.
+        '503':
+          description: Worker sem METRICS_TOKEN configurado.
+      tags:
+      - Metrics
+components:
+  schemas:
+    Metricas:
+      type: object
+      properties:
+        app:
+          type: string
+          description: Nome do produto.
+        today:
+          type: string
+          description: Dia de referência (UTC, AAAA-MM-DD).
+        today_visits:
+          type: integer
+          description: Visitas contadas hoje pela interface.
+        today_contacts:
+          type: integer
+          description: 'Mensagens de contato hoje — este produto não tem formulário, fica em zero. Só com `METRICS_TOKEN`: contato não sai sem token.'
+        days:
+          type: array
+          items:
+            type: object
+          description: Um registro por dia da janela, com as contagens de cada métrica.
+        usage:
+          type: object
+          description: 'Uso por recurso: `markdown` (entregas), `alertas` e `vigias` criados, por dia.'
+        accounts:
+          type: object
+          description: 'Totais: `donos` com token emitido.'
+        financeiro:
+          type: object
+          description: 'Agregado do dia: `hoje_usd`, `hoje_count`, `rede`. Só com `METRICS_TOKEN`: dinheiro não sai sem token; a série completa é `payments`.'
+        payments:
+          type: object
+          description: Resumo financeiro do x402; só com METRICS_TOKEN.
+      required:
+      - app
+      - today
+      - today_visits
+      - days
+      - usage
+      - accounts
+      description: Painel de 7 dias do operador. `payments` só aparece com o token e só em Base mainnet.

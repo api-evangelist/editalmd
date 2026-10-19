@@ -1,83 +1,1554 @@
 openapi: 3.2.0
 info:
-  version: 2d690e87
-  title: Editalmd Documento API
+  title: EditalMD Documento API
+  version: 1d751aaf
 servers:
 - url: https://editalmd.com
 tags:
 - name: Documento
 paths:
-  /api/documento/{id}/markdown:
-    get:
-      operationId: get_api_documento_by_id_markdown
-      summary: Documento em markdown com front-matter de procedência e hash.
-      description: 'Devolve: `text/markdown`. Headers: `x-editalmd-regime`, `x-editalmd-recibo`, `x-editalmd-sha256`.'
+  /api/documento/{id}/avaliacao/premium:
+    post:
+      operationId: post_api_documento_by_id_avaliacao_premium
+      summary: Grants one premium document per agent; it generates it if necessary, without…
+      description: 'Allowance per credential, until the earlier date between the 30 days of the agent and the end of the pilot. Repeating the same document does not use another unit. Do not send a payment. Premium: keep evaluation.access_code and use X-Editalmd-Avaliacao together with X-Agent-Pass in the readings and in GET /geracao. Basic does not open premium content. Pilot subject to the global budget; no automatic renewal.
+
+        Returns: { documento_id, status?, error?, retry_after_s?, evaluation, state_url?, result? }'
       parameters:
       - name: id
         in: path
         required: true
         schema:
           type: string
+        description: Positive ID of the collection document.
+        example: '9927611'
+      - name: X-Agent-Pass
+        in: header
+        required: true
+        schema:
+          type: string
+        description: Persistent individual credential obtained at POST https://api.editalmd.com/licitacoes/api/agente. It is not the User-Agent.
       responses:
         '200':
-          description: '`text/markdown`. Headers: `x-editalmd-regime`, `x-editalmd-recibo`, `x-editalmd-sha256`.'
+          description: '{ documento_id, status?, error?, retry_after_s?, evaluation, state_url?, result? }'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  documento_id:
+                    type: integer
+                    description: Documento solicitado.
+                  status:
+                    type: string
+                    description: ready, pending, running or failed; access_granted recovers the premium grant, without stating a completed processing. A premium preparation can also bring error.
+                  error:
+                    type: string
+                    description: Cause of the failure, when there is one.
+                    nullable: true
+                  retry_after_s:
+                    type: integer
+                    description: Interval for the next GET.
+                  evaluation:
+                    type: object
+                    description: kind basic or sponsored_premium. Premium includes a private access_code, access_header and expires_at; zero charge.
+                  state_url:
+                    type: string
+                    description: Follow-up GET of the premium, with the two evaluation headers.
+                  result:
+                    type: object
+                    description: 'Only a ready basic reading: pages [{page,text}], page_count, ocr_page_count, source_sha256, reviewed:false, structured_tables:false and empty_pages.'
+                required:
+                - documento_id
+                - evaluation
+        '400':
+          description: Unknown fields or query; POST accepts an absent body or {}.
+        '401':
+          description: Missing or invalid agent credential.
         '402':
-          description: Documento recente sem pagamento — o corpo traz `accepts[]` do x402 e o caminho da recarga de crédito.
+          description: Individual quota used or expired; see purchase_url to buy.
         '404':
-          description: Documento não encontrado (não cobra).
+          description: Document or request of this agent not found.
         '409':
-          description: 'Documento ainda não baixado para o acervo: não há o que extrair (não cobra).'
+          description: Source or quote unavailable/changed; no charge.
+        '422':
+          description: Premium up to 50 pages; basic PDF up to 50 pages and 32 MiB.
+        '503':
+          description: Pilot ended, budget exhausted or queue without capacity; keep the credential and try later.
+      tags:
+      - Documento
+  /api/documento/{id}/avaliacao/basico:
+    post:
+      operationId: post_api_documento_by_id_avaliacao_basico
+      summary: 'Queues an individual basic reading: native text and local OCR, without review'
+      description: 'Allowance per credential, until the earlier date between the 30 days of the agent and the end of the pilot. Repeating the same document does not use another unit. Do not send a payment. Premium: keep evaluation.access_code and use X-Editalmd-Avaliacao together with X-Agent-Pass in the readings and in GET /geracao. Basic does not open premium content. Pilot subject to the global budget; no automatic renewal.
+
+        Returns: { documento_id, status?, error?, retry_after_s?, evaluation, state_url?, result? }'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Positive ID of the collection document.
+        example: '9927611'
+      - name: X-Agent-Pass
+        in: header
+        required: true
+        schema:
+          type: string
+        description: Persistent individual credential obtained at POST https://api.editalmd.com/licitacoes/api/agente. It is not the User-Agent.
+      responses:
+        '200':
+          description: '{ documento_id, status?, error?, retry_after_s?, evaluation, state_url?, result? }'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  documento_id:
+                    type: integer
+                    description: Documento solicitado.
+                  status:
+                    type: string
+                    description: ready, pending, running or failed; access_granted recovers the premium grant, without stating a completed processing. A premium preparation can also bring error.
+                  error:
+                    type: string
+                    description: Cause of the failure, when there is one.
+                    nullable: true
+                  retry_after_s:
+                    type: integer
+                    description: Interval for the next GET.
+                  evaluation:
+                    type: object
+                    description: kind basic or sponsored_premium. Premium includes a private access_code, access_header and expires_at; zero charge.
+                  state_url:
+                    type: string
+                    description: Follow-up GET of the premium, with the two evaluation headers.
+                  result:
+                    type: object
+                    description: 'Only a ready basic reading: pages [{page,text}], page_count, ocr_page_count, source_sha256, reviewed:false, structured_tables:false and empty_pages.'
+                required:
+                - documento_id
+                - evaluation
+        '400':
+          description: Unknown fields or query; POST accepts an absent body or {}.
+        '401':
+          description: Missing or invalid agent credential.
+        '402':
+          description: Individual quota used or expired; see purchase_url to buy.
+        '404':
+          description: Document or request of this agent not found.
+        '409':
+          description: Source or quote unavailable/changed; no charge.
+        '422':
+          description: Premium up to 50 pages; basic PDF up to 50 pages and 32 MiB.
+        '503':
+          description: Pilot ended, budget exhausted or queue without capacity; keep the credential and try later.
+      tags:
+      - Documento
+    get:
+      operationId: get_api_documento_by_id_avaliacao_basico
+      summary: Gets the state and the basic text per page, only for the agent that requested it
+      description: 'Allowance per credential, until the earlier date between the 30 days of the agent and the end of the pilot. Repeating the same document does not use another unit. Do not send a payment. Premium: keep evaluation.access_code and use X-Editalmd-Avaliacao together with X-Agent-Pass in the readings and in GET /geracao. Basic does not open premium content. Pilot subject to the global budget; no automatic renewal.
+
+        Returns: { documento_id, status?, error?, retry_after_s?, evaluation, state_url?, result? }'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Positive ID of the collection document.
+        example: '9927611'
+      - name: X-Agent-Pass
+        in: header
+        required: true
+        schema:
+          type: string
+        description: Persistent individual credential obtained at POST https://api.editalmd.com/licitacoes/api/agente. It is not the User-Agent.
+      responses:
+        '200':
+          description: '{ documento_id, status?, error?, retry_after_s?, evaluation, state_url?, result? }'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  documento_id:
+                    type: integer
+                    description: Documento solicitado.
+                  status:
+                    type: string
+                    description: ready, pending, running or failed; access_granted recovers the premium grant, without stating a completed processing. A premium preparation can also bring error.
+                  error:
+                    type: string
+                    description: Cause of the failure, when there is one.
+                    nullable: true
+                  retry_after_s:
+                    type: integer
+                    description: Interval for the next GET.
+                  evaluation:
+                    type: object
+                    description: kind basic or sponsored_premium. Premium includes a private access_code, access_header and expires_at; zero charge.
+                  state_url:
+                    type: string
+                    description: Follow-up GET of the premium, with the two evaluation headers.
+                  result:
+                    type: object
+                    description: 'Only a ready basic reading: pages [{page,text}], page_count, ocr_page_count, source_sha256, reviewed:false, structured_tables:false and empty_pages.'
+                required:
+                - documento_id
+                - evaluation
+        '400':
+          description: Unknown fields or query; POST accepts an absent body or {}.
+        '401':
+          description: Missing or invalid agent credential.
+        '402':
+          description: Individual quota used or expired; see purchase_url to buy.
+        '404':
+          description: Document or request of this agent not found.
+        '409':
+          description: Source or quote unavailable/changed; no charge.
+        '422':
+          description: Premium up to 50 pages; basic PDF up to 50 pages and 32 MiB.
+        '503':
+          description: Pilot ended, budget exhausted or queue without capacity; keep the credential and try later.
+      tags:
+      - Documento
+  /api/documento/{id}/vincular:
+    post:
+      operationId: post_api_documento_by_id_vincular
+      summary: Links your anonymous purchase to the authenticated account, without a new charge
+      description: 'Requires a session and private proof of the purchase. It records the global right of the account by the payment receipt: idempotent for the same owner, and another owner cannot claim it. The code keeps opening the document by itself.
+
+        Returns: { vinculado, documento_id }'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Positive ID of the purchased document.
+        example: '2110258'
+      - name: X-Editalmd-Acesso
+        in: header
+        required: false
+        schema:
+          type: string
+        description: Private capability received after the payment. The document cookie is also accepted.
+      responses:
+        '200':
+          description: '{ vinculado, documento_id }'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  vinculado:
+                    type: boolean
+                    description: The purchase belongs to the account.
+                  documento_id:
+                    type: integer
+                    description: Documento.
+                required:
+                - vinculado
+                - documento_id
+        '400':
+          description: Invalid body/cursor.
+        '401':
+          description: 'Session missing, invalid or ended (`session_ended`: sign in again).'
+        '403':
+          description: Mutation origin or CSRF refused.
+        '404':
+          description: Purchase not found for this client.
+        '405':
+          description: Method not allowed.
+        '503':
+          description: Account or global limit unavailable.
+      tags:
+      - Documento
+  /api/documento/{id}/acesso:
+    get:
+      operationId: get_api_documento_by_id_acesso
+      summary: Checks the link and allows exporting the code of a purchase that is still…
+      description: 'Returns: { documento_id, vinculado, recuperacao }'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Positive ID of the purchased document.
+        example: '2110258'
+      - name: X-Editalmd-Acesso
+        in: header
+        required: false
+        schema:
+          type: string
+        description: Access code; an equivalent session/cookie is accepted.
+      responses:
+        '200':
+          description: '{ documento_id, vinculado, recuperacao }'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  documento_id:
+                    type: integer
+                    description: Documento.
+                  vinculado:
+                    type: boolean
+                    description: The current account owns this document.
+                  recuperacao:
+                    type: string
+                    description: Private code that can be exported only while not linked.
+                    nullable: true
+                required:
+                - documento_id
+                - vinculado
+                - recuperacao
+        '400':
+          description: Invalid body/cursor.
+        '401':
+          description: 'Session missing, invalid or ended (`session_ended`: sign in again).'
+        '402':
+          description: Access not purchased.
+        '403':
+          description: Mutation origin or CSRF refused.
+        '404':
+          description: Purchase not found for this client.
+        '405':
+          description: Method not allowed.
+        '503':
+          description: Account or global limit unavailable.
+      tags:
+      - Documento
+  /api/documento/{id}/preparo:
+    get:
+      operationId: get_api_documento_by_id_preparo
+      summary: Free lookup of the original file, without requesting work
+      description: 'Answers only the state of the file. It does not deliver content, grant access, confirm pages or start a generation. No query. no-store answer.
+
+        Returns: { data }'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Positive ID of the document returned by the procurement.
+        example: '4806436'
+      responses:
+        '200':
+          description: '{ data }'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    description: document_id identifies the document. status is queued, downloading, downloaded or unavailable. requested shows a priority already requested. retry_after_s is 60 while pending and 0 when it finishes.
+                required:
+                - data
+        '202':
+          description: 'Original pending or downloading. Retry-After: 60. Check the channel or the GET after this time.'
+        '400':
+          description: Invalid ID, query or body. POST accepts an empty body or only {}.
+        '404':
+          description: Document not found.
+        '409':
+          description: Original unavailable. No purchase or generation was started.
+        '429':
+          description: Request limit. Respect Retry-After.
         '502':
-          description: 'Pago e sem entrega: o corpo traz o número do recibo.'
+          description: Invalid answer from the origin.
+        '503':
+          description: The original could not be fetched.
+      tags:
+      - Documento
+    post:
+      operationId: post_api_documento_by_id_preparo
+      summary: Downloads a pending original from PNCP now. Free and idempotent
+      description: 'Use it when the person opens the document. Empty body or {} of up to two bytes. A free collector downloads the original immediately and the state becomes downloading; without a free collector, the request goes first in the queue. It does not start OCR, a purchase or a charge. After the arrival, check /geracao to confirm the pages, hash and price before buying.
+
+        Returns: { data }'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Positive ID of the document returned by the procurement.
+        example: '4806436'
+      responses:
+        '200':
+          description: '{ data }'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    description: document_id identifies the document. status is queued, downloading, downloaded or unavailable. requested shows a priority already requested. retry_after_s is 60 while pending and 0 when it finishes.
+                required:
+                - data
+        '202':
+          description: 'Original pending or downloading. Retry-After: 60. Check the channel or the GET after this time.'
+        '400':
+          description: Invalid ID, query or body. POST accepts an empty body or only {}.
+        '403':
+          description: Browser request outside the same origin.
+        '404':
+          description: Document not found.
+        '408':
+          description: Body read deadline expired.
+        '409':
+          description: Original unavailable. No purchase or generation was started.
+        '413':
+          description: Corpo excedeu dois bytes.
+        '415':
+          description: Compressed body not accepted.
+        '429':
+          description: Request limit. Respect Retry-After.
+        '502':
+          description: Invalid answer from the origin.
+        '503':
+          description: The original could not be fetched.
+      tags:
+      - Documento
+  /api/documento/{id}/preparo/canal:
+    get:
+      operationId: get_api_documento_by_id_preparo_canal
+      summary: 'WebSocket of the state of the original. HTTP twin: GET /preparo'
+      description: 'Use wss on the same domain and the exact Origin. The channel only sends the same JSON as the GET; it receives no commands. One lookup per document serves all the tabs: every 5 seconds during the download and every minute in the queue. Caps per process: 32 documents, 128 connections and four per network. Maximum duration of 15 minutes. It closes when it finishes or has no connections. When you come back to the tab, check the GET and reconnect. No content or private token is sent.
+
+        Returns: WebSocket: JSON messages with the same data as GET /preparo.'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Positive ID of the document returned by the procurement.
+        example: '4806436'
+      responses:
+        '200':
+          description: 'WebSocket: JSON messages with the same data as GET /preparo.'
+        '400':
+          description: Invalid ID or query.
+        '403':
+          description: Origin different from the channel domain.
+        '404':
+          description: Document not found. The server refuses before opening the channel.
+        '426':
+          description: Upgrade to WebSocket required.
+        '429':
+          description: 'Connection limit. Retry-After: 60.'
+        '503':
+          description: Channel unavailable.
+      tags:
+      - Documento
+  /api/documento/{id}:
+    get:
+      operationId: get_api_documento_by_id
+      summary: Title, type, pages and procurement linked to the document.
+      description: 'Returns: { documento, compra_id }'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Document identifier.
+        example: '93998'
+      responses:
+        '200':
+          description: '{ documento, compra_id }'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  documento:
+                    type: object
+                    description: id, titulo, tipo, paginas (null when unknown), tem_texto, tem_binario, disponivel and gratuito. It does not include text, files or internal paths.
+                  compra_id:
+                    type: integer
+                    description: Linked procurement. Check /api/compra/:id to list its documents with titles, types and pages (up to 50 per record).
+                    nullable: true
+                required:
+                - documento
+                - compra_id
+        '400':
+          description: Invalid ID.
+        '404':
+          description: Document not found.
+        '502':
+          description: Origin unavailable.
+      tags:
+      - Documento
+  /api/documento/{id}/markdown:
+    get:
+      operationId: get_api_documento_by_id_markdown
+      summary: Markdown with provenance and hash, with purchased access or sponsored premium.
+      description: 'Returns: `text/markdown`. Headers: `x-editalmd-regime`, `x-editalmd-sha256`. Reading does not generate a receipt or a charge.'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Document identifier, from the procurement record.
+        example: '123'
+      - name: X-Agent-Pass
+        in: header
+        required: false
+        schema:
+          type: string
+        description: Individual agent credential, required together with X-Editalmd-Avaliacao.
+      - name: X-Editalmd-Avaliacao
+        in: header
+        required: false
+        schema:
+          type: string
+        description: evaluation.access_code of the sponsored premium, only for this document and agent, with an expiry. Use it together with X-Agent-Pass; it is not a receipt or a purchase.
+      - name: X-Editalmd-Acesso
+        in: header
+        required: false
+        schema:
+          type: string
+        description: 'Private code in acesso.codigo after a payment by someone not signed in to the account; up to 4096 characters. It authorizes this document for whoever holds it. A purchase made with the account session issues no code: the global right of the account (HttpOnly cookie) applies, and the right of the edm_… guest applies with its token. A public receipt does not grant access.'
+      responses:
+        '200':
+          description: '`text/markdown`. Headers: `x-editalmd-regime`, `x-editalmd-sha256`. Reading does not generate a receipt or a charge.'
+        '202':
+          description: 'Text in preparation in the collection (`extracao_em_andamento`): `retry_after_s` in the body and `Retry-After` in the header. Repeat after this time. The preparation is not a completed delivery yet.'
+        '402':
+          description: Without valid purchased or sponsored access. Use the individual evaluation, buy through POST /api/documento/:id/geracao or a deposit; five examples are free.
+        '404':
+          description: Purchase not found for the authenticated account, or a missing document/resource.
+        '409':
+          description: Text unavailable or generation required. Use geracao_url to check the pages and the total and to authorize the payment.
+        '502':
+          description: Origin unavailable; no charge on reading.
       tags:
       - Documento
   /api/documento/{id}/habilitacao:
     post:
       operationId: post_api_documento_by_id_habilitacao
-      summary: 'Lista de habilitação do edital: cada exigência com o trecho literal de onde…'
-      description: 'Extraída por modelo de linguagem na origem e ancorada no texto: item cujo trecho não existe literalmente no edital é descartado (`descartados` conta). Cobre só o lado do edital — o que a empresa tem não entra. `impugnacao_texto` e `proposta_texto` são o que o próprio edital diz, copiado.
+      summary: Qualification list with literal excerpts.
+      description: 'Conditions, exceptions and evidence per page from the available analysis. The lookup does not start another analysis. Deadlines, proposals and other obligations are in the dossier; this list covers the qualification and the required certificates of performance, without stating what the company has.
 
-        Devolve: { documento_id, compra_id, sha256_texto, modelo, cache, recibo, recibo_url, aviso, habilitacao{juridica,fiscal_social_trabalhista,economico_financeira,tecnica,exclusivo_me_epp,impugnacao_texto,proposta_texto,total,descartados} }'
+        Returns: { documento_id, compra_id, sha256_texto, dossie_versao, modelo, cache, recibo, recibo_url, aviso, habilitacao{juridica,fiscal_social_trabalhista,economico_financeira,tecnica,exclusivo_me_epp,impugnacao_texto,proposta_texto,total,descartados} }'
       parameters:
       - name: id
         in: path
         required: true
         schema:
           type: string
+        description: Document identifier, from the procurement record.
+        example: '123'
+      - name: X-Agent-Pass
+        in: header
+        required: false
+        schema:
+          type: string
+        description: Individual agent credential, required together with X-Editalmd-Avaliacao.
+      - name: X-Editalmd-Avaliacao
+        in: header
+        required: false
+        schema:
+          type: string
+        description: evaluation.access_code of the sponsored premium, only for this document and agent, with an expiry. Use it together with X-Agent-Pass; it is not a receipt or a purchase.
+      - name: X-Editalmd-Acesso
+        in: header
+        required: false
+        schema:
+          type: string
+        description: 'Private code in acesso.codigo after a payment by someone not signed in to the account; up to 4096 characters. It authorizes this document for whoever holds it. A purchase made with the account session issues no code: the global right of the account (HttpOnly cookie) applies, and the right of the edm_… guest applies with its token. A public receipt does not grant access.'
       responses:
         '200':
-          description: '{ documento_id, compra_id, sha256_texto, modelo, cache, recibo, recibo_url, aviso, habilitacao{juridica,fiscal_social_trabalhista,economico_financeira,tecnica,exclusivo_me_epp,impugnacao_texto,proposta_texto,total,descartados} }'
+          description: '{ documento_id, compra_id, sha256_texto, dossie_versao, modelo, cache, recibo, recibo_url, aviso, habilitacao{juridica,fiscal_social_trabalhista,economico_financeira,tecnica,exclusivo_me_epp,impugnacao_texto,proposta_texto,total,descartados} }'
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Habilitacao'
         '402':
-          description: Compra recente sem pagamento — `accepts[]` do x402 e o caminho da recarga de crédito. Compra com 30+ dias e cache (mesmo `sha256_texto`) não cobram.
+          description: Without valid purchased or sponsored access. Use the individual evaluation, buy through POST /api/documento/:id/geracao or a deposit; five examples are free.
         '404':
-          description: Documento não encontrado (não cobra).
+          description: Purchase not found for the authenticated account, or a missing document/resource.
         '409':
-          description: Sem texto e sem binário no acervo, ou texto curto demais (não cobra).
+          description: Dossier still in preparation. This lookup starts no new analysis.
         '502':
-          description: 'Pago e sem entrega: o corpo traz o número do recibo.'
+          description: Invalid dossier or incomplete answer from the origin.
         '503':
-          description: Extração por modelo desligada na origem.
+          description: Dossier temporarily unavailable.
+      tags:
+      - Documento
+  /api/documento/{id}/geracao:
+    get:
+      operationId: get_api_documento_by_id_geracao
+      summary: State, quote and access right; free lookup, without starting processing
+      description: 'Returns: { documento_id, status?, error?, retry_after_s?, processing?, markdown_url, geracao_url, acesso_comprado, acesso?, preco_pagina_usd, cotacao, pagamento? }'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Positive ID of the document returned by the procurement.
+        example: '2110000'
+      - name: X-Agent-Pass
+        in: header
+        required: false
+        schema:
+          type: string
+        description: Individual agent credential, required together with X-Editalmd-Avaliacao.
+      - name: X-Editalmd-Avaliacao
+        in: header
+        required: false
+        schema:
+          type: string
+        description: evaluation.access_code of the sponsored premium, only for this document and agent, with an expiry. Use it together with X-Agent-Pass; it is not a receipt or a purchase.
+      - name: X-Editalmd-Acesso
+        in: header
+        required: false
+        schema:
+          type: string
+        description: 'Private code in acesso.codigo after a payment by someone not signed in to the account; up to 4096 characters. It authorizes this document for whoever holds it. A purchase made with the account session issues no code: the global right of the account (HttpOnly cookie) applies, and the right of the edm_… guest applies with its token. A public receipt does not grant access.'
+      responses:
+        '200':
+          description: '{ documento_id, status?, error?, retry_after_s?, processing?, markdown_url, geracao_url, acesso_comprado, acesso?, preco_pagina_usd, cotacao, pagamento? }'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  documento_id:
+                    type: integer
+                    description: Documento solicitado.
+                  status:
+                    type: string
+                    description: '`pronto` when the reading can be opened.'
+                  error:
+                    type: string
+                    description: '`geracao_necessaria`, `extracao_em_andamento`, `geracao_falhou` or the cause of the unavailability.'
+                  retry_after_s:
+                    type: integer
+                    description: Minimum interval until the next follow-up GET.
+                  processing:
+                    type: object
+                    description: 'Progresso real: `progress.stage` (preparing, reading, verifying, packaging), `pages_total`, `pages_processed`, `pages_completed`, `pass`; `updated_at` e `elapsed_ms`.'
+                  markdown_url:
+                    type: string
+                    description: GET of the Markdown, with the purchased access.
+                  geracao_url:
+                    type: string
+                    description: GET for the state/quote; POST to buy individual access.
+                  acesso_comprado:
+                    type: object
+                    description: This credential can read the document, regardless of the global state of the text.
+                  acesso:
+                    type: object
+                    description: 'After a payment confirmed outside the account session: a private codigo and the X-Editalmd-Acesso header. Keep it to reopen or to link to an account (POST /vincular). Do not publish it; it does not open another document.'
+                  preco_pagina_usd:
+                    type: string
+                    description: US$ 0.02 per page on the site and the API (x402 or credit).
+                  cotacao:
+                    type: object
+                    description: 'Pages confirmed in the document: paginas, source_sha256, preco_pagina_usd and preco_total_usd, and the same in reais at the fixed exchange rate of the house Pix (preco_pagina_brl, preco_total_brl), with the smallest credit package in reais (pacote_minimo_brl) and how many documents like this one it covers (documentos_no_pacote). Null when a quote is not possible. The purchase checks only paginas, source_sha256 and preco_total_usd.'
+                    nullable: true
+                  pagamento:
+                    type: object
+                    description: 'When charged: the `recibo` of the x402/credit door and `preco_usd`. Keep it even if the origin fails.'
+                required:
+                - documento_id
+                - markdown_url
+                - geracao_url
+                - acesso_comprado
+                - preco_pagina_usd
+                - cotacao
+        '202':
+          description: Processing in progress; follow up through GET, respecting Retry-After. Never repeat the POST to poll.
+        '404':
+          description: Documento inexistente.
+        '409':
+          description: Generation required, a previous failure or binary unavailable; check `error`.
+        '502':
+          description: Origin unavailable; do not repeat the payment without checking the state and the receipt.
+      tags:
+      - Documento
+    post:
+      operationId: post_api_documento_by_id_geracao
+      summary: Buys individual access to the document for US$ 0.02/page, through x402/credit
+      description: 'Each buyer pays, even when the text is ready. Check GET or the 402, confirm pages/hash/total and send cotacao. The account session (cookie + browser CSRF) records the purchase in the global right of the account before the delivery, without a separate code; with the edm_… guest (Bearer), the right is the guest''s and the code comes along; an agent uses X-Credito. Without an account, keep acesso.codigo to reopen or to link later. After the link, only the account opens it. A ready text reuses the OCR; a necessary generation is included. An unknown/changed quote does not charge. 152 pages = US$ 3.04. Body up to 4096 bytes. After a 202, follow up through GET. Paid and the recording of the right failed: 502 `pago_nao_registrado` with the `recibo`; keep it, and support delivers or refunds.
+
+        Returns: { documento_id, status?, error?, retry_after_s?, processing?, markdown_url, geracao_url, acesso_comprado, acesso?, preco_pagina_usd, cotacao, pagamento? }'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Positive ID of the document returned by the procurement.
+        example: '2110000'
+      - name: X-Agent-Pass
+        in: header
+        required: false
+        schema:
+          type: string
+        description: Individual agent credential, required together with X-Editalmd-Avaliacao.
+      - name: X-Editalmd-Avaliacao
+        in: header
+        required: false
+        schema:
+          type: string
+        description: evaluation.access_code of the sponsored premium, only for this document and agent, with an expiry. Use it together with X-Agent-Pass; it is not a receipt or a purchase.
+      - name: X-Editalmd-Acesso
+        in: header
+        required: false
+        schema:
+          type: string
+        description: 'Private code in acesso.codigo after a payment by someone not signed in to the account; up to 4096 characters. It authorizes this document for whoever holds it. A purchase made with the account session issues no code: the global right of the account (HttpOnly cookie) applies, and the right of the edm_… guest applies with its token. A public receipt does not grant access.'
+      - name: X-PAYMENT
+        in: header
+        required: false
+        schema:
+          type: string
+        description: x402 authorization of the 402 challenge.
+      - name: X-Credito
+        in: header
+        required: false
+        schema:
+          type: string
+        description: cred_… token to deduct from the balance, as an alternative to x402.
+      - name: Authorization
+        in: header
+        required: false
+        schema:
+          type: string
+        description: Bearer cred_… is an alternative to X-Credito. The account travels in a cookie, never as a bearer.
+      - name: Idempotency-Key
+        in: header
+        required: false
+        schema:
+          type: string
+        description: Attempt key, up to 80 characters; keep it in credit retries of the same document.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                cotacao:
+                  type: object
+                  description: 'Object received in the GET/402: paginas, source_sha256 and preco_total_usd must match the current quote. Required when you send a payment authorization.'
+      responses:
+        '200':
+          description: '{ documento_id, status?, error?, retry_after_s?, processing?, markdown_url, geracao_url, acesso_comprado, acesso?, preco_pagina_usd, cotacao, pagamento? }'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  documento_id:
+                    type: integer
+                    description: Documento solicitado.
+                  status:
+                    type: string
+                    description: '`pronto` when the reading can be opened.'
+                  error:
+                    type: string
+                    description: '`geracao_necessaria`, `extracao_em_andamento`, `geracao_falhou` or the cause of the unavailability.'
+                  retry_after_s:
+                    type: integer
+                    description: Minimum interval until the next follow-up GET.
+                  processing:
+                    type: object
+                    description: 'Progresso real: `progress.stage` (preparing, reading, verifying, packaging), `pages_total`, `pages_processed`, `pages_completed`, `pass`; `updated_at` e `elapsed_ms`.'
+                  markdown_url:
+                    type: string
+                    description: GET of the Markdown, with the purchased access.
+                  geracao_url:
+                    type: string
+                    description: GET for the state/quote; POST to buy individual access.
+                  acesso_comprado:
+                    type: object
+                    description: This credential can read the document, regardless of the global state of the text.
+                  acesso:
+                    type: object
+                    description: 'After a payment confirmed outside the account session: a private codigo and the X-Editalmd-Acesso header. Keep it to reopen or to link to an account (POST /vincular). Do not publish it; it does not open another document.'
+                  preco_pagina_usd:
+                    type: string
+                    description: US$ 0.02 per page on the site and the API (x402 or credit).
+                  cotacao:
+                    type: object
+                    description: 'Pages confirmed in the document: paginas, source_sha256, preco_pagina_usd and preco_total_usd, and the same in reais at the fixed exchange rate of the house Pix (preco_pagina_brl, preco_total_brl), with the smallest credit package in reais (pacote_minimo_brl) and how many documents like this one it covers (documentos_no_pacote). Null when a quote is not possible. The purchase checks only paginas, source_sha256 and preco_total_usd.'
+                    nullable: true
+                  pagamento:
+                    type: object
+                    description: 'When charged: the `recibo` of the x402/credit door and `preco_usd`. Keep it even if the origin fails.'
+                required:
+                - documento_id
+                - markdown_url
+                - geracao_url
+                - acesso_comprado
+                - preco_pagina_usd
+                - cotacao
+        '202':
+          description: Processing in progress; follow up through GET, respecting Retry-After. Never repeat the POST to poll.
+        '400':
+          description: Malformed body or unknown fields.
+        '401':
+          description: 'Invalid credit, or `session_ended` (expired session cookie: sign in again); nothing charged.'
+        '402':
+          description: Payment required or refused; it announces x402, credit and the quote.
+        '403':
+          description: '`invalid_origin` / `invalid_csrf`: a purchase with the account cookie requires the same origin and X-CSRF-Token; nothing charged.'
+        '404':
+          description: Documento inexistente.
+        '409':
+          description: Changed/missing quote, unknown pages or generation unavailable; nothing charged before the authorization.
+        '413':
+          description: Corpo excedeu 4096 bytes.
+        '502':
+          description: 'Origin unavailable; do not repeat the payment without checking the state and the receipt. `pago_nao_registrado`: paid and the recording of the right failed; keep the `recibo`.'
+        '503':
+          description: Payment without configuration, `conta_indisponivel` or `acesso_exige_pagamento` (a document never comes out free); nothing charged.
+      tags:
+      - Documento
+  /api/documento/{id}/cobranca:
+    post:
+      operationId: post_api_documento_by_id_cobranca
+      summary: Reserves an exclusive address/QR to buy your access with USDC on Base
+      description: 'Check GET /geracao and send cotacao. Each buyer pays, even when the text is ready. The service confirms USDC in the safe block of Base; safe waits for the inclusion on L1, without absolute finality. Send within 30 min; observation for 24 h. A late payment, a wrong network/currency or a failed extraction requires support. A wallet/exchange can charge a fee. The same X-Cobranca keeps the charge/address. A paid GET returns acesso.codigo and a cookie; to keep it in the account, POST /api/documento/:id/vincular with this code (the site does this by itself for signed-in people). The simulated payment of the development environment is not valid for a deposit.
+
+        Returns: { acesso?, id, documento_id, rede, chain_id, moeda, contrato, endereco, paginas, preco_total_usd, recebido_usdc, restante_usdc, status, expira_em, verificada_em, detalhe, retry_after_s, pagamento_uri, transacoes }'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Positive document ID.
+        example: '2110000'
+      - name: X-Cobranca
+        in: header
+        required: true
+        schema:
+          type: string
+        description: 32 random bytes in 64 lowercase hex characters. Generate and keep it before the POST; reuse it in the GET and in retries. Secret for access to your charge.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                cotacao:
+                  type: object
+                  description: 'Quote received in GET /geracao: paginas, source_sha256 and preco_total_usd.'
+              required:
+              - cotacao
+      responses:
+        '200':
+          description: '{ acesso?, id, documento_id, rede, chain_id, moeda, contrato, endereco, paginas, preco_total_usd, recebido_usdc, restante_usdc, status, expira_em, verificada_em, detalhe, retry_after_s, pagamento_uri, transacoes }'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  acesso:
+                    type: object
+                    description: 'After a payment confirmed outside the account session: a private codigo and the X-Editalmd-Acesso header. Keep it to reopen or to link to an account (POST /vincular). Do not publish it; it does not open another document.'
+                  id:
+                    type: string
+                    description: Charge identifier, for support.
+                  documento_id:
+                    type: integer
+                    description: Documento cotado.
+                  rede:
+                    type: string
+                    description: base; base-sepolia only in the development environment.
+                  chain_id:
+                    type: integer
+                    description: 8453 in production, 84532 in the test.
+                  moeda:
+                    type: string
+                    description: USDC.
+                  contrato:
+                    type: string
+                    description: Contrato USDC aceito nesta rede.
+                  endereco:
+                    type: string
+                    description: Exclusive address of this charge. Never reuse it for another one.
+                  paginas:
+                    type: integer
+                    description: Physical pages confirmed in the document.
+                  preco_total_usd:
+                    type: string
+                    description: Pages × US$ 0.02; value in equivalent USDC.
+                  recebido_usdc:
+                    type: string
+                    description: Sum of confirmed transfers, six decimal places.
+                  restante_usdc:
+                    type: string
+                    description: Remaining value; wallet/exchange fees are not included.
+                  status:
+                    type: string
+                    description: aguardando, expirada, pago, solicitada, gerando, pronto or revisao.
+                  expira_em:
+                    type: string
+                    description: 'ISO UTC: send within 30 minutes.'
+                  verificada_em:
+                    type: string
+                    description: Last observation of the network by the server.
+                    nullable: true
+                  detalhe:
+                    type: string
+                    description: Guidance when support is necessary.
+                    nullable: true
+                  retry_after_s:
+                    type: integer
+                    description: 30 seconds between lookups.
+                  pagamento_uri:
+                    type: string
+                    description: EIP-681 URI for a wallet/QR, with network, contract, recipient and remaining value. Missing after it expires or is paid.
+                    nullable: true
+                  transacoes:
+                    type: array
+                    items:
+                      type: object
+                    description: hash, valor_usdc and explorer url for each transfer.
+                required:
+                - id
+                - documento_id
+                - rede
+                - chain_id
+                - moeda
+                - contrato
+                - endereco
+                - paginas
+                - preco_total_usd
+                - recebido_usdc
+                - restante_usdc
+                - status
+                - expira_em
+                - verificada_em
+                - detalhe
+                - retry_after_s
+                - pagamento_uri
+                - transacoes
+        '400':
+          description: Invalid document/body or missing quote.
+        '401':
+          description: Invalid X-Cobranca.
+        '404':
+          description: Charge not found for this document and token.
+        '409':
+          description: Changed quote, unknown pages or charge cap reached; do not send money.
+        '413':
+          description: Body larger than 4096 bytes.
+        '502':
+          description: Origin unavailable.
+        '503':
+          description: Checkout by deposit unavailable.
+      tags:
+      - Documento
+    get:
+      operationId: get_api_documento_by_id_cobranca
+      summary: Reads the address, confirmation, receipt and release of your charge, free of…
+      description: 'Reuse X-Cobranca and respect Retry-After. The lookup does not write or make a blockchain RPC. When it is gerando, use GET /geracao for phases/pages; pronto releases the reading links. In revisao, keep the ID and the transactions for support, without paying again.
+
+        Returns: { acesso?, id, documento_id, rede, chain_id, moeda, contrato, endereco, paginas, preco_total_usd, recebido_usdc, restante_usdc, status, expira_em, verificada_em, detalhe, retry_after_s, pagamento_uri, transacoes }'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Positive document ID.
+        example: '2110000'
+      - name: X-Cobranca
+        in: header
+        required: true
+        schema:
+          type: string
+        description: 32 random bytes in 64 lowercase hex characters. Generate and keep it before the POST; reuse it in the GET and in retries. Secret for access to your charge.
+      responses:
+        '200':
+          description: '{ acesso?, id, documento_id, rede, chain_id, moeda, contrato, endereco, paginas, preco_total_usd, recebido_usdc, restante_usdc, status, expira_em, verificada_em, detalhe, retry_after_s, pagamento_uri, transacoes }'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  acesso:
+                    type: object
+                    description: 'After a payment confirmed outside the account session: a private codigo and the X-Editalmd-Acesso header. Keep it to reopen or to link to an account (POST /vincular). Do not publish it; it does not open another document.'
+                  id:
+                    type: string
+                    description: Charge identifier, for support.
+                  documento_id:
+                    type: integer
+                    description: Documento cotado.
+                  rede:
+                    type: string
+                    description: base; base-sepolia only in the development environment.
+                  chain_id:
+                    type: integer
+                    description: 8453 in production, 84532 in the test.
+                  moeda:
+                    type: string
+                    description: USDC.
+                  contrato:
+                    type: string
+                    description: Contrato USDC aceito nesta rede.
+                  endereco:
+                    type: string
+                    description: Exclusive address of this charge. Never reuse it for another one.
+                  paginas:
+                    type: integer
+                    description: Physical pages confirmed in the document.
+                  preco_total_usd:
+                    type: string
+                    description: Pages × US$ 0.02; value in equivalent USDC.
+                  recebido_usdc:
+                    type: string
+                    description: Sum of confirmed transfers, six decimal places.
+                  restante_usdc:
+                    type: string
+                    description: Remaining value; wallet/exchange fees are not included.
+                  status:
+                    type: string
+                    description: aguardando, expirada, pago, solicitada, gerando, pronto or revisao.
+                  expira_em:
+                    type: string
+                    description: 'ISO UTC: send within 30 minutes.'
+                  verificada_em:
+                    type: string
+                    description: Last observation of the network by the server.
+                    nullable: true
+                  detalhe:
+                    type: string
+                    description: Guidance when support is necessary.
+                    nullable: true
+                  retry_after_s:
+                    type: integer
+                    description: 30 seconds between lookups.
+                  pagamento_uri:
+                    type: string
+                    description: EIP-681 URI for a wallet/QR, with network, contract, recipient and remaining value. Missing after it expires or is paid.
+                    nullable: true
+                  transacoes:
+                    type: array
+                    items:
+                      type: object
+                    description: hash, valor_usdc and explorer url for each transfer.
+                required:
+                - id
+                - documento_id
+                - rede
+                - chain_id
+                - moeda
+                - contrato
+                - endereco
+                - paginas
+                - preco_total_usd
+                - recebido_usdc
+                - restante_usdc
+                - status
+                - expira_em
+                - verificada_em
+                - detalhe
+                - retry_after_s
+                - pagamento_uri
+                - transacoes
+        '400':
+          description: Invalid document/body or missing quote.
+        '401':
+          description: Invalid X-Cobranca.
+        '404':
+          description: Charge not found for this document and token.
+        '409':
+          description: Changed quote, unknown pages or charge cap reached; do not send money.
+        '413':
+          description: Body larger than 4096 bytes.
+        '502':
+          description: Origin unavailable.
+        '503':
+          description: Checkout by deposit unavailable.
+      tags:
+      - Documento
+  /api/documento/{id}/dossie:
+    get:
+      operationId: get_api_documento_by_id_dossie
+      summary: 'Structured data: requirements, items, certificates of performance, deadlines…'
+      description: 'Dossier included in the document access, without a new analysis when it is read. Partial data report the coverage; the export requires a completed version.
+
+        Returns: Page: data.version, data.complete, data.facts and data.next. Facts keep typed details, applicability, exceptions, evidence (page/start/end/quote) and references. A duration requires an associated quantity and unit in the evidence; duration_verification identifies a necessary correction or review, without changing the source. format=json: schema licitech-document-dossier-v1, complete version and facts, up to 16 MiB.'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Document identifier in the procurement record.
+        example: '9558909'
+      - name: v
+        in: query
+        required: false
+        schema:
+          type: string
+        description: SHA-256 of the shown text; it refuses a different version.
+      - name: after
+        in: query
+        required: false
+        schema:
+          type: string
+        description: Previous next cursor, default 0.
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: string
+        description: 1 to 30 records, default 30.
+      - name: kind
+        in: query
+        required: false
+        schema:
+          type: string
+        description: identity, item, requirement, attestation, deadline or obligation.
+      - name: format
+        in: query
+        required: false
+        schema:
+          type: string
+        description: page (default) or json for a full download without filter/pagination.
+      - name: X-Agent-Pass
+        in: header
+        required: false
+        schema:
+          type: string
+        description: Individual agent credential, required together with X-Editalmd-Avaliacao.
+      - name: X-Editalmd-Avaliacao
+        in: header
+        required: false
+        schema:
+          type: string
+        description: evaluation.access_code of the sponsored premium, only for this document and agent, with an expiry. Use it together with X-Agent-Pass; it is not a receipt or a purchase.
+      - name: X-Editalmd-Acesso
+        in: header
+        required: false
+        schema:
+          type: string
+        description: 'Private code in acesso.codigo after a payment by someone not signed in to the account; up to 4096 characters. It authorizes this document for whoever holds it. A purchase made with the account session issues no code: the global right of the account (HttpOnly cookie) applies, and the right of the edm_… guest applies with its token. A public receipt does not grant access.'
+      responses:
+        '200':
+          description: 'Page: data.version, data.complete, data.facts and data.next. Facts keep typed details, applicability, exceptions, evidence (page/start/end/quote) and references. A duration requires an associated quantity and unit in the evidence; duration_verification identifies a necessary correction or review, without changing the source. format=json: schema licitech-document-dossier-v1, complete version and facts, up to 16 MiB.'
+        '400':
+          description: Invalid query.
+        '402':
+          description: Without valid purchased or sponsored access. Use the individual evaluation, buy through POST /api/documento/:id/geracao or a deposit; five examples are free.
+        '404':
+          description: Purchase not found for the authenticated account, or a missing document/resource.
+        '409':
+          description: The version changed or the export is still in preparation.
+        '502':
+          description: Origin unavailable.
+      tags:
+      - Documento
+  /api/documento/{id}/original:
+    get:
+      operationId: get_api_documento_by_id_original
+      summary: Open or download the preserved original for free
+      description: 'Delivers the public original without a purchase, an account or a new extraction. PDFs open in the browser; other formats are attachments. Processed content and analysis stay behind the paid doors.
+
+        Returns: Original binary (PDF, ZIP or another format), up to 96 MiB, with MIME type and file name.'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Document identifier in the procurement record.
+        example: '9558909'
+      responses:
+        '200':
+          description: Original binary (PDF, ZIP or another format), up to 96 MiB, with MIME type and file name.
+        '404':
+          description: Original unavailable in the collection.
+        '502':
+          description: Origin unavailable.
+      tags:
+      - Documento
+  /api/documento/{id}/partes:
+    get:
+      operationId: get_api_documento_by_id_partes
+      summary: Inner files available in the purchased document
+      description: 'Returns: { data }'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Document identifier in the procurement record.
+        example: '9558909'
+      - name: X-Agent-Pass
+        in: header
+        required: false
+        schema:
+          type: string
+        description: Individual agent credential, required together with X-Editalmd-Avaliacao.
+      - name: X-Editalmd-Avaliacao
+        in: header
+        required: false
+        schema:
+          type: string
+        description: evaluation.access_code of the sponsored premium, only for this document and agent, with an expiry. Use it together with X-Agent-Pass; it is not a receipt or a purchase.
+      - name: X-Editalmd-Acesso
+        in: header
+        required: false
+        schema:
+          type: string
+        description: 'Private code in acesso.codigo after a payment by someone not signed in to the account; up to 4096 characters. It authorizes this document for whoever holds it. A purchase made with the account session issues no code: the global right of the account (HttpOnly cookie) applies, and the right of the edm_… guest applies with its token. A public receipt does not grant access.'
+      responses:
+        '200':
+          description: '{ data }'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    description: 'document_id and parts (up to 200): id, idx, label, content_type, size_bytes, page_count, page_offset and arquivo_url relative to /api/documento/:id/partes/:partId/arquivo. An empty list means a document without inner files.'
+                required:
+                - data
+        '402':
+          description: Without valid purchased or sponsored access. Use the individual evaluation, buy through POST /api/documento/:id/geracao or a deposit; five examples are free.
+        '404':
+          description: Purchase not found for the authenticated account, or a missing document/resource.
+        '409':
+          description: File or index not available yet.
+        '422':
+          description: The package could not be read.
+        '502':
+          description: Origin unavailable.
+        '503':
+          description: Acervo ocupado; respeite Retry-After.
+      tags:
+      - Documento
+  /api/documento/{id}/partes/{partId}/arquivo:
+    get:
+      operationId: get_api_documento_by_id_partes_by_partid_arquivo
+      summary: Open or download an original file with the purchased access to the document
+      description: 'Returns: Ready binary, up to 96 MiB. A PDF can be shown in the browser; other formats can be downloaded.'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Document identifier in the procurement record.
+        example: '9558909'
+      - name: partId
+        in: path
+        required: true
+        schema:
+          type: string
+        description: id of the inner file returned in partes.
+        example: '1'
+      - name: X-Agent-Pass
+        in: header
+        required: false
+        schema:
+          type: string
+        description: Individual agent credential, required together with X-Editalmd-Avaliacao.
+      - name: X-Editalmd-Avaliacao
+        in: header
+        required: false
+        schema:
+          type: string
+        description: evaluation.access_code of the sponsored premium, only for this document and agent, with an expiry. Use it together with X-Agent-Pass; it is not a receipt or a purchase.
+      - name: X-Editalmd-Acesso
+        in: header
+        required: false
+        schema:
+          type: string
+        description: 'Private code in acesso.codigo after a payment by someone not signed in to the account; up to 4096 characters. It authorizes this document for whoever holds it. A purchase made with the account session issues no code: the global right of the account (HttpOnly cookie) applies, and the right of the edm_… guest applies with its token. A public receipt does not grant access.'
+      responses:
+        '200':
+          description: Ready binary, up to 96 MiB. A PDF can be shown in the browser; other formats can be downloaded.
+        '402':
+          description: Without valid purchased or sponsored access. Use the individual evaluation, buy through POST /api/documento/:id/geracao or a deposit; five examples are free.
+        '404':
+          description: Purchase not found for the authenticated account, or a missing document/resource.
+        '502':
+          description: Origin unavailable.
+      tags:
+      - Documento
+  /api/documento/{id}/leitura:
+    get:
+      operationId: get_api_documento_by_id_leitura
+      summary: 'Manifest of the purchased document: physical pages, images and hashes of the…'
+      description: 'Only ready resources. It does not start OCR. `document_approved: false` identifies the automatic extraction and does not prevent its reading.
+
+        Returns: { data }'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Document identifier in the procurement record.
+        example: '9558909'
+      - name: X-Agent-Pass
+        in: header
+        required: false
+        schema:
+          type: string
+        description: Individual agent credential, required together with X-Editalmd-Avaliacao.
+      - name: X-Editalmd-Avaliacao
+        in: header
+        required: false
+        schema:
+          type: string
+        description: evaluation.access_code of the sponsored premium, only for this document and agent, with an expiry. Use it together with X-Agent-Pass; it is not a receipt or a purchase.
+      - name: X-Editalmd-Acesso
+        in: header
+        required: false
+        schema:
+          type: string
+        description: 'Private code in acesso.codigo after a payment by someone not signed in to the account; up to 4096 characters. It authorizes this document for whoever holds it. A purchase made with the account session issues no code: the global right of the account (HttpOnly cookie) applies, and the right of the edm_… guest applies with its token. A public receipt does not grant access.'
+      responses:
+        '200':
+          description: '{ data }'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    description: schema licitech-document-package-v1; document_id, source_sha256, text_sha256, markdown_sha256, pages (number/start/end), images (sha256/filename/size_bytes/mime/width/height), occurrences (page/reference/start/end/sha256). UTF-16 offsets of fonte.md.
+                required:
+                - data
+        '402':
+          description: Without valid purchased or sponsored access. Use the individual evaluation, buy through POST /api/documento/:id/geracao or a deposit; five examples are free.
+        '404':
+          description: Purchase not found for the authenticated account, or a missing document/resource.
+        '409':
+          description: Text version changed; open the current manifest.
+        '502':
+          description: Origin unavailable.
+      tags:
+      - Documento
+  /api/documento/{id}/pacote:
+    get:
+      operationId: get_api_documento_by_id_pacote
+      summary: Download a ZIP with the Markdown and images of the purchased document, for…
+      description: 'Returns: `application/zip`, up to 96 MiB: documento.md, the imagens folder, the literal fonte.md, manifesto.json and LEIA-ME.txt. Keep the imagens folder with the Markdown.'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Document identifier in the procurement record.
+        example: '9558909'
+      - name: v
+        in: query
+        required: false
+        schema:
+          type: string
+        description: text_sha256 of the manifest; it pins the version shown in the reader.
+      - name: X-Agent-Pass
+        in: header
+        required: false
+        schema:
+          type: string
+        description: Individual agent credential, required together with X-Editalmd-Avaliacao.
+      - name: X-Editalmd-Avaliacao
+        in: header
+        required: false
+        schema:
+          type: string
+        description: evaluation.access_code of the sponsored premium, only for this document and agent, with an expiry. Use it together with X-Agent-Pass; it is not a receipt or a purchase.
+      - name: X-Editalmd-Acesso
+        in: header
+        required: false
+        schema:
+          type: string
+        description: 'Private code in acesso.codigo after a payment by someone not signed in to the account; up to 4096 characters. It authorizes this document for whoever holds it. A purchase made with the account session issues no code: the global right of the account (HttpOnly cookie) applies, and the right of the edm_… guest applies with its token. A public receipt does not grant access.'
+      responses:
+        '200':
+          description: '`application/zip`, up to 96 MiB: documento.md, the imagens folder, the literal fonte.md, manifesto.json and LEIA-ME.txt. Keep the imagens folder with the Markdown.'
+        '400':
+          description: Invalid version.
+        '402':
+          description: Without valid purchased or sponsored access. Use the individual evaluation, buy through POST /api/documento/:id/geracao or a deposit; five examples are free.
+        '404':
+          description: Purchase not found for the authenticated account, or a missing document/resource.
+        '409':
+          description: Text version changed; open the current manifest.
+        '502':
+          description: Origin unavailable.
+      tags:
+      - Documento
+  /api/documento/{id}/imagens/{version}/{imageSha}:
+    get:
+      operationId: get_api_documento_by_id_imagens_by_version_by_imagesha
+      summary: PNG/JPEG image of the purchased document, checked by hash
+      description: 'Returns: `image/png` or `image/jpeg`, up to 20 MiB per image. It does not accept URLs or external paths.'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Document identifier in the procurement record.
+        example: '9558909'
+      - name: version
+        in: path
+        required: true
+        schema:
+          type: string
+        description: text_sha256 of the manifest.
+        example: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+      - name: imageSha
+        in: path
+        required: true
+        schema:
+          type: string
+        description: sha256 of the image present in the manifest.
+        example: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+      - name: X-Agent-Pass
+        in: header
+        required: false
+        schema:
+          type: string
+        description: Individual agent credential, required together with X-Editalmd-Avaliacao.
+      - name: X-Editalmd-Avaliacao
+        in: header
+        required: false
+        schema:
+          type: string
+        description: evaluation.access_code of the sponsored premium, only for this document and agent, with an expiry. Use it together with X-Agent-Pass; it is not a receipt or a purchase.
+      - name: X-Editalmd-Acesso
+        in: header
+        required: false
+        schema:
+          type: string
+        description: 'Private code in acesso.codigo after a payment by someone not signed in to the account; up to 4096 characters. It authorizes this document for whoever holds it. A purchase made with the account session issues no code: the global right of the account (HttpOnly cookie) applies, and the right of the edm_… guest applies with its token. A public receipt does not grant access.'
+      responses:
+        '200':
+          description: '`image/png` or `image/jpeg`, up to 20 MiB per image. It does not accept URLs or external paths.'
+        '402':
+          description: Without valid purchased or sponsored access. Use the individual evaluation, buy through POST /api/documento/:id/geracao or a deposit; five examples are free.
+        '404':
+          description: Purchase not found for the authenticated account, or a missing document/resource.
+        '409':
+          description: Text version changed; open the current manifest.
+        '502':
+          description: Origin unavailable.
       tags:
       - Documento
 components:
   schemas:
+    Habilitacao:
+      type: object
+      properties:
+        documento_id:
+          type: integer
+          description: Documento lido.
+        compra_id:
+          type: integer
+          description: Procurement of the document.
+          nullable: true
+        sha256_texto:
+          type: string
+          description: Hash of the source text of the dossier.
+        dossie_versao:
+          type: string
+          description: Hash of the identity of the shared analysis.
+        modelo:
+          type: string
+          description: Model that extracted it.
+          nullable: true
+        cache:
+          type: boolean
+          description: 'False: it reads the current available version.'
+        recibo:
+          type: string
+          description: Receipt of the paid delivery; null in the cache.
+          nullable: true
+        recibo_url:
+          type: string
+          description: Where to check the receipt.
+          nullable: true
+        aviso:
+          type: string
+          description: Reminder to check in the tender document.
+        habilitacao:
+          allOf:
+          - $ref: '#/components/schemas/ListaHabilitacao'
+          description: The requirements per family and what the tender document says about deadlines.
+      required:
+      - documento_id
+      - compra_id
+      - sha256_texto
+      - dossie_versao
+      - modelo
+      - cache
+      - recibo
+      - recibo_url
+      - aviso
+      - habilitacao
+      description: The qualification list extracted from a tender document, per family, with provenance.
     Exigencia:
       type: object
       properties:
         exigencia:
           type: string
-          description: 'Descrição curta, ex.: `Certidão negativa de débitos trabalhistas (CNDT)`.'
+          description: Short description, e.g. `Certidão negativa de débitos trabalhistas (CNDT)`.
         trecho:
           type: string
-          description: Cópia literal do edital, até 300 caracteres — existe no texto, sempre.
+          description: Literal excerpt checked in the Markdown, up to 4000 characters.
+        pagina:
+          type: integer
+          description: Physical page of the first evidence.
+        fato_id:
+          type: integer
+          description: Identity of the fact in the versioned dossier.
+        condicao:
+          type: string
+          description: When it applies.
+          nullable: true
+        excecoes:
+          type: string
+          description: Caveats of the source.
+          nullable: true
+        evidencias:
+          type: array
+          items:
+            type: object
+          description: All the excerpts with page and UTF-16 offsets.
       required:
       - exigencia
       - trecho
-      description: Um documento ou requisito de habilitação e a linha do edital que o exige.
+      - pagina
+      - fato_id
+      - condicao
+      - excecoes
+      - evidencias
+      description: A qualification document or requirement and the line of the tender document that requires it.
     ListaHabilitacao:
       type: object
       properties:
@@ -85,7 +1556,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Exigencia'
-          description: 'Habilitação jurídica: ato constitutivo, registro, procuração…'
+          description: 'Legal qualification: articles of incorporation, registration, power of attorney…'
         fiscal_social_trabalhista:
           type: array
           items:
@@ -95,30 +1566,30 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Exigencia'
-          description: 'Qualificação econômico-financeira: balanço, certidão de falência, índices.'
+          description: 'Economic and financial qualification: balance sheet, bankruptcy certificate, ratios.'
         tecnica:
           type: array
           items:
             $ref: '#/components/schemas/Exigencia'
-          description: 'Qualificação técnica: atestados, registro em conselho, equipe.'
+          description: 'Technical qualification: certificates of performance, professional council registration, team.'
         exclusivo_me_epp:
           type: boolean
-          description: Participação exclusiva de ME/EPP, quando o edital diz.
+          description: 'Null: participation conditioned by item/lot is in the facts of the dossier.'
           nullable: true
         impugnacao_texto:
           type: string
-          description: O que o edital diz sobre o prazo de impugnação, copiado.
+          description: 'Null in this projection: check the deadlines and conditions in the dossier.'
           nullable: true
         proposta_texto:
           type: string
-          description: O que o edital diz sobre a sessão ou o fim das propostas, copiado.
+          description: 'Null in this projection: check the deadlines and conditions in the dossier.'
           nullable: true
         total:
           type: integer
-          description: Exigências aceitas, somando as quatro famílias.
+          description: Accepted requirements, adding up the four families.
         descartados:
           type: integer
-          description: Itens que o modelo sugeriu sem trecho literal no texto e foram descartados.
+          description: Zero in this projection; the validation happens during the preparation of the dossier.
       required:
       - juridica
       - fiscal_social_trabalhista
@@ -129,50 +1600,29 @@ components:
       - proposta_texto
       - total
       - descartados
-      description: Exigências de habilitação por família, mais as marcações que o edital traz em texto.
-    Habilitacao:
-      type: object
-      properties:
-        documento_id:
-          type: integer
-          description: Documento lido.
-        compra_id:
-          type: integer
-          description: Compra do documento.
-          nullable: true
-        sha256_texto:
-          type: string
-          description: Hash do texto lido — a chave do cache.
-        modelo:
-          type: string
-          description: Modelo que extraiu.
-          nullable: true
-        cache:
-          type: boolean
-          description: '`true` quando saiu do cache, sem cobrança.'
-        recibo:
-          type: string
-          description: Recibo da entrega paga; nulo no cache.
-          nullable: true
-        recibo_url:
-          type: string
-          description: Onde consultar o recibo.
-          nullable: true
-        aviso:
-          type: string
-          description: Lembrete de conferir no edital.
-        habilitacao:
-          allOf:
-          - $ref: '#/components/schemas/ListaHabilitacao'
-          description: As exigências por família e o que o edital diz de prazo.
-      required:
-      - documento_id
-      - compra_id
-      - sha256_texto
-      - modelo
-      - cache
-      - recibo
-      - recibo_url
-      - aviso
-      - habilitacao
-      description: A lista de habilitação extraída de um edital, por família, com procedência.
+      description: Qualification requirements per family, plus the markings that the tender document has in text.
+  securitySchemes:
+    globalAccount:
+      type: apiKey
+      in: cookie
+      name: __Host-mm-auth
+      description: Global session in the product's HttpOnly cookie; writes require exact Origin and X-CSRF-Token.
+    contaChaveApi:
+      type: http
+      scheme: bearer
+      bearerFormat: mmk_…
+      description: 'Account API key: `Authorization: Bearer mmk_…` or `X-Api-Key: mmk_…`. Created on the account page (API keys), valid only in the product where it was created; it acts as the account (or the organization that owns it).'
+    carteiraAgente:
+      type: http
+      scheme: bearer
+      bearerFormat: mmw_…
+      description: 'Wallet credential of an agent without an account (`Authorization: Bearer mmw_…`, 30 days, this product only): POST /api/auth/wallet/agent/start, sign the message with the wallet, POST /api/auth/wallet/agent/token. The owner is `x402:<address>`.'
+x-service-info:
+  categories:
+  - public-procurement
+  - documents
+  - data
+  docs:
+    homepage: https://editalmd.com/
+    apiReference: https://editalmd.com/developers
+    llms: https://editalmd.com/llms.txt
