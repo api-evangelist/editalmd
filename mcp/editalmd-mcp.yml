@@ -32,52 +32,287 @@ x-evidence:
   content_type: application/json
   tools_file: editalmd-mcp-tools.json
 tools:
+- name: evaluation_quota
+  description: 'Individual allowance: one premium and 100 basic documents, with an expiry date.'
+- name: evaluation_premium
+  description: 'Uses your only sponsored premium on a document of up to 50 pages. Keep evaluation.access_code
+    as avaliacao_codigo and follow it with generation_status and agent_pass. A repeat returns the same
+    access. Allowance per credential, until the earlier date of the agent''s 30 days and the end of the
+    pilot. Repeating the same document does not use another unit. Premium: keep evaluation.access_code
+    and use X-Editalmd-Avaliacao together with X-Agent-Pass in the reads and in GET /geracao. Basic does
+    not open premium content. The pilot depends on the global budget; no automatic renewal.'
+- name: evaluation_basic
+  description: 'Basic native or OCR text of a PDF of up to 50 pages / 32 MiB, without review or structured
+    tables. Up to 100 documents per agent. It does not open premium. Allowance per credential, until the
+    earlier date of the agent''s 30 days and the end of the pilot. Repeating the same document does not
+    use another unit. Premium: keep evaluation.access_code and use X-Editalmd-Avaliacao together with
+    X-Agent-Pass in the reads and in GET /geracao. Basic does not open premium content. The pilot depends
+    on the global budget; no automatic renewal.'
+- name: evaluation_basic_result
+  description: 'Follows the basic reading after retry_after_s and returns the text per page with the hash
+    of the source. Allowance per credential, until the earlier date of the agent''s 30 days and the end
+    of the pilot. Repeating the same document does not use another unit. Premium: keep evaluation.access_code
+    and use X-Editalmd-Avaliacao together with X-Agent-Pass in the reads and in GET /geracao. Basic does
+    not open premium content. The pilot depends on the global budget; no automatic renewal.'
+- name: company_documents
+  description: Lists the private PDFs of the company. Binary downloads use the authenticated HTTP GET
+    /documentos/:arquivo.
+- name: attach_company_document
+  description: Sends a PDF proof of the company. It does not start OCR. Requires a session; for large
+    files, prefer HTTP. Returns 201. JSON up to 11,200,000 bytes; PDF up to 8 MiB; 20 documents, 80 MiB
+    and 50 pages per company. An identical file is reused. The automatic reading happens only when you
+    request the analysis.
+- name: remove_company_document
+  description: Removes a proof from your own company; the analyses that used it become out of date.
+- name: analyze_participation
+  description: Starts or resumes the analysis with the company record, the attachments and the tender.
+    Call it only when the user asks; follow it with get_participation. Returns 202 after it accepts and
+    keeps the request, and 200 when it reuses a finished analysis. It uses the profile and the attachments
+    of this owner. Interrupted requests can resume; failures tell the reason and the next action. An explicit
+    POST resumes a pause. Up to 2 thousand facts and 100 tenders per company, subject to the available
+    capacity and budget. Follow-up only by GET. The analysis is a triage with evidence, not a final qualification
+    decision or an external legal opinion.
+- name: get_participation
+  description: Reads the state, the pending items and the met items, with reasons, actions and evidence.
+    It never starts an analysis. Pending items group precisa_comprovar (proof missing), divergente (incompatible
+    evidence) and acompanhar (future obligation). A different company record, attachments or dossier return
+    outdated without current results. The reference date stays when the analysis resumes; a previous day
+    returns data_atual=false. Validated batches stay available during failures or processing, with parcial=true
+    and processados/total; they never mean that the requirements not yet compared are done. GET does not
+    run the queue and does not start AI.
+- name: list_my_companies
+  description: The companies are the account organizations with EditalMD; use the session or the organization
+    key.
+- name: search_companies
+  description: Searches the company registry by CNPJ or company name; requires an account or a guest.
+- name: add_company
+  description: Imports the CNPJ into a new organization or into the organization of the organization key.
+    Without X-Organization-Id, it creates the organization with the company name and EditalMD on, or returns
+    the one that the person removed from the list (201). With X-Organization-Id or an organization key,
+    the record goes to that organization if the caller manages it and it has no company. Returns 200 when
+    the CNPJ is already in an organization of the caller. Up to 100 companies; no partners or contacts;
+    no analysis starts.
+- name: select_company
+  description: Selects a registered company; it does not run an analysis. Each person's choice is kept
+    in the account. Repeating the current choice writes nothing.
+- name: remove_company
+  description: Removes the company from the list (owner or admin); the organization and the PDFs stay,
+    and adding the CNPJ again brings it back.
+- name: awarded_prices
+  description: 'Awarded results for a similar item, as a free summary: how many results, the median and
+    the range (p25/p75) of the same catalog product in the same unit, without the extremes; the volume
+    bought; the value for your quantity; and the other groups that the search found (ask for the product
+    and the unit of one of them to switch). It searches awarded results by item description. It also accepts
+    POST, PUT or PATCH with the same parameters in JSON or a form; `query`, `termo`, `busca` and `search`
+    count as `q`, `estado` as `uf`, and `limit` as `limite`. Every 400 has `exemplo` and `doc`.'
+- name: framework_agreements
+  description: 'The valid framework agreements (`ata de registro de preços`) on PNCP for the object, most
+    relevant first: the managing agency, the validity, whether the agreement accepts joining (carona)
+    and the link to the agreement. Free. Only the agreements that are not canceled and are valid today
+    or later. `adesao=1` returns only the ones that accept joining. The procurement record (`/api/compra/:id`)
+    has the agreements that it generated. `Accept: text/html` opens the Atas vigentes tab with the terms.'
+- name: procurement_plans
+  description: 'What agencies plan to procure (annual procurement plans, PCA, on PNCP), before the tender
+    opens: item, agency, quantity, estimated value and desired date. Free. Only the current version of
+    each plan; without `ano`, from the current year on. To know when the tender opens, create an alert
+    with the same terms (`/api/alertas`). `Accept: text/html` opens the Planos de compras tab with the
+    terms.'
+- name: my_account
+  description: 'The identity and the private counters of the account session (cookie) sent in the MCP
+    request. The global account is already the person in EditalMD: there is no activation per product.'
+- name: my_documents
+  description: The private collection of the account. Requires the account session (cookie and the browser
+    CSRF).
+- name: my_procurements
+  description: The private collection of the account. Requires the account session (cookie and the browser
+    CSRF).
+- name: account_tracking
+  description: Checks that the Salvas, Alertas and Vigias belong to the account of the session. The lists
+    of a guest edm_… move to the account with `POST /api/auth/claim`; a POST to this route answers 410
+    with the path.
+- name: claim_guest_tracking
+  description: 'Brings into the session account what the guest edm_… created (the SDK claim): the Salvas,
+    Alertas and Vigias that the account does not have yet, and the documents that the guest bought. Requires
+    the bootstrap/CSRF of this browser; the page does it right after sign-in. It moves only what the guest
+    still has, in one transaction; what collides with what the account already has stays with the guest.
+    A repeat does no harm (it moves zero).'
+- name: lookup_reference
+  description: Find city names and state codes, activities and other Radar CNPJ references. For tender
+    filters, use the city name and state. Returned numeric codes belong to Receita, not IBGE.
+- name: preview_alert
+  description: A free sample of procurements by terms and filters, or editable suggestions by CNPJ. It
+    does not create alerts.
+- name: update_alert
+  description: Edits the interest, or pauses or turns on again an alert of the owner. The filters replace
+    the whole filter.
+- name: list_saved
+  description: Lists up to 200 tenders saved by the owner, free.
+- name: save_procurement
+  description: Saves the procurement, up to 200 per owner. Saving does not create a watch or a notification.
+    The client sends only the ID; the snapshot comes from the collection.
+- name: remove_saved
+  description: Removes the procurement from the personal list of the owner. Saving does not create a watch
+    or a notification. The client sends only the ID; the snapshot comes from the collection.
+- name: generation_status
+  description: Follows the real phases and the completion, free, without starting processing.
+- name: original_status
+  description: 'Reads the status of the original, free. It does not ask for a download or a generation.
+    It returns only the file status: it does not deliver content, grant access, confirm pages or start
+    a generation. No query. The response is no-store.'
+- name: request_original
+  description: When the person wants the document, downloads the pending original from PNCP now. Free
+    and idempotent. It does not start OCR. Use it when the person opens the document. The body is empty
+    or {} (two bytes at most). A free collector downloads the original at once and the status becomes
+    downloading; without a free collector, the request goes first into the queue.
+- name: list_examples
+  description: Lists five real free proofs to check the Markdown, the original PDF and the ZIP with images
+    before you generate another document.
+- name: get_document
+  description: A free lookup of the title, type, pages and the procurement linked to a document. Use `get_procurement`
+    to list the related documents. It does not open content or start OCR.
+- name: get_document_dossier
+  description: Items, requirements, attestations, deadlines and obligations, with conditions, exceptions
+    and excerpts/pages. It uses the same acesso_codigo as the reading. It does not start AI. The dossier
+    is included in the document access, with no new analysis when you read it. Partial data tells the
+    coverage; an export requires a finished version.
+- name: list_document_files
+  description: The catalog of the original files of the document, with download links and pages. Use /api/documento/{id}/original
+    to download the full original.
 - name: api_index
-  description: API index - routes, pricing regime and price per route.
+  description: The EditalMD API index, with the routes.
 - name: health
-  description: Origin health and corpus size (tenders and documents with extracted text).
-- name: buscar_licitacao
-  description: Full-text PNCP tender search by term, UF, open-only filter. Free.
-- name: prazos
-  description: Tender deadlines - end of proposals (from PNCP) and last challenge day (estimated).
-- name: compra
-  description: Tender sheet plus its documents with extracted text and the price of each. Free.
-- name: edital_markdown
-  description: PNCP document as markdown with provenance front-matter and hash. Free at 30+ days, paid
-    when recent.
-- name: habilitacao
-  description: Extracted eligibility checklist (legal, fiscal, economic-financial, technical), each item
-    with its literal excerpt.
-- name: criar_dono
-  description: Creates the owner token (edm_) that opens alerts and watchers, plus the whsec_ webhook
-    signing secret. No signup.
-- name: dono
-  description: Owner state (requires edm_ token) - confirmed email, free quota and the webhook secret.
-- name: rotacionar_segredo_webhook
-  description: Rotates the webhook signing secret; the previous one still signs for 24h.
-- name: criar_alerta
-  description: New-tender alert by object terms and UF (requires edm_ token); pull, signed webhook or
-    email channel.
-- name: alerta_por_cnpj
-  description: New-tender alerts from a company CNPJ - each CNAE activity becomes a term family, one alert
-    per family.
-- name: cnaes
-  description: CNAE dictionary as the CNPJ alert reads it - official IBGE description, family, terms,
-    active SICAF suppliers.
-- name: alertas_compras
-  description: Tenders already matched by an alert (pull channel) with deadlines and delivery status.
-- name: vigiar_compra
-  description: Watch a tender - snapshot now, then events on rectification, new document, deadline change,
-    value change.
-- name: vigia_eventos
-  description: Events of a watched tender (what changed, from what to what, when) and the current snapshot.
-- name: credito_saldo
-  description: Prepaid credit balance and statement (requires cred_ token).
-- name: credito_recarregar
-  description: Recharge credit - pay once with x402 (1, 5, 10, 25 USD packs), get the bearer token valid
-    across the house.
-- name: recibo
-  description: Delivery receipt - price, payment mode and SHA-256 hash of the delivered content.
+  description: Health of the origin and size of the collection (procurements and documents with text).
+- name: search_tenders
+  description: Searches public procurements by term. Free. Returns the object, the agency, the state (UF),
+    the modality and the procurement id.
+- name: get_deadlines
+  description: 'The deadlines of the procurement: the published end of proposals and the last day to challenge
+    the tender (estimate: 3 business days before the session, Law 14.133 art. 164, national holidays).
+    Free. Served from the edge cache for up to 6 hours: the record rarely changes. `Cache-Control: no-cache`
+    in the request reads the origin now. The `x-origem-cache` header says `hit`, `miss` or `bypass`.'
+- name: get_procurement
+  description: 'The procurement record and its documents in the collection (up to 50), with titles, types,
+    pages and availability. Free. Served from the edge cache for up to 6 hours: the record rarely changes.
+    `Cache-Control: no-cache` in the request reads the origin now. The `x-origem-cache` header says `hit`,
+    `miss` or `bypass`.'
+- name: who_supplies
+  description: The CNAEs (activity codes) that usually win procurements like this one, most likely first,
+    with the official description and, per CNAE, how many items and how much of the estimated value pointed
+    to it. Free. Each item of the procurement (up to 99, the ones of highest value) points to the 3 most
+    likely CNAEs, by a classifier trained on the activity of the companies that won similar items in the
+    awarded PNCP results; the procurement adds the points (3, 2 and 1 by position). Without items in the
+    collection, the object of the procurement counts, and the top 5 come without `itens` or `valor_estimado`.
+    In the measurement of 27/09/2026, for 87% of the items one of the first 3 was a CNAE of the company
+    that won. To receive the new procurements of these CNAEs, create an alert (`POST /api/alertas`).
+- name: open_tenders_in_field
+  description: The tenders with an open proposal period published in the last 7 days, in the state (UF)
+    and in the CNAEs of the companies that supply the same as this procurement, highest value first, and
+    the alert body that delivers them (for `create_alert`). Useful when the procurement you looked up
+    is already closed. Free. Without a CNAE, it uses the terms of the object. It is the same read as the
+    alert preview (`POST /api/alertas/previa`), and `alerta` has the body that creates this alert in `POST
+    /api/alertas` (add the `canal`). The result is per field and state and is kept for 30 minutes; when
+    the service is busy or the origin is down, `estado` says so and `itens` is empty.
+- name: get_tender_markdown
+  description: Reads the Markdown with the acesso_codigo of the document, or with avaliacao_codigo and
+    agent_pass of the sponsored premium. Five examples are free.
+- name: get_qualification
+  description: 'The qualification list of the tender, with literal excerpts: conditions, exceptions and
+    evidence by page of the available analysis. The lookup does not start another analysis. Deadlines,
+    proposals and the other obligations are in the dossier; this list covers qualification and the required
+    attestations, and does not state what the company has.'
+- name: get_reading_manifest
+  description: 'The document manifest: pages, images, SHA-256 and version. Send acesso_codigo; the examples
+    are free. It does not start OCR. The same authorization opens the ZIP and the images through the API.
+    Only ready resources. `document_approved: false` marks the automatic extraction and does not block
+    reading.'
+- name: create_owner
+  description: 'Creates the guest (token edm_…, issued by the account library) that opens alerts and watches,
+    and the secret whsec_… that signs the webhooks. No sign-up. The token appears only once: keep it and
+    send it in Authorization: Bearer in the alert and watch tools. The account library signs the token,
+    with a limit per network and per hour, so the free allowance does not become infinite. The token has
+    no recovery: sign in to the account and bring the lists into it (`POST /api/auth/claim`, which the
+    account page does on sign-in) to stop depending on it. You can read `webhook_segredo` again in `GET
+    /api/dono`. Each webhook POST carries `webhook-id`, `webhook-timestamp` (Unix seconds) and `webhook-signature:
+    v1,<base64>`: HMAC-SHA256 of `id.timestamp.body` with the key of your `whsec_…` (the base64 after
+    the prefix). This is the Standard Webhooks pattern: any of its libraries can check it; reject a timestamp
+    outside 5 minutes. After `POST /api/dono/segredo`, the previous secret still signs for 24 h (two `v1,`
+    parts in the header).'
+- name: get_owner
+  description: 'The owner state (requires the token edm_… or the account session): account or guest, the
+    notice e-mail, the allowance and the secret whsec_… that signs each webhook (Standard Webhooks: webhook-id,
+    webhook-timestamp, webhook-signature). Each webhook POST carries `webhook-id`, `webhook-timestamp`
+    (Unix seconds) and `webhook-signature: v1,<base64>`: HMAC-SHA256 of `id.timestamp.body` with the key
+    of your `whsec_…` (the base64 after the prefix). This is the Standard Webhooks pattern: any of its
+    libraries can check it; reject a timestamp outside 5 minutes. After `POST /api/dono/segredo`, the
+    previous secret still signs for 24 h (two `v1,` parts in the header).'
+- name: rotate_webhook_secret
+  description: 'Changes the secret that signs the webhooks (requires the token edm_…). The previous secret
+    still signs for 24 h, so you can change it without a failure window. During the 24 h, the `webhook-signature`
+    header has two `v1,…` parts: one with the new secret and one with the previous. The receiver only
+    needs to accept any part that matches.'
+- name: create_alert
+  description: 'An alert for new procurements by object terms and state (UF). Use the account session
+    or guest token. Channels: pull, signed webhook or email. Name, organization and email recipients are
+    optional. Two modes. By `termos`: a space requires all groups; `|` accepts alternatives within a group.
+    By `cnpj`: known activity families produce alerts, up to `max_familias`. Unmapped activities remain
+    in the response without an alert. The cron checks every 30 minutes. Email requires an account session
+    and `EMAIL_ALERTAS=1`. It uses explicit recipients or the verified account email.'
+- name: create_alerts_by_cnpj
+  description: 'Alerts for new procurements by the company CNPJ (requires the token edm_…): the activities
+    (CNAE) become families of terms, and there is one alert per family, main first, up to max_familias.
+    A CNAE outside the dictionary is listed in the response with a null family. Two modes. By `termos`:
+    a space requires all groups; `|` accepts alternatives within a group. By `cnpj`: known activity families
+    produce alerts, up to `max_familias`. Unmapped activities remain in the response without an alert.
+    The cron checks every 30 minutes. Email requires an account session and `EMAIL_ALERTAS=1`. It uses
+    explicit recipients or the verified account email.'
+- name: list_cnaes
+  description: 'Search term suggestions by economic activity (CNAE), with the description, the family
+    and coverage indicators. Free. Without `q`, it lists the activities with the most registered suppliers.
+    With `q`, it searches by code prefix (`1412`, `1412-6/01`) or by a word of the description. A null
+    `familia` or `termos` means that the CNAE is not in the dictionary yet: an alert by CNPJ does not
+    use it.'
+- name: list_alert_matches
+  description: The procurements that already matched an alert (pull channel), with deadlines and delivery
+    status. Requires the token edm_….
+- name: watch_procurement
+  description: 'Watches a procurement (requires the token edm_…): takes a snapshot now and records the
+    events of correction, new document, suspension, postponed deadline and value, plus deadline notices.
+    The checks are periodic; check the date of the last check in the watch. The notices `prazo_impugnacao`
+    (on the day) and `prazo_proposta` (24 h before) go out once each.'
+- name: list_watch_events
+  description: The events of a watched procurement (what changed, from what to what, and when) and the
+    current snapshot. Requires the token edm_….
+- name: consulta_cadastro
+  description: Name, status, activity and address of a Brazilian company by CNPJ. It does not count against
+    the daily free limit, does not show contacts or partners and runs no extra checks. The origin's protection
+    limit still applies. For sanctions, tax status and a live CNIA check, use consulta_cnpj.
+- name: consulta_endereco
+  description: Addresses and companies at a CEP (Brazilian postal code), without counting against the
+    daily free limit. Up to 20 addresses and 20 companies; `pontos_total` has the total number of addresses.
+    The origin's protection limit still applies.
+- name: consulta_sugerir
+  description: Suggests up to 8 Brazilian companies for a CNPJ, company name, partner, phone or e-mail,
+    ordered by how well they match. It does not count against the daily free limit and does not show contacts.
+    `incompleto` means one of the sources did not answer.
+- name: consulta_cnpj
+  description: 'Brazilian company record by CNPJ from the Federal Revenue (Receita Federal), with the
+    special status when there is one (bankruptcy, judicial recovery, liquidation); its sanctions (CEIS,
+    CNEP, CEPIM, leniency agreements, TCU and the CNJ''s CNIA, checked live); partners on the politically
+    exposed persons list (CGU); tax status (federal tax debt, installment agreements, tax incentives and
+    construction works); the Federal Revenue chronic tax debtor list (`devedorContumaz.consta`: barred
+    from public tenders); environmental and labor risk (forced-labor list, Ibama embargoes and fines);
+    government contracts (PNCP, federal contracts since 2013 and sales to municipalities in the state
+    of SP, from TCE-SP) and BNDES financing; registrations with regulators and official registries (CVM,
+    Central Bank, ANS, ANTT, ANP, ANEEL, Anatel, Anvisa, CNES, Cadastur, Ibama, ANAC and SICAF); CVM investment
+    funds; and the address on the map (CNEFE/IBGE). Accepts the numeric and the alphanumeric CNPJ. Personal
+    data in the record comes masked. `sancoes` has what public registries record against the whole company
+    (the CNPJ root), updated daily: useful to vet suppliers. 10 free lookups per day per network; after
+    that, the tool answers `free_limit` with `resets_at`.'
+- name: consulta_cep
+  description: Addresses at a CEP (Brazilian postal code) with coordinates (CNEFE/IBGE) and the companies
+    registered there. Returns up to 20 addresses and up to 20 companies; the total number of addresses
+    is in `pontos_total`. 10 free lookups per day per network; after that, the tool answers `free_limit`
+    with `resets_at`.
 tool_quality:
   tool_count: 59
   tokens_total: 13796
@@ -103,3 +338,4 @@ tool_quality:
   scored: false
   note: Facts from the saved tools/list capture (mcp_tool_quality.py); recorded, not scored. Checks learned
     from Glimind's agent-readiness audit.
+tools_count: 59
