@@ -1,1 +1,2686 @@
-{"jsonrpc":"2.0","id":1,"result":{"tools":[{"name":"api_index","description":"Índice da API do EditalMD: rotas, regime de cobrança e preço.","inputSchema":{"type":"object","properties":{}}},{"name":"health","description":"Saúde da origem e tamanho do acervo (compras e documentos com texto).","inputSchema":{"type":"object","properties":{}}},{"name":"buscar_licitacao","description":"Busca compras públicas do PNCP por termo. Grátis. Devolve objeto, órgão, UF, modalidade e o id da compra.","inputSchema":{"type":"object","properties":{"q":{"type":"string","description":"Termo de busca, mínimo 3 letras"},"uf":{"type":"string","description":"Sigla da UF (opcional)"},"abertas":{"type":"string","description":"'1' para só compras com prazo de proposta aberto"},"limite":{"type":"number","description":"1 a 50 (padrão 20)"}},"required":["q"]}},{"name":"prazos","description":"Prazos da compra: fim das propostas (do PNCP) e último dia de impugnação (estimado: 3 dias úteis antes da sessão, Lei 14.133 art. 164, feriados nacionais). Grátis.","inputSchema":{"type":"object","properties":{"id":{"type":"number","description":"id da compra (vem da busca)"}},"required":["id"]}},{"name":"compra","description":"Ficha da compra e a lista de documentos com texto extraído, com o preço de cada um. Grátis.","inputSchema":{"type":"object","properties":{"id":{"type":"number","description":"id da compra (vem da busca)"}},"required":["id"]}},{"name":"edital_markdown","description":"Documento do PNCP em markdown com front-matter de procedência e hash. Grátis quando a compra foi publicada há 30+ dias; pago por requisição (x402, sem cadastro) quando é recente.","inputSchema":{"type":"object","properties":{"id":{"type":"number","description":"id do documento (vem de `compra`)"}},"required":["id"]}},{"name":"habilitacao","description":"Lista de habilitação do edital (jurídica, fiscal/social/trabalhista, econômico-financeira, técnica), cada item com o trecho literal do texto. Pago por documento (x402 ou crédito); mesmo texto não paga de novo.","inputSchema":{"type":"object","properties":{"id":{"type":"number","description":"id do documento (vem de `compra`)"}},"required":["id"]}},{"name":"criar_dono","description":"Cria o token de dono (edm_…) que abre alertas e vigias, e o segredo whsec_… que assina os webhooks. Sem cadastro; o token é mostrado uma única vez — guarde e mande em Authorization: Bearer nas tools de alerta e vigia.","inputSchema":{"type":"object","properties":{}}},{"name":"dono","description":"Estado do dono (precisa do token edm_…): e-mail confirmado, franquia e o segredo whsec_… que assina cada webhook (Standard Webhooks: webhook-id, webhook-timestamp, webhook-signature).","inputSchema":{"type":"object","properties":{}}},{"name":"rotacionar_segredo_webhook","description":"Troca o segredo que assina os webhooks (precisa do token edm_…). O anterior ainda assina por 24 h, para trocar sem janela de falha.","inputSchema":{"type":"object","properties":{}}},{"name":"criar_alerta","description":"Alerta de compra nova por termos do objeto e UF (precisa do token edm_…). Canal pull (ler por alertas_compras), webhook (POST https assinado com o whsec_… do dono) ou email. O primeiro é grátis; os seguintes custam por 30 dias (x402 ou crédito).","inputSchema":{"type":"object","properties":{"termos":{"type":"string","description":"Palavras do objeto, 3 a 200 letras; espaço = todas, | = qualquer uma (uniforme|fardamento)"},"uf":{"type":"string","description":"Sigla da UF (opcional)"},"canal":{"type":"string","description":"pull, webhook ou email (padrão pull)"},"destino":{"type":"string","description":"URL https (webhook) ou e-mail (email)"}},"required":["termos"]}},{"name":"alerta_por_cnpj","description":"Alertas de compra nova pelo CNPJ da empresa (precisa do token edm_…): as atividades (CNAE) viram famílias de termos e sai um alerta por família, principal primeiro, até max_familias. O que passa da franquia é cobrado numa vez só (x402 ou crédito). CNAE fora do dicionário vem listado na resposta com familia nula.","inputSchema":{"type":"object","properties":{"cnpj":{"type":"string","description":"CNPJ com 14 dígitos, com ou sem pontuação"},"max_familias":{"type":"number","description":"1 a 8 (padrão 8): quantas famílias viram alerta"},"uf":{"type":"string","description":"Sigla da UF (opcional)"},"canal":{"type":"string","description":"pull, webhook ou email (padrão pull)"},"destino":{"type":"string","description":"URL https (webhook) ou e-mail (email)"}},"required":["cnpj"]}},{"name":"cnaes","description":"A lista de CNAE como o alerta por CNPJ a lê: descrição oficial (IBGE), família e termos do dicionário e fornecedores ativos no SICAF. Sem q, o ranking de quem mais vende para o governo. Grátis.","inputSchema":{"type":"object","properties":{"q":{"type":"string","description":"Prefixo do código (1412) ou palavra da descrição (opcional)"},"limite":{"type":"number","description":"1 a 100 (padrão 20)"}}}},{"name":"alertas_compras","description":"Compras que já casaram com um alerta (canal pull), com prazos e status de entrega. Precisa do token edm_….","inputSchema":{"type":"object","properties":{"id":{"type":"string","description":"id do alerta"},"limite":{"type":"number","description":"1 a 100 (padrão 50)"}},"required":["id"]}},{"name":"vigiar_compra","description":"Vigia uma compra (precisa do token edm_…): fotografa agora e registra eventos de retificação, documento novo, suspensão, prazo adiado e valor, mais avisos de prazo. A primeira é grátis; as seguintes custam até 30 dias após o encerramento.","inputSchema":{"type":"object","properties":{"compra_id":{"type":"number","description":"id da compra (vem da busca)"},"canal":{"type":"string","description":"pull, webhook ou email (padrão pull)"},"destino":{"type":"string","description":"URL https (webhook) ou e-mail (email)"}},"required":["compra_id"]}},{"name":"vigia_eventos","description":"Eventos de uma compra vigiada (o que mudou, de quê para quê, quando) e a fotografia atual. Precisa do token edm_….","inputSchema":{"type":"object","properties":{"id":{"type":"string","description":"id da vigia"},"limite":{"type":"number","description":"1 a 100 (padrão 50)"}},"required":["id"]}},{"name":"credito_saldo","description":"Saldo e extrato do crédito pré-pago (precisa do token `cred_…`).","inputSchema":{"type":"object","properties":{}}},{"name":"credito_recarregar","description":"Recarrega crédito: paga uma vez com x402 (pacotes de 1, 5, 10 ou 25 dólares) e devolve o token que desconta em qualquer API da casa.","inputSchema":{"type":"object","properties":{"usd":{"type":"number","description":"1, 5, 10 ou 25"}},"required":["usd"]}},{"name":"recibo","description":"Recibo de uma entrega: preço, modo de pagamento e hash do conteúdo entregue.","inputSchema":{"type":"object","properties":{"id":{"type":"string","description":"id do recibo (vem no header x-editalmd-recibo)"}},"required":["id"]}}]}}
+{
+  "endpoint": "https://editalmd.com/mcp",
+  "captured": "2026-10-20",
+  "method": "initialize + tools/list (anonymous, no tool called; roadmap#992)",
+  "protocol_version": "2025-06-18",
+  "server_info": {
+    "name": "EditalMD",
+    "version": "78e0bd5f"
+  },
+  "result": {
+    "tools": [
+      {
+        "name": "evaluation_quota",
+        "title": "Pilot allowance",
+        "description": "Individual allowance: one premium and 100 basic documents, with an expiry date.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "agent_pass": {
+              "type": "string",
+              "description": "Persistent individual credential from POST https://api.editalmd.com/licitacoes/api/agente. It is not the User-Agent."
+            }
+          },
+          "required": [
+            "agent_pass"
+          ]
+        },
+        "annotations": {
+          "title": "Pilot allowance",
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          },
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "evaluation_premium",
+        "title": "Use the sponsored premium",
+        "description": "Uses your only sponsored premium on a document of up to 50 pages. Keep evaluation.access_code as avaliacao_codigo and follow it with generation_status and agent_pass. A repeat returns the same access. Allowance per credential, until the earlier date of the agent's 30 days and the end of the pilot. Repeating the same document does not use another unit. Premium: keep evaluation.access_code and use X-Editalmd-Avaliacao together with X-Agent-Pass in the reads and in GET /geracao. Basic does not open premium content. The pilot depends on the global budget; no automatic renewal.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "agent_pass": {
+              "type": "string",
+              "description": "Persistent individual credential from POST https://api.editalmd.com/licitacoes/api/agente. It is not the User-Agent."
+            },
+            "id": {
+              "type": "number",
+              "description": "ID of the document in the collection."
+            }
+          },
+          "required": [
+            "agent_pass",
+            "id"
+          ]
+        },
+        "annotations": {
+          "title": "Use the sponsored premium",
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": false,
+          "openWorldHint": false
+        },
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          },
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "evaluation_basic",
+        "title": "Basic text of a document",
+        "description": "Basic native or OCR text of a PDF of up to 50 pages / 32 MiB, without review or structured tables. Up to 100 documents per agent. It does not open premium. Allowance per credential, until the earlier date of the agent's 30 days and the end of the pilot. Repeating the same document does not use another unit. Premium: keep evaluation.access_code and use X-Editalmd-Avaliacao together with X-Agent-Pass in the reads and in GET /geracao. Basic does not open premium content. The pilot depends on the global budget; no automatic renewal.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "agent_pass": {
+              "type": "string",
+              "description": "Persistent individual credential from POST https://api.editalmd.com/licitacoes/api/agente. It is not the User-Agent."
+            },
+            "id": {
+              "type": "number",
+              "description": "ID of the document in the collection."
+            }
+          },
+          "required": [
+            "agent_pass",
+            "id"
+          ]
+        },
+        "annotations": {
+          "title": "Basic text of a document",
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": false,
+          "openWorldHint": false
+        },
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          },
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "evaluation_basic_result",
+        "title": "Basic reading result",
+        "description": "Follows the basic reading after retry_after_s and returns the text per page with the hash of the source. Allowance per credential, until the earlier date of the agent's 30 days and the end of the pilot. Repeating the same document does not use another unit. Premium: keep evaluation.access_code and use X-Editalmd-Avaliacao together with X-Agent-Pass in the reads and in GET /geracao. Basic does not open premium content. The pilot depends on the global budget; no automatic renewal.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "agent_pass": {
+              "type": "string",
+              "description": "Persistent individual credential from POST https://api.editalmd.com/licitacoes/api/agente. It is not the User-Agent."
+            },
+            "id": {
+              "type": "number",
+              "description": "ID of the document in the collection."
+            }
+          },
+          "required": [
+            "agent_pass",
+            "id"
+          ]
+        },
+        "annotations": {
+          "title": "Basic reading result",
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          },
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "company_documents",
+        "title": "Company documents",
+        "description": "Lists the private PDFs of the company. Binary downloads use the authenticated HTTP GET /documentos/:arquivo.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "cnpj": {
+              "type": "string",
+              "description": "CNPJ with 14 characters (digits or alphanumeric) linked to the owner."
+            }
+          },
+          "required": [
+            "cnpj"
+          ]
+        },
+        "annotations": {
+          "title": "Company documents",
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          },
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "attach_company_document",
+        "title": "Attach a company document",
+        "description": "Sends a PDF proof of the company. It does not start OCR. Requires a session; for large files, prefer HTTP. Returns 201. JSON up to 11,200,000 bytes; PDF up to 8 MiB; 20 documents, 80 MiB and 50 pages per company. An identical file is reused. The automatic reading happens only when you request the analysis.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "cnpj": {
+              "type": "string",
+              "description": "CNPJ with 14 characters (digits or alphanumeric) linked to the owner."
+            },
+            "nome": {
+              "type": "string",
+              "description": "PDF name."
+            },
+            "tipo": {
+              "type": "string",
+              "description": "atestado, certidao, licenca, contrato_social or outro."
+            },
+            "arquivo_base64": {
+              "type": "string",
+              "description": "The PDF in base64, up to 8 MiB decoded."
+            }
+          },
+          "required": [
+            "cnpj",
+            "nome",
+            "tipo",
+            "arquivo_base64"
+          ]
+        },
+        "annotations": {
+          "title": "Attach a company document",
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": false,
+          "openWorldHint": false
+        },
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          },
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "remove_company_document",
+        "title": "Remove a company document",
+        "description": "Removes a proof from your own company; the analyses that used it become out of date.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "cnpj": {
+              "type": "string",
+              "description": "CNPJ with 14 characters (digits or alphanumeric) linked to the owner."
+            },
+            "arquivo": {
+              "type": "string",
+              "description": "SHA-256 of the private PDF."
+            }
+          },
+          "required": [
+            "cnpj",
+            "arquivo"
+          ]
+        },
+        "annotations": {
+          "title": "Remove a company document",
+          "readOnlyHint": false,
+          "destructiveHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          },
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "analyze_participation",
+        "title": "Analyze participation",
+        "description": "Starts or resumes the analysis with the company record, the attachments and the tender. Call it only when the user asks; follow it with get_participation. Returns 202 after it accepts and keeps the request, and 200 when it reuses a finished analysis. It uses the profile and the attachments of this owner. Interrupted requests can resume; failures tell the reason and the next action. An explicit POST resumes a pause. Up to 2 thousand facts and 100 tenders per company, subject to the available capacity and budget. Follow-up only by GET. The analysis is a triage with evidence, not a final qualification decision or an external legal opinion.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "cnpj": {
+              "type": "string",
+              "description": "CNPJ with 14 characters (digits or alphanumeric) linked to the owner."
+            },
+            "id": {
+              "type": "integer",
+              "description": "Document ID."
+            },
+            "v": {
+              "type": "string",
+              "description": "SHA-256 of the open Markdown, 64 lowercase hex characters."
+            }
+          },
+          "required": [
+            "cnpj",
+            "id",
+            "v"
+          ]
+        },
+        "annotations": {
+          "title": "Analyze participation",
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": false,
+          "openWorldHint": false
+        },
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          },
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "get_participation",
+        "title": "Participation result",
+        "description": "Reads the state, the pending items and the met items, with reasons, actions and evidence. It never starts an analysis. Pending items group precisa_comprovar (proof missing), divergente (incompatible evidence) and acompanhar (future obligation). A different company record, attachments or dossier return outdated without current results. The reference date stays when the analysis resumes; a previous day returns data_atual=false. Validated batches stay available during failures or processing, with parcial=true and processados/total; they never mean that the requirements not yet compared are done. GET does not run the queue and does not start AI.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "cnpj": {
+              "type": "string",
+              "description": "CNPJ with 14 characters (digits or alphanumeric) linked to the owner."
+            },
+            "id": {
+              "type": "integer",
+              "description": "Document ID."
+            },
+            "v": {
+              "type": "string",
+              "description": "SHA-256 of the open Markdown, 64 lowercase hex characters."
+            },
+            "grupo": {
+              "type": "string",
+              "description": "pendencias, atendidos or nao_aplicavel."
+            },
+            "kind": {
+              "type": "string",
+              "description": "requirement, attestation or obligation."
+            },
+            "after": {
+              "type": "integer",
+              "description": "Last ID received; default 0."
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 30,
+              "description": "1 to 30; default 30."
+            }
+          },
+          "required": [
+            "cnpj",
+            "id",
+            "v"
+          ]
+        },
+        "annotations": {
+          "title": "Participation result",
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          },
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "list_my_companies",
+        "title": "My companies",
+        "description": "The companies are the account organizations with EditalMD; use the session or the organization key.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {},
+          "required": []
+        },
+        "annotations": {
+          "title": "My companies",
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          },
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "search_companies",
+        "title": "Find a company",
+        "description": "Searches the company registry by CNPJ or company name; requires an account or a guest.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "q": {
+              "type": "string",
+              "description": "Full CNPJ or a name of 3 to 120 characters."
+            }
+          },
+          "required": [
+            "q"
+          ]
+        },
+        "annotations": {
+          "title": "Find a company",
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          },
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "add_company",
+        "title": "Add a company",
+        "description": "Imports the CNPJ into a new organization or into the organization of the organization key. Without X-Organization-Id, it creates the organization with the company name and EditalMD on, or returns the one that the person removed from the list (201). With X-Organization-Id or an organization key, the record goes to that organization if the caller manages it and it has no company. Returns 200 when the CNPJ is already in an organization of the caller. Up to 100 companies; no partners or contacts; no analysis starts.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "cnpj": {
+              "type": "string",
+              "description": "Full CNPJ, 14 digits with a valid check digit."
+            }
+          },
+          "required": [
+            "cnpj"
+          ]
+        },
+        "annotations": {
+          "title": "Add a company",
+          "readOnlyHint": false,
+          "destructiveHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          },
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "select_company",
+        "title": "Select a company",
+        "description": "Selects a registered company; it does not run an analysis. Each person's choice is kept in the account. Repeating the current choice writes nothing.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "cnpj": {
+              "type": "string",
+              "description": "Full CNPJ, 14 digits with a valid check digit."
+            }
+          },
+          "required": [
+            "cnpj"
+          ]
+        },
+        "annotations": {
+          "title": "Select a company",
+          "readOnlyHint": false,
+          "destructiveHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          },
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "remove_company",
+        "title": "Remove a company",
+        "description": "Removes the company from the list (owner or admin); the organization and the PDFs stay, and adding the CNPJ again brings it back.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "cnpj": {
+              "type": "string",
+              "description": "Full CNPJ, 14 digits with a valid check digit."
+            }
+          },
+          "required": [
+            "cnpj"
+          ]
+        },
+        "annotations": {
+          "title": "Remove a company",
+          "readOnlyHint": false,
+          "destructiveHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          },
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "awarded_prices",
+        "title": "Awarded prices",
+        "description": "Awarded results for a similar item, as a free summary: how many results, the median and the range (p25/p75) of the same catalog product in the same unit, without the extremes; the volume bought; the value for your quantity; and the other groups that the search found (ask for the product and the unit of one of them to switch). It searches awarded results by item description. It also accepts POST, PUT or PATCH with the same parameters in JSON or a form; `query`, `termo`, `busca` and `search` count as `q`, `estado` as `uf`, and `limit` as `limite`. Every 400 has `exemplo` and `doc`.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "q": {
+              "type": "string",
+              "description": "Item description, at least 3 letters."
+            },
+            "uf": {
+              "type": "string",
+              "description": "State (UF) of the agency (optional)."
+            },
+            "meses": {
+              "type": "number",
+              "description": "Award window in months, 1 to 36 (default 12).",
+              "default": 12
+            },
+            "catmat": {
+              "type": "string",
+              "description": "Item code in the government catalog (optional)."
+            },
+            "limite": {
+              "type": "number",
+              "description": "1 to 100 (default 50).",
+              "default": 50
+            },
+            "produto": {
+              "type": "string",
+              "description": "Catalog product, as in `grupos` (optional)."
+            },
+            "unidade": {
+              "type": "string",
+              "description": "Unit, as in `grupos`: 500 FL, 1 UN (optional)."
+            },
+            "quantidade": {
+              "type": "number",
+              "description": "How much you will sell: the value for the range of that quantity (optional)."
+            }
+          },
+          "required": [
+            "q"
+          ]
+        },
+        "annotations": {
+          "title": "Awarded prices",
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          },
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "framework_agreements",
+        "title": "Valid framework agreements",
+        "description": "The valid framework agreements (`ata de registro de preços`) on PNCP for the object, most relevant first: the managing agency, the validity, whether the agreement accepts joining (carona) and the link to the agreement. Free. Only the agreements that are not canceled and are valid today or later. `adesao=1` returns only the ones that accept joining. The procurement record (`/api/compra/:id`) has the agreements that it generated. `Accept: text/html` opens the Atas vigentes tab with the terms.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "q": {
+              "type": "string",
+              "description": "Object terms, at least 3 letters."
+            },
+            "adesao": {
+              "type": "string",
+              "description": "1 for only the agreements that accept joining (optional)."
+            },
+            "pagina": {
+              "type": "number",
+              "description": "0 to 49 (default 0)."
+            }
+          },
+          "required": [
+            "q"
+          ]
+        },
+        "annotations": {
+          "title": "Valid framework agreements",
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          },
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "procurement_plans",
+        "title": "Procurement plans",
+        "description": "What agencies plan to procure (annual procurement plans, PCA, on PNCP), before the tender opens: item, agency, quantity, estimated value and desired date. Free. Only the current version of each plan; without `ano`, from the current year on. To know when the tender opens, create an alert with the same terms (`/api/alertas`). `Accept: text/html` opens the Planos de compras tab with the terms.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "q": {
+              "type": "string",
+              "description": "Item terms, at least 3 letters."
+            },
+            "ano": {
+              "type": "number",
+              "description": "Plan year (optional; the default is from the current year on)."
+            },
+            "pagina": {
+              "type": "number",
+              "description": "0 to 49 (default 0)."
+            }
+          },
+          "required": [
+            "q"
+          ]
+        },
+        "annotations": {
+          "title": "Procurement plans",
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          },
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "my_account",
+        "title": "My account",
+        "description": "The identity and the private counters of the account session (cookie) sent in the MCP request. The global account is already the person in EditalMD: there is no activation per product.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "locais": {
+              "type": "string",
+              "description": "Up to 90 positive document IDs separated by commas, to check which ones already belong to the account; 1529 characters at most."
+            }
+          },
+          "required": []
+        },
+        "annotations": {
+          "title": "My account",
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "my_documents",
+        "title": "My documents",
+        "description": "The private collection of the account. Requires the account session (cookie and the browser CSRF).",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "antes": {
+              "type": "string",
+              "description": "proximo_antes of the previous page; hex, an exclusive cursor of the client."
+            }
+          },
+          "required": []
+        },
+        "annotations": {
+          "title": "My documents",
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "my_procurements",
+        "title": "My procurements",
+        "description": "The private collection of the account. Requires the account session (cookie and the browser CSRF).",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "antes": {
+              "type": "string",
+              "description": "proximo_antes of the previous page; hex, an exclusive cursor of the client."
+            }
+          },
+          "required": []
+        },
+        "annotations": {
+          "title": "My procurements",
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "account_tracking",
+        "title": "Account follow-up lists",
+        "description": "Checks that the Salvas, Alertas and Vigias belong to the account of the session. The lists of a guest edm_… move to the account with `POST /api/auth/claim`; a POST to this route answers 410 with the path.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {},
+          "required": []
+        },
+        "annotations": {
+          "title": "Account follow-up lists",
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "claim_guest_tracking",
+        "title": "Bring guest lists into the account",
+        "description": "Brings into the session account what the guest edm_… created (the SDK claim): the Salvas, Alertas and Vigias that the account does not have yet, and the documents that the guest bought. Requires the bootstrap/CSRF of this browser; the page does it right after sign-in. It moves only what the guest still has, in one transaction; what collides with what the account already has stays with the guest. A repeat does no harm (it moves zero).",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "guest_token": {
+              "type": "string",
+              "description": "Token edm_… of the guest."
+            }
+          },
+          "required": [
+            "guest_token"
+          ]
+        },
+        "annotations": {
+          "title": "Bring guest lists into the account",
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": false,
+          "openWorldHint": false
+        },
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "lookup_reference",
+        "title": "Lookup reference",
+        "description": "Find city names and state codes, activities and other Radar CNPJ references. For tender filters, use the city name and state. Returned numeric codes belong to Receita, not IBGE.",
+        "inputSchema": {
+          "type": "object",
+          "required": [
+            "tipo"
+          ],
+          "properties": {
+            "tipo": {
+              "type": "string",
+              "enum": [
+                "municipio",
+                "cnae",
+                "natureza",
+                "qualificacao",
+                "pais",
+                "motivo"
+              ],
+              "description": "Reference type: city, activity, legal nature, qualification, country or status reason."
+            },
+            "q": {
+              "type": "string",
+              "description": "At least two letters."
+            },
+            "codigos": {
+              "type": "string",
+              "description": "Up to 50 Receita codes, separated by commas."
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "description": "1 to 50 results. Default: 20."
+            }
+          }
+        },
+        "annotations": {
+          "title": "Lookup reference",
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          },
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "preview_alert",
+        "title": "Alert preview",
+        "description": "A free sample of procurements by terms and filters, or editable suggestions by CNPJ. It does not create alerts.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "termos": {
+              "type": "string",
+              "description": "Object terms; a space requires all words, | accepts alternatives."
+            },
+            "uf": {
+              "type": "string",
+              "description": "State (UF) abbreviation; empty means all."
+            },
+            "filtros": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "modalidades": {
+                  "type": "array",
+                  "maxItems": 10,
+                  "items": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 19
+                  }
+                },
+                "municipios": {
+                  "type": "array",
+                  "maxItems": 10,
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "excluir": {
+                  "type": "array",
+                  "maxItems": 10,
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "valor_min": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "valor_max": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "abertas": {
+                  "type": "boolean"
+                },
+                "cnaes": {
+                  "type": "array",
+                  "maxItems": 8,
+                  "items": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-?\\d/?\\d{2}$"
+                  }
+                }
+              },
+              "description": "Extra filter: modalities, municipalities, exclusions, values, open proposals and CNAEs. PATCH replaces the whole filter; {} clears it."
+            },
+            "cnpj": {
+              "type": "string",
+              "description": "CNPJ to suggest up to 8 families of terms, without turning them on."
+            }
+          }
+        },
+        "annotations": {
+          "title": "Alert preview",
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": false,
+          "openWorldHint": false
+        },
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          },
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "update_alert",
+        "title": "Edit an alert",
+        "description": "Edits the interest, or pauses or turns on again an alert of the owner. The filters replace the whole filter.",
+        "inputSchema": {
+          "type": "object",
+          "required": [
+            "id"
+          ],
+          "properties": {
+            "termos": {
+              "type": "string",
+              "description": "Object terms; a space requires all words, | accepts alternatives."
+            },
+            "uf": {
+              "type": "string",
+              "description": "State (UF) abbreviation; empty means all."
+            },
+            "filtros": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "modalidades": {
+                  "type": "array",
+                  "maxItems": 10,
+                  "items": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 19
+                  }
+                },
+                "municipios": {
+                  "type": "array",
+                  "maxItems": 10,
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "excluir": {
+                  "type": "array",
+                  "maxItems": 10,
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "valor_min": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "valor_max": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "abertas": {
+                  "type": "boolean"
+                },
+                "cnaes": {
+                  "type": "array",
+                  "maxItems": 8,
+                  "items": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-?\\d/?\\d{2}$"
+                  }
+                }
+              },
+              "description": "Extra filter: modalities, municipalities, exclusions, values, open proposals and CNAEs. PATCH replaces the whole filter; {} clears it."
+            },
+            "nome": {
+              "type": "string",
+              "maxLength": 100,
+              "description": "Alert name, up to 100 characters."
+            },
+            "organizacao_id": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Organization from `GET /api/me/empresas`. Membership and MFA are checked. Null removes the label. This does not share alert ownership."
+            },
+            "destinatarios": {
+              "type": "object",
+              "additionalProperties": false,
+              "description": "Email recipients: `para`, `cc` and `bcc` arrays. Up to 10 distinct addresses in total. An empty `para` list uses the account email. PATCH replaces all three lists. BCC is hidden from other recipients.",
+              "properties": {
+                "para": {
+                  "type": "array",
+                  "maxItems": 10,
+                  "items": {
+                    "type": "string",
+                    "format": "email",
+                    "maxLength": 254
+                  }
+                },
+                "cc": {
+                  "type": "array",
+                  "maxItems": 10,
+                  "items": {
+                    "type": "string",
+                    "format": "email",
+                    "maxLength": 254
+                  }
+                },
+                "bcc": {
+                  "type": "array",
+                  "maxItems": 10,
+                  "items": {
+                    "type": "string",
+                    "format": "email",
+                    "maxLength": 254
+                  }
+                }
+              }
+            },
+            "id": {
+              "type": "string",
+              "description": "Alert identifier."
+            },
+            "ativo": {
+              "type": "boolean",
+              "description": "`false` pauses without deleting; `true` turns it on again."
+            },
+            "canal": {
+              "type": "string",
+              "description": "New channel: `pull`, `webhook` or `email`. Email requires a session and uses explicit recipients or the account email.",
+              "enum": [
+                "pull",
+                "webhook",
+                "email"
+              ]
+            },
+            "destino": {
+              "type": "string",
+              "description": "New https URL on port 443 (webhook). Ignored for pull and email."
+            }
+          }
+        },
+        "annotations": {
+          "title": "Edit an alert",
+          "readOnlyHint": false,
+          "destructiveHint": true,
+          "idempotentHint": false,
+          "openWorldHint": true
+        },
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          },
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "list_saved",
+        "title": "Saved tenders",
+        "description": "Lists up to 200 tenders saved by the owner, free.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {},
+          "required": []
+        },
+        "annotations": {
+          "title": "Saved tenders",
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          },
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "save_procurement",
+        "title": "Save a procurement",
+        "description": "Saves the procurement, up to 200 per owner. Saving does not create a watch or a notification. The client sends only the ID; the snapshot comes from the collection.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "number",
+              "description": "Procurement identifier in the collection."
+            }
+          },
+          "required": [
+            "id"
+          ]
+        },
+        "annotations": {
+          "title": "Save a procurement",
+          "readOnlyHint": false,
+          "destructiveHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          },
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "remove_saved",
+        "title": "Remove a saved procurement",
+        "description": "Removes the procurement from the personal list of the owner. Saving does not create a watch or a notification. The client sends only the ID; the snapshot comes from the collection.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "number",
+              "description": "Procurement identifier in the collection."
+            }
+          },
+          "required": [
+            "id"
+          ]
+        },
+        "annotations": {
+          "title": "Remove a saved procurement",
+          "readOnlyHint": false,
+          "destructiveHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          },
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "generation_status",
+        "title": "Generation status",
+        "description": "Follows the real phases and the completion, free, without starting processing.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "number",
+              "description": "Document ID."
+            },
+            "acesso_codigo": {
+              "type": "string",
+              "description": "Authorizes this document for whoever holds it. A public receipt grants no access."
+            },
+            "agent_pass": {
+              "type": "string",
+              "description": "Individual agent credential, required together with X-Editalmd-Avaliacao."
+            },
+            "avaliacao_codigo": {
+              "type": "string",
+              "description": "evaluation.access_code of the sponsored premium, only for this document and agent, with an expiry."
+            }
+          },
+          "required": [
+            "id"
+          ]
+        },
+        "annotations": {
+          "title": "Generation status",
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          },
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "original_status",
+        "title": "Original file status",
+        "description": "Reads the status of the original, free. It does not ask for a download or a generation. It returns only the file status: it does not deliver content, grant access, confirm pages or start a generation. No query. The response is no-store.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Document ID from the procurement record (`get_procurement`)."
+            }
+          },
+          "required": [
+            "id"
+          ],
+          "additionalProperties": false
+        },
+        "annotations": {
+          "title": "Original file status",
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          },
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "request_original",
+        "title": "Request the original",
+        "description": "When the person wants the document, downloads the pending original from PNCP now. Free and idempotent. It does not start OCR. Use it when the person opens the document. The body is empty or {} (two bytes at most). A free collector downloads the original at once and the status becomes downloading; without a free collector, the request goes first into the queue.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Document ID from the procurement record (`get_procurement`)."
+            }
+          },
+          "required": [
+            "id"
+          ],
+          "additionalProperties": false
+        },
+        "annotations": {
+          "title": "Request the original",
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": true
+        },
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          },
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "list_examples",
+        "title": "Examples",
+        "description": "Lists five real free proofs to check the Markdown, the original PDF and the ZIP with images before you generate another document.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {}
+        },
+        "annotations": {
+          "title": "Examples",
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          },
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "get_document",
+        "title": "Document",
+        "description": "A free lookup of the title, type, pages and the procurement linked to a document. Use `get_procurement` to list the related documents. It does not open content or start OCR.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Document ID."
+            }
+          },
+          "required": [
+            "id"
+          ]
+        },
+        "annotations": {
+          "title": "Document",
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          },
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "get_document_dossier",
+        "title": "Document dossier",
+        "description": "Items, requirements, attestations, deadlines and obligations, with conditions, exceptions and excerpts/pages. It uses the same acesso_codigo as the reading. It does not start AI. The dossier is included in the document access, with no new analysis when you read it. Partial data tells the coverage; an export requires a finished version.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "number",
+              "description": "Document ID."
+            },
+            "v": {
+              "type": "string",
+              "description": "SHA-256 of the text."
+            },
+            "after": {
+              "type": "number",
+              "description": "Previous `next` cursor."
+            },
+            "limit": {
+              "type": "number",
+              "description": "1 to 30 facts."
+            },
+            "kind": {
+              "type": "string",
+              "description": "identity, item, requirement, attestation, deadline or obligation."
+            },
+            "acesso_codigo": {
+              "type": "string",
+              "description": "Authorizes this document for whoever holds it. A public receipt grants no access."
+            },
+            "agent_pass": {
+              "type": "string",
+              "description": "Individual agent credential, required together with X-Editalmd-Avaliacao."
+            },
+            "avaliacao_codigo": {
+              "type": "string",
+              "description": "evaluation.access_code of the sponsored premium, only for this document and agent, with an expiry."
+            }
+          },
+          "required": [
+            "id"
+          ]
+        },
+        "annotations": {
+          "title": "Document dossier",
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          },
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "list_document_files",
+        "title": "Document files",
+        "description": "The catalog of the original files of the document, with download links and pages. Use /api/documento/{id}/original to download the full original.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "number",
+              "description": "Document ID from the procurement record (`get_procurement`)."
+            },
+            "acesso_codigo": {
+              "type": "string",
+              "description": "Authorizes this document for whoever holds it. A public receipt grants no access."
+            },
+            "agent_pass": {
+              "type": "string",
+              "description": "Individual agent credential, required together with X-Editalmd-Avaliacao."
+            },
+            "avaliacao_codigo": {
+              "type": "string",
+              "description": "evaluation.access_code of the sponsored premium, only for this document and agent, with an expiry."
+            }
+          },
+          "required": [
+            "id"
+          ]
+        },
+        "annotations": {
+          "title": "Document files",
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          },
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "api_index",
+        "title": "API index",
+        "description": "The EditalMD API index, with the routes.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {}
+        },
+        "annotations": {
+          "title": "API index",
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          },
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "health",
+        "title": "Service health",
+        "description": "Health of the origin and size of the collection (procurements and documents with text).",
+        "inputSchema": {
+          "type": "object",
+          "properties": {}
+        },
+        "annotations": {
+          "title": "Service health",
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          },
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "search_tenders",
+        "title": "Search tenders",
+        "description": "Searches public procurements by term. Free. Returns the object, the agency, the state (UF), the modality and the procurement id.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "q": {
+              "type": "string",
+              "description": "Search term, at least 3 letters."
+            },
+            "uf": {
+              "type": "string",
+              "description": "State (UF) abbreviation (optional)."
+            },
+            "abertas": {
+              "type": "string",
+              "description": "'1' for only procurements with an open proposal period.",
+              "enum": [
+                "1"
+              ]
+            },
+            "limite": {
+              "type": "number",
+              "description": "1 to 50 (default 20)."
+            },
+            "filtros": {
+              "type": "string",
+              "description": "JSON up to 2048 characters: excluir and municipios (up to 10 expressions of 3 to 80 characters; municipalities by exact name or IBGE code), orgao_cnpj (14 digits), modalidades (up to 10 codes from 1 to 19), valor_min and valor_max (reais from 0 to 1e15). Example: {\"excluir\":[\"usado\"],\"modalidades\":[6]}."
+            }
+          },
+          "required": [
+            "q"
+          ]
+        },
+        "annotations": {
+          "title": "Search tenders",
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          },
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "get_deadlines",
+        "title": "Procurement deadlines",
+        "description": "The deadlines of the procurement: the published end of proposals and the last day to challenge the tender (estimate: 3 business days before the session, Law 14.133 art. 164, national holidays). Free. Served from the edge cache for up to 6 hours: the record rarely changes. `Cache-Control: no-cache` in the request reads the origin now. The `x-origem-cache` header says `hit`, `miss` or `bypass`.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "number",
+              "description": "Procurement id (from the search)."
+            }
+          },
+          "required": [
+            "id"
+          ]
+        },
+        "annotations": {
+          "title": "Procurement deadlines",
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          },
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "get_procurement",
+        "title": "Procurement record",
+        "description": "The procurement record and its documents in the collection (up to 50), with titles, types, pages and availability. Free. Served from the edge cache for up to 6 hours: the record rarely changes. `Cache-Control: no-cache` in the request reads the origin now. The `x-origem-cache` header says `hit`, `miss` or `bypass`.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "number",
+              "description": "Procurement id (from the search)."
+            }
+          },
+          "required": [
+            "id"
+          ]
+        },
+        "annotations": {
+          "title": "Procurement record",
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          },
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "who_supplies",
+        "title": "Who supplies",
+        "description": "The CNAEs (activity codes) that usually win procurements like this one, most likely first, with the official description and, per CNAE, how many items and how much of the estimated value pointed to it. Free. Each item of the procurement (up to 99, the ones of highest value) points to the 3 most likely CNAEs, by a classifier trained on the activity of the companies that won similar items in the awarded PNCP results; the procurement adds the points (3, 2 and 1 by position). Without items in the collection, the object of the procurement counts, and the top 5 come without `itens` or `valor_estimado`. In the measurement of 27/09/2026, for 87% of the items one of the first 3 was a CNAE of the company that won. To receive the new procurements of these CNAEs, create an alert (`POST /api/alertas`).",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "number",
+              "description": "Procurement id (from the search)."
+            }
+          },
+          "required": [
+            "id"
+          ]
+        },
+        "annotations": {
+          "title": "Who supplies",
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          },
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "open_tenders_in_field",
+        "title": "Open tenders in the same field",
+        "description": "The tenders with an open proposal period published in the last 7 days, in the state (UF) and in the CNAEs of the companies that supply the same as this procurement, highest value first, and the alert body that delivers them (for `create_alert`). Useful when the procurement you looked up is already closed. Free. Without a CNAE, it uses the terms of the object. It is the same read as the alert preview (`POST /api/alertas/previa`), and `alerta` has the body that creates this alert in `POST /api/alertas` (add the `canal`). The result is per field and state and is kept for 30 minutes; when the service is busy or the origin is down, `estado` says so and `itens` is empty.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "number",
+              "description": "Procurement id (from the search)."
+            }
+          },
+          "required": [
+            "id"
+          ]
+        },
+        "annotations": {
+          "title": "Open tenders in the same field",
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          },
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "get_tender_markdown",
+        "title": "Tender Markdown",
+        "description": "Reads the Markdown with the acesso_codigo of the document, or with avaliacao_codigo and agent_pass of the sponsored premium. Five examples are free.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "number",
+              "description": "Document id (from `get_procurement`)."
+            },
+            "acesso_codigo": {
+              "type": "string",
+              "description": "Authorizes this document for whoever holds it. A public receipt grants no access."
+            },
+            "agent_pass": {
+              "type": "string",
+              "description": "Individual agent credential, required together with X-Editalmd-Avaliacao."
+            },
+            "avaliacao_codigo": {
+              "type": "string",
+              "description": "evaluation.access_code of the sponsored premium, only for this document and agent, with an expiry."
+            }
+          },
+          "required": [
+            "id"
+          ]
+        },
+        "annotations": {
+          "title": "Tender Markdown",
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          },
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "get_qualification",
+        "title": "Qualification list",
+        "description": "The qualification list of the tender, with literal excerpts: conditions, exceptions and evidence by page of the available analysis. The lookup does not start another analysis. Deadlines, proposals and the other obligations are in the dossier; this list covers qualification and the required attestations, and does not state what the company has.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "number",
+              "description": "Document id (from `get_procurement`)."
+            },
+            "acesso_codigo": {
+              "type": "string",
+              "description": "Authorizes this document for whoever holds it. A public receipt grants no access."
+            },
+            "agent_pass": {
+              "type": "string",
+              "description": "Individual agent credential, required together with X-Editalmd-Avaliacao."
+            },
+            "avaliacao_codigo": {
+              "type": "string",
+              "description": "evaluation.access_code of the sponsored premium, only for this document and agent, with an expiry."
+            }
+          },
+          "required": [
+            "id"
+          ]
+        },
+        "annotations": {
+          "title": "Qualification list",
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": false,
+          "openWorldHint": false
+        },
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          },
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "get_reading_manifest",
+        "title": "Document reading manifest",
+        "description": "The document manifest: pages, images, SHA-256 and version. Send acesso_codigo; the examples are free. It does not start OCR. The same authorization opens the ZIP and the images through the API. Only ready resources. `document_approved: false` marks the automatic extraction and does not block reading.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "number",
+              "description": "Document id."
+            },
+            "acesso_codigo": {
+              "type": "string",
+              "description": "Authorizes this document for whoever holds it. A public receipt grants no access."
+            },
+            "agent_pass": {
+              "type": "string",
+              "description": "Individual agent credential, required together with X-Editalmd-Avaliacao."
+            },
+            "avaliacao_codigo": {
+              "type": "string",
+              "description": "evaluation.access_code of the sponsored premium, only for this document and agent, with an expiry."
+            }
+          },
+          "required": [
+            "id"
+          ]
+        },
+        "annotations": {
+          "title": "Document reading manifest",
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          },
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "create_owner",
+        "title": "Create an owner",
+        "description": "Creates the guest (token edm_…, issued by the account library) that opens alerts and watches, and the secret whsec_… that signs the webhooks. No sign-up. The token appears only once: keep it and send it in Authorization: Bearer in the alert and watch tools. The account library signs the token, with a limit per network and per hour, so the free allowance does not become infinite. The token has no recovery: sign in to the account and bring the lists into it (`POST /api/auth/claim`, which the account page does on sign-in) to stop depending on it. You can read `webhook_segredo` again in `GET /api/dono`. Each webhook POST carries `webhook-id`, `webhook-timestamp` (Unix seconds) and `webhook-signature: v1,<base64>`: HMAC-SHA256 of `id.timestamp.body` with the key of your `whsec_…` (the base64 after the prefix). This is the Standard Webhooks pattern: any of its libraries can check it; reject a timestamp outside 5 minutes. After `POST /api/dono/segredo`, the previous secret still signs for 24 h (two `v1,` parts in the header).",
+        "inputSchema": {
+          "type": "object",
+          "properties": {}
+        },
+        "annotations": {
+          "title": "Create an owner",
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": false,
+          "openWorldHint": false
+        },
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          },
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "get_owner",
+        "title": "Owner",
+        "description": "The owner state (requires the token edm_… or the account session): account or guest, the notice e-mail, the allowance and the secret whsec_… that signs each webhook (Standard Webhooks: webhook-id, webhook-timestamp, webhook-signature). Each webhook POST carries `webhook-id`, `webhook-timestamp` (Unix seconds) and `webhook-signature: v1,<base64>`: HMAC-SHA256 of `id.timestamp.body` with the key of your `whsec_…` (the base64 after the prefix). This is the Standard Webhooks pattern: any of its libraries can check it; reject a timestamp outside 5 minutes. After `POST /api/dono/segredo`, the previous secret still signs for 24 h (two `v1,` parts in the header).",
+        "inputSchema": {
+          "type": "object",
+          "properties": {}
+        },
+        "annotations": {
+          "title": "Owner",
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          },
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "rotate_webhook_secret",
+        "title": "Rotate the webhook secret",
+        "description": "Changes the secret that signs the webhooks (requires the token edm_…). The previous secret still signs for 24 h, so you can change it without a failure window. During the 24 h, the `webhook-signature` header has two `v1,…` parts: one with the new secret and one with the previous. The receiver only needs to accept any part that matches.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {}
+        },
+        "annotations": {
+          "title": "Rotate the webhook secret",
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": false,
+          "openWorldHint": false
+        },
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          },
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "create_alert",
+        "title": "Create an alert",
+        "description": "An alert for new procurements by object terms and state (UF). Use the account session or guest token. Channels: pull, signed webhook or email. Name, organization and email recipients are optional. Two modes. By `termos`: a space requires all groups; `|` accepts alternatives within a group. By `cnpj`: known activity families produce alerts, up to `max_familias`. Unmapped activities remain in the response without an alert. The cron checks every 30 minutes. Email requires an account session and `EMAIL_ALERTAS=1`. It uses explicit recipients or the verified account email.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "nome": {
+              "type": "string",
+              "maxLength": 100,
+              "description": "Alert name, up to 100 characters."
+            },
+            "organizacao_id": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Organization from `GET /api/me/empresas`. Membership and MFA are checked. Null removes the label. This does not share alert ownership."
+            },
+            "destinatarios": {
+              "type": "object",
+              "additionalProperties": false,
+              "description": "Email recipients: `para`, `cc` and `bcc` arrays. Up to 10 distinct addresses in total. An empty `para` list uses the account email. PATCH replaces all three lists. BCC is hidden from other recipients.",
+              "properties": {
+                "para": {
+                  "type": "array",
+                  "maxItems": 10,
+                  "items": {
+                    "type": "string",
+                    "format": "email",
+                    "maxLength": 254
+                  }
+                },
+                "cc": {
+                  "type": "array",
+                  "maxItems": 10,
+                  "items": {
+                    "type": "string",
+                    "format": "email",
+                    "maxLength": 254
+                  }
+                },
+                "bcc": {
+                  "type": "array",
+                  "maxItems": 10,
+                  "items": {
+                    "type": "string",
+                    "format": "email",
+                    "maxLength": 254
+                  }
+                }
+              }
+            },
+            "termos": {
+              "type": "string",
+              "description": "Object words, 3 to 200 letters; a space means all, | means any (uniforme|fardamento)."
+            },
+            "uf": {
+              "type": "string",
+              "description": "State (UF) abbreviation (optional)."
+            },
+            "canal": {
+              "type": "string",
+              "description": "pull, webhook or email (default pull).",
+              "enum": [
+                "pull",
+                "webhook",
+                "email"
+              ],
+              "default": "pull"
+            },
+            "filtros": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "modalidades": {
+                  "type": "array",
+                  "maxItems": 10,
+                  "items": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 19
+                  }
+                },
+                "municipios": {
+                  "type": "array",
+                  "maxItems": 10,
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "excluir": {
+                  "type": "array",
+                  "maxItems": 10,
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "valor_min": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "valor_max": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "abertas": {
+                  "type": "boolean"
+                },
+                "cnaes": {
+                  "type": "array",
+                  "maxItems": 8,
+                  "items": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-?\\d/?\\d{2}$"
+                  }
+                }
+              },
+              "description": "Extra filter: modalities, municipalities, exclusions, values, open proposals and CNAEs. PATCH replaces the whole filter; {} clears it."
+            },
+            "destino": {
+              "type": "string",
+              "description": "HTTPS webhook URL. Ignored for pull and email."
+            }
+          },
+          "required": [
+            "termos"
+          ]
+        },
+        "annotations": {
+          "title": "Create an alert",
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": false,
+          "openWorldHint": true
+        },
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          },
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "create_alerts_by_cnpj",
+        "title": "Alerts by CNPJ",
+        "description": "Alerts for new procurements by the company CNPJ (requires the token edm_…): the activities (CNAE) become families of terms, and there is one alert per family, main first, up to max_familias. A CNAE outside the dictionary is listed in the response with a null family. Two modes. By `termos`: a space requires all groups; `|` accepts alternatives within a group. By `cnpj`: known activity families produce alerts, up to `max_familias`. Unmapped activities remain in the response without an alert. The cron checks every 30 minutes. Email requires an account session and `EMAIL_ALERTAS=1`. It uses explicit recipients or the verified account email.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "nome": {
+              "type": "string",
+              "maxLength": 100,
+              "description": "Alert name, up to 100 characters."
+            },
+            "organizacao_id": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Organization from `GET /api/me/empresas`. Membership and MFA are checked. Null removes the label. This does not share alert ownership."
+            },
+            "destinatarios": {
+              "type": "object",
+              "additionalProperties": false,
+              "description": "Email recipients: `para`, `cc` and `bcc` arrays. Up to 10 distinct addresses in total. An empty `para` list uses the account email. PATCH replaces all three lists. BCC is hidden from other recipients.",
+              "properties": {
+                "para": {
+                  "type": "array",
+                  "maxItems": 10,
+                  "items": {
+                    "type": "string",
+                    "format": "email",
+                    "maxLength": 254
+                  }
+                },
+                "cc": {
+                  "type": "array",
+                  "maxItems": 10,
+                  "items": {
+                    "type": "string",
+                    "format": "email",
+                    "maxLength": 254
+                  }
+                },
+                "bcc": {
+                  "type": "array",
+                  "maxItems": 10,
+                  "items": {
+                    "type": "string",
+                    "format": "email",
+                    "maxLength": 254
+                  }
+                }
+              }
+            },
+            "cnpj": {
+              "type": "string",
+              "description": "CNPJ with 14 digits, with or without punctuation."
+            },
+            "max_familias": {
+              "type": "number",
+              "description": "1 to 8 (default 8): how many families become alerts.",
+              "default": 8
+            },
+            "uf": {
+              "type": "string",
+              "description": "State (UF) abbreviation (optional)."
+            },
+            "filtros": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "modalidades": {
+                  "type": "array",
+                  "maxItems": 10,
+                  "items": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 19
+                  }
+                },
+                "municipios": {
+                  "type": "array",
+                  "maxItems": 10,
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "excluir": {
+                  "type": "array",
+                  "maxItems": 10,
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "valor_min": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "valor_max": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "abertas": {
+                  "type": "boolean"
+                },
+                "cnaes": {
+                  "type": "array",
+                  "maxItems": 8,
+                  "items": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-?\\d/?\\d{2}$"
+                  }
+                }
+              },
+              "description": "Extra filter: modalities, municipalities, exclusions, values, open proposals and CNAEs. PATCH replaces the whole filter; {} clears it."
+            },
+            "canal": {
+              "type": "string",
+              "description": "pull, webhook or email (default pull).",
+              "enum": [
+                "pull",
+                "webhook",
+                "email"
+              ],
+              "default": "pull"
+            },
+            "destino": {
+              "type": "string",
+              "description": "HTTPS webhook URL. Ignored for pull and email."
+            }
+          },
+          "required": [
+            "cnpj"
+          ]
+        },
+        "annotations": {
+          "title": "Alerts by CNPJ",
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": false,
+          "openWorldHint": true
+        },
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          },
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "list_cnaes",
+        "title": "Activity codes (CNAE)",
+        "description": "Search term suggestions by economic activity (CNAE), with the description, the family and coverage indicators. Free. Without `q`, it lists the activities with the most registered suppliers. With `q`, it searches by code prefix (`1412`, `1412-6/01`) or by a word of the description. A null `familia` or `termos` means that the CNAE is not in the dictionary yet: an alert by CNPJ does not use it.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "q": {
+              "type": "string",
+              "description": "Code prefix (1412) or a word of the description (optional)."
+            },
+            "limite": {
+              "type": "number",
+              "description": "1 to 100 (default 20)."
+            }
+          }
+        },
+        "annotations": {
+          "title": "Activity codes (CNAE)",
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          },
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "list_alert_matches",
+        "title": "Alert matches",
+        "description": "The procurements that already matched an alert (pull channel), with deadlines and delivery status. Requires the token edm_….",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "Alert id."
+            },
+            "limite": {
+              "type": "number",
+              "description": "1 to 100 (default 50)."
+            },
+            "antes_compra": {
+              "type": "number",
+              "description": "proximo_antes of the previous page."
+            }
+          },
+          "required": [
+            "id"
+          ]
+        },
+        "annotations": {
+          "title": "Alert matches",
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          },
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "watch_procurement",
+        "title": "Watch a procurement",
+        "description": "Watches a procurement (requires the token edm_…): takes a snapshot now and records the events of correction, new document, suspension, postponed deadline and value, plus deadline notices. The checks are periodic; check the date of the last check in the watch. The notices `prazo_impugnacao` (on the day) and `prazo_proposta` (24 h before) go out once each.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "compra_id": {
+              "type": "number",
+              "description": "Procurement id (from the search)."
+            },
+            "canal": {
+              "type": "string",
+              "description": "pull, webhook or email (default pull).",
+              "enum": [
+                "pull",
+                "webhook",
+                "email"
+              ],
+              "default": "pull"
+            },
+            "destino": {
+              "type": "string",
+              "description": "HTTPS webhook URL. Ignored for pull and email."
+            }
+          },
+          "required": [
+            "compra_id"
+          ]
+        },
+        "annotations": {
+          "title": "Watch a procurement",
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": false,
+          "openWorldHint": true
+        },
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          },
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "list_watch_events",
+        "title": "Watch events",
+        "description": "The events of a watched procurement (what changed, from what to what, and when) and the current snapshot. Requires the token edm_….",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "Watch id."
+            },
+            "limite": {
+              "type": "number",
+              "description": "1 to 100 (default 50)."
+            }
+          },
+          "required": [
+            "id"
+          ]
+        },
+        "annotations": {
+          "title": "Watch events",
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          },
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "consulta_cadastro",
+        "title": "Company registration record",
+        "description": "Name, status, activity and address of a Brazilian company by CNPJ. It does not count against the daily free limit, does not show contacts or partners and runs no extra checks. The origin's protection limit still applies. For sanctions, tax status and a live CNIA check, use consulta_cnpj.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "cnpj": {
+              "type": "string",
+              "description": "CNPJ, with or without punctuation."
+            }
+          },
+          "required": [
+            "cnpj"
+          ],
+          "additionalProperties": false
+        },
+        "annotations": {
+          "title": "Company registration record",
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          },
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "consulta_endereco",
+        "title": "Addresses of a CEP",
+        "description": "Addresses and companies at a CEP (Brazilian postal code), without counting against the daily free limit. Up to 20 addresses and 20 companies; `pontos_total` has the total number of addresses. The origin's protection limit still applies.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "cep": {
+              "type": "string",
+              "description": "CEP, with or without the hyphen."
+            }
+          },
+          "required": [
+            "cep"
+          ],
+          "additionalProperties": false
+        },
+        "annotations": {
+          "title": "Addresses of a CEP",
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          },
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "consulta_sugerir",
+        "title": "Find a company",
+        "description": "Suggests up to 8 Brazilian companies for a CNPJ, company name, partner, phone or e-mail, ordered by how well they match. It does not count against the daily free limit and does not show contacts. `incompleto` means one of the sources did not answer.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "q": {
+              "type": "string",
+              "minLength": 3,
+              "maxLength": 120,
+              "description": "A name of 3 to 120 characters, a CNPJ, a phone with area code or a full e-mail."
+            }
+          },
+          "required": [
+            "q"
+          ],
+          "additionalProperties": false
+        },
+        "annotations": {
+          "title": "Find a company",
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          },
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "consulta_cnpj",
+        "title": "Check a company (live)",
+        "description": "Brazilian company record by CNPJ from the Federal Revenue (Receita Federal), with the special status when there is one (bankruptcy, judicial recovery, liquidation); its sanctions (CEIS, CNEP, CEPIM, leniency agreements, TCU and the CNJ's CNIA, checked live); partners on the politically exposed persons list (CGU); tax status (federal tax debt, installment agreements, tax incentives and construction works); the Federal Revenue chronic tax debtor list (`devedorContumaz.consta`: barred from public tenders); environmental and labor risk (forced-labor list, Ibama embargoes and fines); government contracts (PNCP, federal contracts since 2013 and sales to municipalities in the state of SP, from TCE-SP) and BNDES financing; registrations with regulators and official registries (CVM, Central Bank, ANS, ANTT, ANP, ANEEL, Anatel, Anvisa, CNES, Cadastur, Ibama, ANAC and SICAF); CVM investment funds; and the address on the map (CNEFE/IBGE). Accepts the numeric and the alphanumeric CNPJ. Personal data in the record comes masked. `sancoes` has what public registries record against the whole company (the CNPJ root), updated daily: useful to vet suppliers. 10 free lookups per day per network; after that, the tool answers `free_limit` with `resets_at`.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "cnpj": {
+              "type": "string",
+              "description": "CNPJ, with or without punctuation."
+            },
+            "temas": {
+              "type": "string",
+              "maxLength": 240,
+              "description": "Comma-separated topics: dados, socios, sancoes, fiscal, divida, obras, trabalho, ibama, contratos, pep, vendas, campanhas, prefeituras, sicaf, aeronaves, fundos, rntrc, bndes, registros; todos. Omit for the full record. Basic company data always stays. Unrequested blocks are omitted; null means unchecked. Personal data remains masked."
+            }
+          },
+          "required": [
+            "cnpj"
+          ],
+          "additionalProperties": false
+        },
+        "annotations": {
+          "title": "Check a company (live)",
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": true
+        },
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          },
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "consulta_cep",
+        "title": "Check a CEP",
+        "description": "Addresses at a CEP (Brazilian postal code) with coordinates (CNEFE/IBGE) and the companies registered there. Returns up to 20 addresses and up to 20 companies; the total number of addresses is in `pontos_total`. 10 free lookups per day per network; after that, the tool answers `free_limit` with `resets_at`.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "cep": {
+              "type": "string",
+              "description": "CEP with 8 digits."
+            }
+          },
+          "required": [
+            "cep"
+          ],
+          "additionalProperties": false
+        },
+        "annotations": {
+          "title": "Check a CEP",
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          },
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
